@@ -731,7 +731,7 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
   </section>
 
   <!-- ═══ 학생 학습 현황 (교사·관리자) ═══ -->
-  <section class="scr" id="scr-dash" data-screen-label="학생 현황"><div id="dash-body"></div></section>
+  <section class="scr" id="scr-dash" data-screen-label="학생 현황"><input class="search" id="dash-q" type="text" placeholder="🔍 이름·아이디·반으로 검색" autocomplete="off"><div id="dash-body"></div></section>
 
   <!-- ═══ 계정 관리 (관리자) ═══ -->
   <section class="scr" id="scr-admin" data-screen-label="계정 관리">
@@ -739,6 +739,7 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
       <div class="ad-code-row"><input type="text" id="ad-code" placeholder="새 가입 코드 (6자 이상)"><button class="btn primary" id="btn-ad-code" style="flex:0 0 auto">변경</button></div>
     </div>
     <div class="hr"></div>
+    <input class="search" id="admin-q" type="text" placeholder="🔍 이름이나 아이디로 검색" autocomplete="off">
     <div id="admin-body"></div>
   </section>
 
@@ -1858,7 +1859,20 @@ async function renderDash(){
   const pmap = {}; progs.forEach(p=>pmap[p.user_id]=p);
   const smap = {}; sess.forEach(s=>{ (smap[s.user_id] = smap[s.user_id]||[]).push(s); });
   const MODE_KO = {quiz:'퀴즈', spell:'스펠링', flash:'카드'};
-  const students = profs.filter(p=>p.role==='student');
+  dashCtx = {profs, smap, pmap};
+  drawDash();
+}
+let dashCtx = null;
+function drawDash(){
+  if(!dashCtx) return;
+  const box = $('dash-body');
+  const {smap, pmap} = dashCtx;
+  const MODE_KO = {quiz:'퀴즈', spell:'스펠링', flash:'카드'};
+  const q = ($('dash-q').value||'').trim().toLowerCase();
+  const students = dashCtx.profs.filter(p=>p.role==='student' && (!q
+    || (p.name||'').toLowerCase().includes(q)
+    || (p.email||'').toLowerCase().includes(q)
+    || (p.class_name||'').toLowerCase().includes(q)));
   const today = new Date(); today.setHours(0,0,0,0);
   box.innerHTML = students.map(p=>{
     const ss = smap[p.id]||[];
@@ -1898,8 +1912,9 @@ async function renderDash(){
       +'<div class="stat-h">반 지정 — 반별 리스트 배포의 기준이 된다</div>'
       +'<div class="row"><input type="text" class="cls-in" data-id="'+p.id+'" value="'+esc(p.class_name||'')+'" list="class-suggest" placeholder="예: 경신고2"><button class="btn primary cls-save" data-id="'+p.id+'" style="flex:0 0 auto;padding:9px 14px">저장</button></div>'
       +'</div></div>';
-  }).join('') || '<div class="note">아직 가입한 학생이 없어요. 가입 코드를 학생들에게 알려 주세요.</div>';
+  }).join('') || '<div class="note">'+(($('dash-q').value||'').trim() ? '검색 결과가 없어요. 철자나 반 이름을 다시 확인해 보세요.' : '아직 가입한 학생이 없어요. 가입 코드를 학생들에게 알려 주세요.')+'</div>';
 }
+$('dash-q').addEventListener('input', drawDash);
 $('dash-body').addEventListener('click', async e=>{
   const save = e.target.closest('.cls-save');
   if(save){
@@ -2002,12 +2017,21 @@ $('msg-list').addEventListener('click', e=>{
 
 /* ════════ 계정 관리 (관리자) ════════ */
 $('m-admin').addEventListener('click', ()=>{ go('scr-admin'); renderAdmin(); });
+let adminProfs = null;
 async function renderAdmin(){
   const box = $('admin-body');
   box.innerHTML = '<div class="note">불러오는 중…</div>';
   const r = await api('/rest/v1/profiles?select=id,name,email,role,blocked&order=created_at.desc');
   if(!r || !r.ok){ box.innerHTML = '<div class="note">불러오기 실패 — 관리자 권한을 확인해 주세요.</div>'; return; }
-  const profs = await r.json();
+  adminProfs = await r.json();
+  drawAdmin();
+}
+function drawAdmin(){
+  const box = $('admin-body');
+  const q = ($('admin-q').value||'').trim().toLowerCase();
+  const profs = (adminProfs||[]).filter(p=>!q
+    || (p.name||'').toLowerCase().includes(q)
+    || (p.email||'').toLowerCase().includes(q));
   box.innerHTML = profs.map(p=>{
     const me = DB.profile && p.id===DB.profile.id;
     return '<div class="acc"><span class="an">'+esc(p.name)+(me?' <span class="rolebadge">나</span>':'')
@@ -2018,8 +2042,9 @@ async function renderAdmin(){
       +'<button class="blk'+(p.blocked?' on':'')+'" data-id="'+p.id+'" data-b="'+(!p.blocked)+'"'+(me?' disabled':'')+'>'+(p.blocked?'차단 해제':'차단')+'</button>'
       +'<button class="del-user" data-id="'+p.id+'" data-name="'+esc(p.name)+'"'+(me?' disabled':'')+'>삭제</button>'
       +'</div>';
-  }).join('') || '<div class="note">계정이 없어요.</div>';
+  }).join('') || '<div class="note">'+(($('admin-q').value||'').trim() ? '검색 결과가 없어요. 철자를 다시 확인해 보세요.' : '계정이 없어요.')+'</div>';
 }
+$('admin-q').addEventListener('input', drawAdmin);
 $('admin-body').addEventListener('change', async e=>{
   const s = e.target.closest('.role-sel'); if(!s) return;
   const r = await api('/rest/v1/rpc/admin_set_role', {method:'POST', body: JSON.stringify({target:s.dataset.id, new_role:s.value})});
