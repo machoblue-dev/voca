@@ -499,6 +499,13 @@ background:var(--line,#EAE3D6);color:var(--ink2,#8A8175);vertical-align:1px}
 
 .mng-chips{margin:2px 0 4px}
 .mng-chips:empty{display:none}
+
+.hall-sub{font-size:12.5px;font-weight:800;color:var(--ink2,#8A8175);margin:4px 2px 8px}
+details.hall-m{margin-top:8px;border-top:1px dashed var(--line,#EAE3D6);padding-top:8px}
+details.hall-m summary{cursor:pointer;font-size:13.5px;font-weight:800;padding:4px 2px;list-style:none}
+details.hall-m summary::-webkit-details-marker{display:none}
+details.hall-m summary::before{content:'▸ ';color:var(--red,#FF4B3E)}
+details.hall-m[open] summary::before{content:'▾ '}
 </style>
 </head>
 <body>
@@ -2621,15 +2628,15 @@ $('nk-confirm').addEventListener('click', async ()=>{
   if(curScr==='scr-home') renderHome();
 });
 
-/* ════════ 주간 리그 ════════ */
+/* ════════ 월간 리그 ════════ */
 async function pushLeague(){ /* 리그는 서버가 학습 기록으로 직접 집계한다 */ }
 async function fetchLeague(){
   const now = Date.now();
   if(leagueCache && (now - leagueCache.t) < 5*60*1000) return leagueCache.rows;
-  const r = await api('/rest/v1/rpc/league_week', {method:'POST', body:'{}'});
+  const r = await api('/rest/v1/rpc/league_month', {method:'POST', body:'{}'});
   if(!r || !r.ok) return null;
   const raw = await r.json();
-  const rows = (raw||[]).map(x=>({nickname:x.nick, avatar:x.avatar, class_name:'', week_xp:x.score, me:!!x.me}));
+  const rows = (raw||[]).map(x=>({nickname:x.nick, avatar:x.avatar, class_name:x.cls||'', mname:x.mname||'', week_xp:x.score, me:!!x.me}));
   leagueCache = {t: now, rows};
   return rows;
 }
@@ -2663,7 +2670,8 @@ function renderStats(){
     +'<div class="tchip"><b style="color:var(--gold)">'+starSum+'</b><span>★ 모은 별</span></div>'
     +'<div class="tchip"><b style="color:var(--teal-deep)">'+(acc==null?'—':acc+'%')+'</b><span>누적 정답률</span></div>'
     +'</div>';
-  h += '<div class="stat-h">주간 리그 · 전체 학생<span class="sub">닉네임으로 표시 · 월요일 리셋</span></div><div class="lg-card" id="lg-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div>';
+  h += '<div class="stat-h">월간 리그 · 전체 학생<span class="sub">닉네임으로 표시 · 매달 1일 리셋</span></div><div class="lg-card" id="lg-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div>';
+  h += '<div class="stat-h">명예의 전당<span class="sub">달이 끝나면 그달 TOP 10이 새겨져요</span></div><div class="lg-card" id="hall-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div>';
   h += '<div class="stat-h">최근 7일 학습량<span class="sub">푼 문항 수</span></div><div class="bars">'
     +days.map(d=>'<div class="bar'+(d.n?'':' zero')+'"><i style="height:'+Math.max(2,Math.round(d.n/max*72))+'px"></i><span>'+d.label+'</span></div>').join('')+'</div>';
   const slh = DB.lists.map(l=>{
@@ -2686,28 +2694,29 @@ function renderStats(){
   }
   box.innerHTML = h;
   renderLeague();
+  renderHall();
 }
 async function renderLeague(){
   const el = document.getElementById('lg-body'); if(!el) return;
   const g = ensureGame();
   const cls = (DB.profile && DB.profile.class_name) || '';
-  const meRow = '<div class="lg-row me"><span class="rank">—</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'닉네임 미정')+' <span class="mebadge">나</span></span><span class="sg">'+esc(cls)+'</span></span><span class="wxp">'+fmtXp(g.weekXp)+' XP</span></div>';
+  const meRow = '<div class="lg-row me"><span class="rank">—</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'닉네임 미정')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+cls)+'</span></span><span class="wxp">'+fmtXp(0)+' XP</span></div>';
   const rows = await fetchLeague();
   if(!rows || !rows.length){
-    el.innerHTML = meRow + '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">이번 주 랭킹이 아직 비어 있어요. 학습하면 순위가 생겨요! (전체 랭킹은 서버 리그 설정 후 표시)</span></span></div>';
+    el.innerHTML = meRow + '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">이번 달 랭킹이 아직 비어 있어요. 학습하면 순위가 생겨요!</span></span></div>';
     return;
   }
   let mine=false;
   const html = rows.slice(0,10).map((r,i)=>{
     const me = !!r.me;
     if(me) mine=true;
-    return '<div class="lg-row r'+(i+1)+(me?' me':'')+'"><span class="rank">'+(i+1)+'</span><span class="avt">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc(r.class_name||'')+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
+    return '<div class="lg-row r'+(i+1)+(me?' me':'')+'"><span class="rank">'+(i+1)+'</span><span class="avt">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.class_name||''))+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
   }).join('');
   let tail = '';
   if(!mine){
     const idx = rows.findIndex(r=>r.me);
     tail = (idx >= 0)
-      ? '<div class="lg-row me"><span class="rank">'+(idx+1)+'</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'')+' <span class="mebadge">나</span></span><span class="sg"></span></span><span class="wxp">'+fmtXp(rows[idx].week_xp)+' XP</span></div>'
+      ? '<div class="lg-row me"><span class="rank">'+(idx+1)+'</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+((DB.profile && DB.profile.class_name)||''))+'</span></span><span class="wxp">'+fmtXp(rows[idx].week_xp)+' XP</span></div>'
       : meRow;
   }
   el.innerHTML = html + tail;
@@ -2794,6 +2803,44 @@ document.getElementById('lf-target-chips').addEventListener('click', e=>{
   t.value = cur.join(', ');
   renderTargetChips();
 });
+function maskName(n){
+  n = (n||'').trim();
+  if(n.length <= 1) return n;
+  if(n.length === 2) return n[0] + 'O';
+  return n[0] + 'O'.repeat(n.length - 2) + n[n.length - 1];
+}
+let hallCache = null;
+async function fetchHall(){
+  const now = Date.now();
+  if(hallCache && (now - hallCache.t) < 10*60*1000) return hallCache.d;
+  const r = await api('/rest/v1/rpc/get_hall', {method:'POST', body:'{}'});
+  if(!r || !r.ok) return null;
+  const d = await r.json();
+  hallCache = {t: now, d};
+  return d;
+}
+function ymKo(ym){ const a = String(ym||'').split('-'); return a[0]+'년 '+Number(a[1])+'월'; }
+async function renderHall(){
+  const el = document.getElementById('hall-body'); if(!el) return;
+  const d = await fetchHall();
+  if(!d){ el.innerHTML = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오지 못했어요. 잠시 후 다시 열어 보세요.</span></span></div>'; return; }
+  const months = d.months || [], wins = d.wins || [];
+  if(!months.length){
+    el.innerHTML = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">첫 명예의 전당은 이번 달이 끝나면 새겨져요. 지금부터 점수를 쌓아 두자!</span></span></div>';
+    return;
+  }
+  const line = (r, i, xp)=>'<div class="lg-row r'+i+'"><span class="rank">'+i+'</span><span class="avt">'+esc(r.avatar||'👑')+'</span><span class="who"><span class="nk">'+esc(r.nick||'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span><span class="wxp">'+xp+'</span></div>';
+  let h = '';
+  if(wins.length){
+    h += '<div class="hall-sub">👑 누적 우승 TOP '+wins.length+'</div>';
+    h += wins.map((w,i)=>line({avatar:'👑', nick:w.nick, mname:w.mname, cls:w.cls}, i+1, '우승 '+w.wins+'회')).join('');
+  }
+  h += months.map((mo,i)=>{
+    const rows = (mo.rows||[]).map(r=>line(r, r.rank, fmtXp(r.score)+' XP')).join('');
+    return '<details class="hall-m"'+(i===0?' open':'')+'><summary>'+ymKo(mo.ym)+' TOP '+(mo.rows||[]).length+(i===0?' (최신)':'')+'</summary>'+rows+'</details>';
+  }).join('');
+  el.innerHTML = h;
+}
 </script>
 </body>
 </html>
