@@ -2085,7 +2085,7 @@ let adminProfs = null;
 async function renderAdmin(){
   const box = $('admin-body');
   box.innerHTML = '<div class="note">불러오는 중…</div>';
-  const r = await api('/rest/v1/profiles?select=id,name,email,role,blocked&order=created_at.desc');
+  const r = await api('/rest/v1/profiles?select=id,name,email,role,blocked,class_name&order=created_at.desc');
   if(!r || !r.ok){ box.innerHTML = '<div class="note">불러오기 실패 — 관리자 권한을 확인해 주세요.</div>'; return; }
   adminProfs = await r.json();
   drawAdmin();
