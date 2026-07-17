@@ -28,7 +28,7 @@
   --hero-grad:linear-gradient(135deg,#FF4B3E,#E03A2E); --hero-ink:#FFFFFF; --hero-ink2:rgba(255,255,255,.85); --hero-bar:rgba(0,0,0,.18); --hero-fill:#FFC839; --hero-border:transparent; --hero-shadow:0 8px 20px rgba(255,75,62,.32);
   --hero-btn-bg:#FFFFFF; --hero-btn-ink:#E03A2E; --hero-btn-edge:rgba(0,0,0,.15);
   --card-shadow:0 2px 10px rgba(60,40,20,.05); --pop-shadow:0 10px 30px rgba(60,40,20,.14);
-  --tab-bg:rgba(255,253,246,.92); --glow-red:none; --glow-teal:none;
+  --tab-bg:rgba(255,253,246,.92); --glow-red:none; --glow-teal:none; --dot:rgba(31,32,51,.07);
 }
 html[data-theme=dark]{
   --bg:#141115; --card:#1E1A20; --card2:#26212A; --line:#2C2630; --line2:#282329; --edge:#0E0C10;
@@ -42,7 +42,7 @@ html[data-theme=dark]{
   --hero-grad:linear-gradient(160deg,rgba(255,107,92,.16),rgba(255,107,92,.05)); --hero-ink:#F2EDE6; --hero-ink2:rgba(242,237,230,.6); --hero-bar:rgba(255,255,255,.09); --hero-fill:#FF6B5C; --hero-border:rgba(255,107,92,.28); --hero-shadow:none;
   --hero-btn-bg:#FF6B5C; --hero-btn-ink:#1A0E0C; --hero-btn-edge:transparent;
   --card-shadow:none; --pop-shadow:0 10px 30px rgba(0,0,0,.4);
-  --tab-bg:rgba(20,17,21,.92); --glow-red:0 0 24px rgba(255,107,92,.35); --glow-teal:0 0 20px rgba(65,199,167,.3);
+  --tab-bg:rgba(20,17,21,.92); --glow-red:0 0 24px rgba(255,107,92,.35); --glow-teal:0 0 20px rgba(65,199,167,.3); --dot:rgba(242,237,230,.04);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
@@ -517,6 +517,77 @@ details.hall-m summary{cursor:pointer;font-size:13.5px;font-weight:800;padding:4
 details.hall-m summary::-webkit-details-marker{display:none}
 details.hall-m summary::before{content:'▸ ';color:var(--red,#FF4B3E)}
 details.hall-m[open] summary::before{content:'▾ '}
+
+/* ═══ V2 아케이드 스킨 (오버라이드 전용 — 기능 무관) ═══ */
+@keyframes springIn{0%{transform:scale(.5);opacity:0}55%{transform:scale(1.06);opacity:1}75%{transform:scale(.98)}100%{transform:scale(1)}}
+@keyframes shine{0%{transform:translateX(-130%)}100%{transform:translateX(360%)}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes glowpulse{0%,100%{box-shadow:0 0 0 0 color-mix(in oklab,currentColor 30%,transparent)}50%{box-shadow:0 0 0 7px transparent}}
+body{background-image:radial-gradient(var(--dot) 1px,transparent 1px);background-size:22px 22px}
+::selection{background:var(--red-line)}
+.hd .logo{font-size:22px}
+.pillchip{border:1.5px solid color-mix(in oklab,currentColor 28%,transparent);padding:6px 12px;transition:transform .15s}
+.pillchip.streak{animation:glowpulse 2.6s ease infinite}
+.hero{border-radius:26px}
+.hero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-55deg,rgba(255,255,255,.055) 0 16px,transparent 16px 32px);pointer-events:none;border-radius:inherit}
+html[data-theme=dark] .hero::before{display:none}
+.hero .deco{animation:floaty 5s ease-in-out infinite}
+.hero .h-head{font-size:26px}
+.hero .h-bar{height:14px}
+.hero .h-bar i,.pbar i,.lvhero .lbar i{position:relative;overflow:hidden}
+.hero .h-bar i::after,.pbar i::after,.lvhero .lbar i::after{content:'';position:absolute;top:0;bottom:0;left:0;width:38%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.6),transparent);animation:shine 2.6s ease-in-out infinite}
+.pbar{height:16px;box-shadow:inset 0 2px 0 rgba(0,0,0,.04)}
+.hero .h-cta{border-radius:17px;font-size:16px;box-shadow:0 5px 0 var(--hero-btn-edge);transition:transform .16s cubic-bezier(.2,1.4,.4,1)}
+html[data-theme=dark] .hero .h-cta{box-shadow:var(--glow-red)}
+.btn{border-radius:17px;transition:transform .16s cubic-bezier(.2,1.4,.4,1),box-shadow .12s}
+.btn.primary{background:linear-gradient(180deg,var(--red) 0%,var(--red-deep) 100%);box-shadow:0 5px 0 var(--red-edge)}
+html[data-theme=dark] .btn.primary{background:var(--red);box-shadow:var(--glow-red)}
+.btn.know{background:linear-gradient(180deg,var(--teal),var(--teal-deep));box-shadow:0 5px 0 var(--teal-edge)}
+html[data-theme=dark] .btn.know{background:var(--teal);box-shadow:var(--glow-teal)}
+.mode{box-shadow:0 4px 0 color-mix(in oklab,currentColor 20%,transparent);transition:transform .16s cubic-bezier(.2,1.4,.4,1)}
+.mode.wide{box-shadow:0 4px 0 var(--edge)}
+.sec-h{display:flex;align-items:center;gap:9px}
+.sec-h::after{content:'';flex:1;height:2px;background:var(--line);border-radius:2px}
+.lvrow .lvn{background:linear-gradient(135deg,var(--plum),#8B5CF6);box-shadow:0 3px 0 color-mix(in oklab,var(--plum) 45%,transparent)}
+.wcard{box-shadow:0 3px 0 var(--edge)}
+.grp-bar{box-shadow:0 3px 0 var(--red-line)}
+.search:focus,.fld input:focus,.fld select:focus,.fld textarea:focus,.sp-in:focus{box-shadow:0 0 0 4px var(--red-soft)}
+.face{border-radius:28px;box-shadow:0 10px 0 var(--edge)}
+.face.front .w{font-size:32px}
+.q-card{box-shadow:0 8px 0 var(--edge)}
+.opt{box-shadow:0 3px 0 var(--edge)}
+.opt.picked-wrong{box-shadow:0 3px 0 var(--red-line)}
+.opt.reveal-right{box-shadow:0 3px 0 var(--teal-line)}
+.tri .tchip{box-shadow:0 4px 0 var(--edge)}
+.tri .tchip b{font-family:Paperlogy,Pretendard,sans-serif;font-size:21px;font-weight:800}
+.lvhero{border-radius:26px}
+.lvhero::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-55deg,rgba(255,255,255,.05) 0 16px,transparent 16px 32px);pointer-events:none;border-radius:inherit}
+html[data-theme=dark] .lvhero::before{display:none}
+.lvhero .bignum{animation:floaty 4.5s ease-in-out infinite}
+.lg-row .rank{width:25px;height:25px;font-size:12.5px;display:flex;align-items:center;justify-content:center;border-radius:99px}
+.lg-row.r1 .rank{background:linear-gradient(180deg,#FFD95E,#F0A800);color:#5A4200;box-shadow:0 2px 0 rgba(0,0,0,.14)}
+.lg-row.r2 .rank{background:linear-gradient(180deg,#ECEAF2,#C6C3D2);color:#55525F;box-shadow:0 2px 0 rgba(0,0,0,.1)}
+.lg-row.r3 .rank{background:linear-gradient(180deg,#F6B87F,#DE8637);color:#6B3A00;box-shadow:0 2px 0 rgba(0,0,0,.14)}
+.bars .bar i{background:linear-gradient(180deg,var(--red),#FF7A4B)}
+html[data-theme=dark] .bars .bar i{background:var(--red)}
+.bars .bar.zero i{background:var(--line2)}
+.result-big .stars{font-size:46px}
+.result-big .sc{font-size:50px}
+.result-big .xpline{box-shadow:0 0 0 4px color-mix(in oklab,var(--teal) 10%,transparent)}
+.combochip{border:1.5px solid color-mix(in oklab,var(--amber) 35%,transparent);animation:pop .25s ease,glowpulse 1.9s ease .3s infinite}
+#toast{box-shadow:0 12px 30px rgba(0,0,0,.28);border:2px solid rgba(255,255,255,.14)}
+#xp-float{font-size:32px}
+.ovl .card{border-radius:28px;animation:springIn .45s cubic-bezier(.2,.9,.3,1.15)}
+.sw.on{background:linear-gradient(180deg,var(--teal),var(--teal-deep));box-shadow:0 0 12px color-mix(in oklab,var(--teal) 40%,transparent)}
+.brand{padding:48px 4px 26px}
+.brand .logo{font-size:50px}
+.brand .logo em{display:inline-block;animation:floaty 3.2s ease-in-out .4s infinite}
+.brand .sub{margin-top:10px;display:inline-block;background:var(--red-soft);color:var(--red-deep);border:1.5px solid var(--red-line);border-radius:99px;padding:5px 15px;letter-spacing:.14em;font-size:12.5px;font-weight:800}
+.auth-wrap{background:var(--card);border:2px solid var(--line);border-radius:26px;padding:22px 18px 16px;box-shadow:0 7px 0 var(--edge);max-width:430px}
+.auth-tabs button.on{box-shadow:inset 0 -3px 0 var(--red-line)}
+.pf-card .pfa{background:linear-gradient(180deg,var(--red-soft),var(--card));box-shadow:0 3px 0 var(--red-line)}
+@media print{body{background-image:none}}
+@media (prefers-reduced-motion:reduce){.hero .h-bar i::after,.pbar i::after,.lvhero .lbar i::after,.hero .deco,.lvhero .bignum,.brand .logo em,.pillchip.streak,.combochip{animation:none!important}}
 </style>
 </head>
 <body>
@@ -2852,6 +2923,29 @@ async function renderHall(){
   }).join('');
   el.innerHTML = h;
 }
+</script>
+<script>
+/* V2 축하 이펙트 — 기존 앱 신호(XP 플로트·결과 화면·레벨업 모달)를 관찰만 함. 앱 로직 무변경 */
+(function(){
+if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+var COLORS=['#FF4B3E','#FFC839','#00C389','#6E6BF0','#F07B1D','#FF8AC2'];
+function burst(x,y,n,spread){spread=spread||1;
+  for(var i=0;i<n;i++){
+    var p=document.createElement('div'),s=6+Math.random()*7;
+    p.style.cssText='position:fixed;z-index:97;pointer-events:none;left:'+x+'px;top:'+y+'px;width:'+s+'px;height:'+(s*1.4)+'px;border-radius:'+(Math.random()<.4?'50%':'2px')+';background:'+COLORS[i%COLORS.length];
+    document.body.appendChild(p);
+    var ang=Math.random()*Math.PI*2,v=(60+Math.random()*180)*spread;
+    var dx=Math.cos(ang)*v,dy=Math.sin(ang)*v-120*spread;
+    p.animate([{transform:'translate(0,0) rotate(0deg)',opacity:1},{transform:'translate('+dx+'px,'+(dy+260)+'px) rotate('+(Math.random()*720-360)+'deg)',opacity:0}],{duration:900+Math.random()*700,easing:'cubic-bezier(.2,.6,.4,1)'}).onfinish=function(){this.effect.target.remove()};
+  }
+}
+var xp=document.getElementById('xp-float');
+if(xp&&window.MutationObserver) new MutationObserver(function(){ if(xp.classList.contains('go')) burst(innerWidth/2,innerHeight*.38,16); }).observe(xp,{attributes:true,attributeFilter:['class']});
+document.querySelectorAll('.ovl').forEach(function(o){
+  new MutationObserver(function(){ if(o.classList.contains('on')&&o.querySelector('.lvup-num')) burst(innerWidth/2,innerHeight/2,56,1.3); }).observe(o,{attributes:true,attributeFilter:['class']});
+});
+new MutationObserver(function(ms){ for(var i=0;i<ms.length;i++){ var nodes=ms[i].addedNodes; for(var j=0;j<nodes.length;j++){ var n=nodes[j]; if(n.nodeType!==1) continue; var r=(n.matches&&n.matches('.result-big'))?n:(n.querySelector?n.querySelector('.result-big'):null); if(r){ var b=r.getBoundingClientRect(); burst(innerWidth/2,Math.max(120,b.top+80),44,1.2); return; } } } }).observe(document.body,{childList:true,subtree:true});
+})();
 </script>
 </body>
 </html>
