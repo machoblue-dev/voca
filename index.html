@@ -483,6 +483,22 @@ background:var(--red-soft,#FFEDEB);border-radius:99px;padding:3px 11px}
 border-radius:99px;padding:7px 14px;font-size:13px;font-weight:800;color:var(--ink2,#8A8175);cursor:pointer}
 .grp-title{font-size:15px;font-weight:900}
 .grp-title small{font-weight:700;color:var(--ink2,#8A8175);margin-left:6px}
+
+#noticebar{background:var(--ink,#2B2622);color:#FFFDF6;border-radius:16px;padding:13px 17px;
+font-size:14px;font-weight:700;line-height:1.55;margin-bottom:14px}
+#noticebar::before{content:'📢 ';opacity:.9}
+.li-card.arch{opacity:.62}
+.li-badge{display:inline-block;font-size:11px;font-weight:800;border-radius:7px;padding:1px 7px;margin-left:6px;
+background:var(--line,#EAE3D6);color:var(--ink2,#8A8175);vertical-align:1px}
+.mng-row{display:flex;gap:8px;margin-top:9px;width:100%}
+.mng-row input{flex:1;min-width:0}
+
+.stu .stu-detail{display:none}
+.stu.open .stu-detail{display:block}
+.stu .stu-h{cursor:pointer}
+
+.mng-chips{margin:2px 0 4px}
+.mng-chips:empty{display:none}
 </style>
 </head>
 <body>
@@ -530,6 +546,7 @@ border-radius:99px;padding:7px 14px;font-size:13px;font-weight:800;color:var(--i
 
   <!-- ═══ 홈 ═══ -->
   <section class="scr" id="scr-home" data-screen-label="홈">
+    <div id="noticebar" style="display:none"></div>
     <div class="hd">
       <div class="logo">VOCA<em>꾹</em></div>
       <div class="hd-chips">
@@ -717,7 +734,7 @@ border-radius:99px;padding:7px 14px;font-size:13px;font-weight:800;color:var(--i
   <section class="scr" id="scr-msg" data-screen-label="쪽지함">
     <div class="hd" style="margin-bottom:12px"><div class="logo disp" style="font-size:20px;font-weight:800">쪽지함</div></div>
     <div id="msg-compose" class="msg-compose" style="display:none">
-      <div class="fld"><label>받는 사람</label><select id="mc-to"></select></div>
+      <div class="fld"><label>받는 사람</label><select id="mc-class" style="display:none;margin-bottom:8px"></select><select id="mc-to"></select></div>
       <div class="fld"><label>내용</label><textarea id="mc-body" rows="4" placeholder="내용을 적어 주세요 (2000자 이내)"></textarea></div>
       <div class="row">
         <button class="btn primary" id="btn-mc-send" style="flex:1">보내기</button>
@@ -769,9 +786,13 @@ border-radius:99px;padding:7px 14px;font-size:13px;font-weight:800;color:var(--i
 
   <!-- ═══ 계정 관리 (관리자) ═══ -->
   <section class="scr" id="scr-admin" data-screen-label="계정 관리">
+    <div class="fld"><label>홈 공지 (전 학생 홈 상단에 표시 — 비우고 저장하면 내림)</label>
+      <div class="ad-code-row"><input type="text" id="ad-notice" placeholder="예: 이번 주 금요일 휴원"><button class="btn primary" id="btn-ad-notice" style="flex:0 0 auto">공지 저장</button></div>
+    </div>
     <div class="fld"><label>가입 코드 변경 (즉시 적용, 기존 계정 영향 없음)</label>
       <div class="ad-code-row"><input type="text" id="ad-code" placeholder="새 가입 코드 (6자 이상)"><button class="btn primary" id="btn-ad-code" style="flex:0 0 auto">변경</button></div>
     </div>
+    <button class="btn" id="btn-backup" style="width:100%;margin-top:2px">📦 백업 내려받기 (명단·기록·리스트)</button>
     <div class="hr"></div>
     <input class="search" id="admin-q" type="text" placeholder="🔍 이름이나 아이디로 검색" autocomplete="off">
     <div id="admin-body"></div>
@@ -990,16 +1011,23 @@ function wordsToTSV(words){
 let editListId = null;
 function renderLists(){
   const box = $('list-cards');
-  box.innerHTML = DB.lists.map(l=>{
+  const card = l=>{
     const act = l.id===DB.activeListId;
-    return '<div class="li-card'+(act?' active':'')+'">'
-      +'<div class="li-info"><b>'+esc(l.name)+'</b><span>단어 '+(l.words||[]).length+'개 · '+((l.target_classes&&l.target_classes.length)?('대상: '+esc(l.target_classes.join(', '))):'전체 배포')+(act?' · 사용 중':'')+'</span></div>'
+    return '<div class="li-card'+(act?' active':'')+(l.published===false?' arch':'')+'">'
+      +'<div class="li-info"><b>'+esc(l.name)+(l.published===false?'<span class="li-badge">보관</span>':'')+'</b>'
+      +'<span>단어 '+(l.words||[]).length+'개 · '+((l.target_classes&&l.target_classes.length)?('대상: '+esc(l.target_classes.join(', '))):'전체 배포')
+      +(l.created_name?(' · '+esc(l.created_name)+'T'):'')+(act?' · 사용 중':'')+'</span></div>'
       +'<div class="li-act">'
       +(act?'':'<button data-act="use" data-id="'+esc(l.id)+'">선택</button>')
       +'<button data-act="edit" data-id="'+esc(l.id)+'">수정</button>'
+      +'<button data-act="arch" data-id="'+esc(l.id)+'" data-p="'+(l.published===false?'1':'0')+'">'+(l.published===false?'복원':'보관')+'</button>'
       +'<button class="del" data-act="del" data-id="'+esc(l.id)+'">삭제</button>'
       +'</div></div>';
-  }).join('') || '<div class="note">배포된 리스트가 없어요. 새 리스트를 올리면 학생 앱에 자동으로 내려가요.</div>';
+  };
+  const live = DB.lists.filter(l=>l.published!==false);
+  const arch = DB.lists.filter(l=>l.published===false);
+  box.innerHTML = (live.map(card).join('') || '<div class="note">배포 중인 리스트가 없어요. 새 리스트를 올리면 학생 앱에 자동으로 내려가요.</div>')
+    + (arch.length ? '<div class="stat-h" style="margin-top:16px">보관함 — 학생에게 안 보이고 기록은 보존</div>'+arch.map(card).join('') : '');
 }
 $('list-cards').addEventListener('click', async e=>{
   const b = e.target.closest('button'); if(!b) return;
@@ -1013,6 +1041,14 @@ $('list-cards').addEventListener('click', async e=>{
     $('lf-target').value = (L.target_classes||[]).join(', '); renderTargetChips();
     $('list-form').style.display='block';
     window.scrollTo({top:0, behavior:'smooth'});
+  }
+  if(act==='arch'){
+    const cur = e.target.dataset.p === '1';
+    const r = await api('/rest/v1/word_lists?id=eq.'+id, {method:'PATCH', headers:{'Prefer':'return=minimal'}, body: JSON.stringify({published: cur})});
+    if(!r || !r.ok){ toast('처리 실패 ('+(r?r.status:'연결')+')'); return; }
+    toast(cur ? '배포로 복원했어요' : '보관함으로 옮겼어요');
+    await pullLists(); renderLists(); renderHome();
+    return;
   }
   if(act==='del'){
     if(!confirm('"'+L.name+'"를 삭제할까? 전 학생 앱에서도 함께 사라진다.')) return;
@@ -1036,6 +1072,7 @@ $('btn-lf-save').addEventListener('click', async ()=>{
   const btn = $('btn-lf-save'); btn.disabled = true;
   const targets = $('lf-target').value.split(',').map(s=>s.trim()).filter(Boolean);
   const payload = {name, words, target_classes: targets.length ? targets : null};
+  if(!editListId && DB.profile) payload.created_name = DB.profile.name;
   let r;
   if(editListId) r = await api('/rest/v1/word_lists?id=eq.'+encodeURIComponent(editListId), {method:'PATCH', headers:{'Prefer':'return=minimal'}, body: JSON.stringify(payload)});
   else r = await api('/rest/v1/word_lists', {method:'POST', headers:{'Prefer':'return=minimal'}, body: JSON.stringify(payload)});
@@ -1720,7 +1757,7 @@ async function pullProfile(){
 async function pullLists(){
 /* 조건부 동기화: 가벼운 목록표를 먼저 받고, 새로 생겼거나 수정된 리스트만 본문을 내려받는다.
      (전송량 절감 — 무변경 접속은 몇 KB로 끝난다) */
-  const r = await api('/rest/v1/word_lists?select=id,name,updated_at,target_classes&order=created_at.desc');
+  const r = await api('/rest/v1/word_lists?select=id,name,updated_at,target_classes,published,created_name&order=created_at.desc');
   if(!r || !r.ok) return false;
   const meta = await r.json();
   const cache = {}; (DB.lists||[]).forEach(l=>{ cache[l.id] = l; });
@@ -1737,6 +1774,7 @@ async function pullLists(){
   }
   DB.lists = meta.map(m=>({
     id: m.id, name: m.name, updated_at: m.updated_at,
+    published: (m.published !== false), created_name: m.created_name || null,
     target_classes: m.target_classes||null,
     words: (m.id in full) ? full[m.id] : (cache[m.id] ? cache[m.id].words : null)
   })).filter(l=>Array.isArray(l.words));
@@ -1802,8 +1840,15 @@ async function pullUnread(){
   const r = await api('/rest/v1/messages?recipient=eq.'+DB.auth.uid+'&read_at=is.null&select=id');
   if(r && r.ok) DB.unreadCount = (await r.json()).length;
 }
+async function pullNotice(){
+  const r = await api('/rest/v1/rpc/get_notice', {method:'POST', body:'{}'});
+  if(r && r.ok){ DB.notice = (await r.json()) || ''; scheduleSave(); }
+  const nb = document.getElementById('noticebar');
+  if(nb){ nb.textContent = DB.notice || ''; nb.style.display = DB.notice ? 'block' : 'none'; }
+}
 async function fullSync(){
   const okP = await pullProfile();
+  pullNotice();
   await pullLists();
   await pullProgress();
   await pullUnread();
@@ -1879,53 +1924,57 @@ $('btn-sync').addEventListener('click', async ()=>{
 
 
 /* ════════ 학생 학습 현황 (교사·관리자) ════════ */
-$('m-dash').addEventListener('click', ()=>{ dashGroup = null; $('dash-q').value = ''; go('scr-dash'); renderDash(); });
+$('m-dash').addEventListener('click', ()=>{ dashShowAll = false; dashGroup = null; $('dash-q').value = ''; go('scr-dash'); renderDash(); });
 async function renderDash(){
   const box = $('dash-body');
   box.innerHTML = '<div class="note">서버에서 불러오는 중…</div>';
-  const [rp, rs, rg] = await Promise.all([
+  const [rp, ra] = await Promise.all([
     api('/rest/v1/profiles?select=id,name,email,role,blocked,class_name&order=name.asc'),
-    api('/rest/v1/sessions?select=user_id,list_name,mode,total,correct_count,created_at&order=created_at.desc&limit=1000'),
-    api('/rest/v1/progress?select=user_id,data')
+    api('/rest/v1/rpc/dash_summary', {method:'POST', body:'{}'})
   ]);
   if(!rp || !rp.ok){ box.innerHTML = '<div class="note">불러오기 실패 — 교사 권한 계정인지, 인터넷 연결을 확인해 주세요.</div>'; return; }
   const profs = await rp.json();
-  const sess = (rs && rs.ok) ? await rs.json() : [];
-  const progs = (rg && rg.ok) ? await rg.json() : [];
-  const pmap = {}; progs.forEach(p=>pmap[p.user_id]=p);
-  const smap = {}; sess.forEach(s=>{ (smap[s.user_id] = smap[s.user_id]||[]).push(s); });
-  const MODE_KO = {quiz:'퀴즈', spell:'스펠링', flash:'카드'};
-  dashCtx = {profs, smap, pmap};
+  const agg = {};
+  if(ra && ra.ok) (await ra.json()).forEach(x=>{ agg[x.uid] = x; });
+  dashCtx = {profs, agg, detail:{}};
   drawDash();
 }
 let dashCtx = null;
 let dashGroup = null;
+let dashShowAll = false;
 function drawDash(){
   if(!dashCtx) return;
   const box = $('dash-body');
-  const {smap, pmap} = dashCtx;
-  const MODE_KO = {quiz:'퀴즈', spell:'스펠링', flash:'카드'};
+  const {profs, agg} = dashCtx;
   const q = ($('dash-q').value||'').trim().toLowerCase();
-  const today = new Date(); today.setHours(0,0,0,0);
+  const managed = (DB.profile && DB.profile.role==='teacher' && Array.isArray(DB.profile.managed_classes) && DB.profile.managed_classes.length)
+    ? DB.profile.managed_classes : null;
+  const allStu = profs.filter(p=>p.role==='student' && p.class_name!=='퇴원' && p.class_name!=='졸업');
   let students, ghead = '';
-  const allStu = dashCtx.profs.filter(p=>p.role==='student');
   if(q){
     students = allStu.filter(p=>(p.name||'').toLowerCase().includes(q)
       || (p.email||'').toLowerCase().includes(q)
       || (p.class_name||'').toLowerCase().includes(q));
   } else if(dashGroup === null){
+    let pool = allStu, mhead = '';
+    if(managed && !dashShowAll){
+      pool = allStu.filter(p=>managed.includes(p.class_name));
+      mhead = '<div class="grp-head"><span class="grp-title">내 담당 반<small>'+managed.length+'개 반</small></span><button type="button" class="grp-back" id="dash-all">전체 보기</button></div>';
+    } else if(managed){
+      mhead = '<div class="grp-head"><span class="grp-title">전체 반</span><button type="button" class="grp-back" id="dash-mine">내 담당만</button></div>';
+    }
     const groups = {};
-    allStu.forEach(p=>{ const g = p.class_name || '미배정'; (groups[g] = groups[g]||[]).push(p); });
+    pool.forEach(p=>{ const g = p.class_name || '미배정'; (groups[g] = groups[g]||[]).push(p); });
     const keys = Object.keys(groups).sort((a,b)=>{
       if(a==='미배정') return 1; if(b==='미배정') return -1;
       return a.localeCompare(b,'ko');
     });
-    box.innerHTML = keys.map(g=>{
-      const week = groups[g].reduce((acc,p)=>acc + ((smap[p.id]||[]).filter(x=>(Date.now()-new Date(x.created_at).getTime()) < 7*864e5).length), 0);
+    box.innerHTML = mhead + (keys.map(g=>{
+      const week = groups[g].reduce((acc,p)=>acc + ((dashCtx.agg[p.id] && dashCtx.agg[p.id].n7) || 0), 0);
       return '<button type="button" class="grp" data-g="'+esc(g)+'"><span class="gn">'
         +(g==='미배정' ? '⏳ ' : '🏫 ')+esc(g)
         +'</span><span class="gc">'+groups[g].length+'명 · 주간 '+week+'회</span><span class="ga">›</span></button>';
-    }).join('') || '<div class="note">아직 가입한 학생이 없어요.</div>';
+    }).join('') || '<div class="note">'+(managed && !dashShowAll ? '담당 반에 학생이 아직 없어요.' : '아직 가입한 학생이 없어요.')+'</div>');
     return;
   } else {
     students = allStu.filter(p=>(p.class_name || '미배정') === dashGroup);
@@ -1933,82 +1982,115 @@ function drawDash(){
       +'<span class="grp-title">'+esc(dashGroup)+'<small>'+students.length+'명</small></span></div>';
   }
   const rows = students.map(p=>{
-    const ss = smap[p.id]||[];
-    const graded = ss.filter(s=>s.correct_count!=null);
-    const tot = graded.reduce((a,s)=>a+s.total,0), rt = graded.reduce((a,s)=>a+s.correct_count,0);
-    const acc = tot ? Math.round(rt/tot*100)+'%' : '—';
-    const items = ss.reduce((a,s)=>a+s.total,0);
-    const wd = (pmap[p.id] && pmap[p.id].data && pmap[p.id].data.wrong) || {};
-    const wcount = {};
-    for(const lid in wd) for(const w in wd[lid]) wcount[w]=(wcount[w]||0)+wd[lid][w];
-    const top = Object.entries(wcount).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    const last = ss.length ? new Date(ss[0].created_at) : null;
-    const days = Array.from({length:14}, (_,i)=>{ const d = new Date(today); d.setDate(d.getDate()-13+i); return d; });
-    const byDay = days.map(d=>{ const key = d.toDateString(); return ss.filter(s=>new Date(s.created_at).toDateString()===key).length; });
-    const mx = Math.max(1, ...byDay);
-    const week = ss.filter(s=>(Date.now() - new Date(s.created_at).getTime()) < 7*864e5).length;
-    const md = ['quiz','spell','flash'].map(m=>{
-      const g = ss.filter(s=>s.mode===m);
-      if(!g.length) return null;
-      const gg = g.filter(s=>s.correct_count!=null);
-      const t2 = gg.reduce((a,s)=>a+s.total,0), r2 = gg.reduce((a,s)=>a+s.correct_count,0);
-      return '<span class="it"><b>'+MODE_KO[m]+'</b><span class="ko">'+g.length+'회'+(t2?(' · 정답률 '+Math.round(r2/t2*100)+'%'):'')+'</span></span>';
-    }).filter(Boolean).join('');
-    return '<div class="stu"><div class="stu-h"><b>'+esc(p.name)
+    const a = agg[p.id] || {n14:0, n7:0, total14:0, correct14:0, last_at:null};
+    const acc = a.total14 ? Math.round(a.correct14/a.total14*100)+'%' : '—';
+    const last = a.last_at ? new Date(a.last_at) : null;
+    return '<div class="stu" data-id="'+p.id+'"><div class="stu-h"><b>'+esc(p.name)
       +(p.class_name?' <span class="rolebadge">'+esc(p.class_name)+'</span>':'')
       +(p.blocked?' <span class="rolebadge admin">차단</span>':'')+'</b>'
       +'<span class="last">'+(last ? (last.getMonth()+1)+'/'+last.getDate()+' 학습' : '기록 없음')+'</span></div>'
-      +'<div class="stu-m"><span>학습 <b>'+ss.length+'</b>회</span><span>문항 <b>'+items+'</b></span><span>정답률 <b>'+acc+'</b></span><span>오답 <b>'+Object.keys(wcount).length+'</b>단어</span><span>최근 7일 <b>'+week+'</b>회</span></div>'
-      +'<div class="stu-detail">'
-      +'<div class="dt-id">아이디 '+esc(p.email||'—')+'</div>'
-      +'<div class="stat-h">최근 14일 활동</div>'
-      +'<div class="spark">'+byDay.map((v,i)=>'<i class="'+(v?'on':'')+'" style="height:'+Math.max(7, Math.round(v/mx*100))+'%" title="'+(days[i].getMonth()+1)+'/'+days[i].getDate()+' · '+v+'회"></i>').join('')+'</div>'
-      +'<div class="spark-lb"><span>'+(days[0].getMonth()+1)+'/'+days[0].getDate()+'</span><span>오늘</span></div>'
-      +(md?'<div class="stat-h">학습 방법별</div><div class="f-body">'+md+'</div>':'')
-      +(top.length ? '<div class="stat-h">자주 틀리는 단어 TOP '+top.length+'</div><div class="f-body">'+top.map(([w,c])=>'<span class="it"><b>'+esc(w)+'</b><span class="ko">'+c+'회</span></span>').join('')+'</div>' : '')
-      +(ss.length ? '<div class="stat-h">최근 기록</div>'+ss.slice(0,8).map(s=>{const d=new Date(s.created_at); return '<div class="rec"><span class="rd">'+(d.getMonth()+1)+'/'+d.getDate()+'</span><span class="rm">'+(MODE_KO[s.mode]||s.mode)+(s.list_name?' · '+esc(s.list_name):'')+'</span><span class="rs">'+(s.correct_count==null?(s.total+'장'):(s.correct_count+' / '+s.total))+'</span></div>';}).join('') : '<div class="note">아직 학습 기록이 없어요.</div>')
-      +'<div class="stat-h">반 지정 — 반별 리스트 배포의 기준이 된다</div>'
-      +'<div class="row"><input type="text" class="cls-in" data-id="'+p.id+'" value="'+esc(p.class_name||'')+'" list="class-suggest" placeholder="예: 경신고2"><button class="btn primary cls-save" data-id="'+p.id+'" style="flex:0 0 auto;padding:9px 14px">저장</button></div>'
-      +'</div></div>';
+      +'<div class="stu-m"><span>14일 학습 <b>'+a.n14+'</b>회</span><span>최근 7일 <b>'+a.n7+'</b>회</span><span>문항 <b>'+a.total14+'</b></span><span>정답률 <b>'+acc+'</b></span></div>'
+      +'<div class="stu-detail"><div class="note">불러오는 중…</div></div></div>';
   }).join('');
-  box.innerHTML = ghead + (rows || '<div class="note">아직 가입한 학생이 없어요. 가입 코드를 학생들에게 알려 주세요.</div>');
+  box.innerHTML = ghead + (rows || '<div class="note">'+(($('dash-q').value||'').trim() ? '검색 결과가 없어요. 철자나 반 이름을 다시 확인해 보세요.' : '이 반에 학생이 없어요.')+'</div>');
 }
-$('dash-body').addEventListener('click', e=>{
-  const g = e.target.closest('.grp');
-  if(g){ dashGroup = g.dataset.g; drawDash(); return; }
-  if(e.target.closest('.grp-back')){ dashGroup = null; drawDash(); }
-});
+function stuDetailHtml(p, ss, wd){
+  const MODE_KO = {quiz:'퀴즈', spell:'스펠링', flash:'카드'};
+  const today = new Date(); today.setHours(0,0,0,0);
+  const wcount = {};
+  for(const lid in wd) for(const w in wd[lid]) wcount[w]=(wcount[w]||0)+wd[lid][w];
+  const top = Object.entries(wcount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const days = Array.from({length:14}, (_,i)=>{ const d = new Date(today); d.setDate(d.getDate()-13+i); return d; });
+  const byDay = days.map(d=>{ const key = d.toDateString(); return ss.filter(s=>new Date(s.created_at).toDateString()===key).length; });
+  const mx = Math.max(1, ...byDay);
+  const md = ['quiz','spell','flash'].map(m=>{
+    const g = ss.filter(s=>s.mode===m);
+    if(!g.length) return null;
+    const gg = g.filter(s=>s.correct_count!=null);
+    const t2 = gg.reduce((a,s)=>a+s.total,0), r2 = gg.reduce((a,s)=>a+s.correct_count,0);
+    return '<span class="it"><b>'+MODE_KO[m]+'</b><span class="ko">'+g.length+'회'+(t2?(' · 정답률 '+Math.round(r2/t2*100)+'%'):'')+'</span></span>';
+  }).filter(Boolean).join('');
+  return '<div class="dt-id">아이디 '+esc(p.email||'—')+'</div>'
+    +'<div class="stat-h">최근 14일 활동</div>'
+    +'<div class="spark">'+byDay.map((v,i)=>'<i class="'+(v?'on':'')+'" style="height:'+Math.max(7, Math.round(v/mx*100))+'%" title="'+(days[i].getMonth()+1)+'/'+days[i].getDate()+' · '+v+'회"></i>').join('')+'</div>'
+    +'<div class="spark-lb"><span>'+(days[0].getMonth()+1)+'/'+days[0].getDate()+'</span><span>오늘</span></div>'
+    +(md?'<div class="stat-h">학습 방법별 (14일)</div><div class="f-body">'+md+'</div>':'')
+    +(top.length ? '<div class="stat-h">자주 틀리는 단어 TOP '+top.length+'</div><div class="f-body">'+top.map(([w,c])=>'<span class="it"><b>'+esc(w)+'</b><span class="ko">'+c+'회</span></span>').join('')+'</div>' : '')
+    +(ss.length ? '<div class="stat-h">최근 기록</div>'+ss.slice(0,8).map(s=>{const d=new Date(s.created_at); return '<div class="rec"><span class="rd">'+(d.getMonth()+1)+'/'+d.getDate()+'</span><span class="rm">'+(MODE_KO[s.mode]||s.mode)+(s.list_name?' · '+esc(s.list_name):'')+'</span><span class="rs">'+(s.correct_count==null?(s.total+'장'):(s.correct_count+' / '+s.total))+'</span></div>';}).join('') : '<div class="note">최근 14일 학습 기록이 없어요.</div>')
+    +'<div class="stat-h">반 지정 — 반별 리스트 배포의 기준이 된다</div>'
+    +'<div class="row"><input type="text" class="cls-in" data-id="'+p.id+'" value="'+esc(p.class_name||'')+'" list="class-suggest" placeholder="예: 경신고2"><button class="btn primary cls-save" data-id="'+p.id+'" style="flex:0 0 auto;padding:9px 14px">저장</button></div>';
+}
+async function openStuDetail(stuEl, uid){
+  const body = stuEl.querySelector('.stu-detail');
+  if(dashCtx.detail[uid]){ body.innerHTML = dashCtx.detail[uid]; return; }
+  body.innerHTML = '<div class="note">불러오는 중…</div>';
+  const since = new Date(Date.now() - 14*864e5).toISOString();
+  const [rs, rg] = await Promise.all([
+    api('/rest/v1/sessions?user_id=eq.'+uid+'&select=list_name,mode,total,correct_count,created_at&created_at=gte.'+encodeURIComponent(since)+'&order=created_at.desc&limit=300'),
+    api('/rest/v1/progress?user_id=eq.'+uid+'&select=data')
+  ]);
+  const ss = (rs && rs.ok) ? await rs.json() : [];
+  const rows2 = (rg && rg.ok) ? await rg.json() : [];
+  const wd = (rows2[0] && rows2[0].data && rows2[0].data.wrong) || {};
+  const p = dashCtx.profs.find(x=>x.id===uid) || {id:uid};
+  const html = stuDetailHtml(p, ss, wd);
+  dashCtx.detail[uid] = html;
+  body.innerHTML = html;
+}
 $('dash-q').addEventListener('input', drawDash);
 $('dash-body').addEventListener('click', async e=>{
-  const save = e.target.closest('.cls-save');
-  if(save){
-    const inp = save.parentElement.querySelector('.cls-in');
-    const r = await api('/rest/v1/rpc/staff_set_class', {method:'POST', body: JSON.stringify({target: save.dataset.id, cls: inp.value})});
+  const b = e.target.closest('.cls-save');
+  if(b){
+    const id = b.dataset.id;
+    const input = document.querySelector('.cls-in[data-id="'+id+'"]');
+    const cls = ((input && input.value) || '').trim();
+    const r = await api('/rest/v1/rpc/staff_set_class', {method:'POST', body: JSON.stringify({target: id, cls: cls || null})});
     toast(r && r.ok ? '반 지정 완료 — 반별 리스트가 즉시 적용돼요' : '실패 — 권한·연결 확인');
     if(r && r.ok) renderDash();
     return;
   }
+  if(e.target.closest('#dash-all')){ dashShowAll = true; drawDash(); return; }
+  if(e.target.closest('#dash-mine')){ dashShowAll = false; drawDash(); return; }
+  const g = e.target.closest('.grp');
+  if(g){ dashGroup = g.dataset.g; drawDash(); return; }
+  if(e.target.closest('.grp-back')){ dashGroup = null; drawDash(); return; }
   if(e.target.closest('input,button,select')) return;
   const card = e.target.closest('.stu');
-  if(card) card.classList.toggle('open');
+  if(card){
+    card.classList.toggle('open');
+    if(card.classList.contains('open')) openStuDetail(card, card.dataset.id);
+  }
 });
-
 
 /* ════════ 쪽지 ════════ */
 let msgNames = {};
+let staffRows = [];
 async function loadRecipients(){
   msgNames = {};
   if(DB.profile) msgNames[DB.profile.id] = DB.profile.name;
   let opts = [];
+  const mcClass = $('mc-class');
   if(isStaff()){
     const r = await api('/rest/v1/profiles?select=id,name,role,class_name&order=name.asc');
     if(r && r.ok){
-      const rows = await r.json();
-      rows.forEach(p=>{ msgNames[p.id] = p.name; });
-      opts = rows.filter(p=>!DB.profile || p.id!==DB.profile.id)
+      staffRows = await r.json();
+      staffRows.forEach(p=>{ msgNames[p.id] = p.name; });
+      opts = staffRows.filter(p=>!DB.profile || p.id!==DB.profile.id)
         .map(p=>({id:p.id, label:p.name + (p.class_name?' ('+p.class_name+')':'') + (p.role!=='student'?' — '+roleKo(p.role):'')}));
+      const stu = staffRows.filter(p=>p.role==='student' && !p.blocked && p.class_name && p.class_name!=='퇴원' && p.class_name!=='졸업');
+      const byCls = {};
+      stu.forEach(p=>{ (byCls[p.class_name] = byCls[p.class_name]||[]).push(p); });
+      const managed = (DB.profile && Array.isArray(DB.profile.managed_classes)) ? DB.profile.managed_classes : [];
+      const clsKeys = Object.keys(byCls).sort((a,b)=>{
+        const ma = managed.includes(a) ? 0 : 1, mb = managed.includes(b) ? 0 : 1;
+        return ma !== mb ? ma - mb : a.localeCompare(b,'ko');
+      });
+      mcClass.innerHTML = '<option value="">✉️ 개인에게 보내기</option>'
+        + clsKeys.map(c=>'<option value="'+esc(c)+'">📣 '+esc(c)+' 반 전체 ('+byCls[c].length+'명)'+(managed.includes(c)?' · 내 담당':'')+'</option>').join('');
+      mcClass.style.display = 'block';
     }
   } else {
+    mcClass.style.display = 'none';
     const r = await api('/rest/v1/rpc/staff_list', {method:'POST', body:'{}'});
     if(r && r.ok){
       const rows = await r.json();
@@ -2018,6 +2100,7 @@ async function loadRecipients(){
   }
   $('mc-to').innerHTML = opts.map(o=>'<option value="'+esc(o.id)+'">'+esc(o.label)+'</option>').join('')
     || '<option value="">보낼 상대가 없다</option>';
+  mcClass.onchange = ()=>{ $('mc-to').style.display = mcClass.value ? 'none' : 'block'; };
 }
 async function renderMsgs(){
   const box = $('msg-list');
@@ -2058,17 +2141,28 @@ $('btn-msg-new').addEventListener('click', ()=>{
 });
 $('btn-mc-cancel').addEventListener('click', ()=>{ $('msg-compose').style.display = 'none'; });
 $('btn-mc-send').addEventListener('click', async ()=>{
+  const cls = isStaff() ? $('mc-class').value : '';
   const to = $('mc-to').value, body = $('mc-body').value.trim();
-  if(!to){ toast('받는 사람이 없어요'); return; }
+  if(!cls && !to){ toast('받는 사람이 없어요'); return; }
   if(!body){ toast('내용을 적어 주세요'); return; }
   if(body.length > 2000){ toast('2000자 이내로 줄여 주세요'); return; }
   const btn = $('btn-mc-send'); btn.disabled = true;
+  let payload, cnt = 1;
+  if(cls){
+    const ids = staffRows.filter(p=>p.role==='student' && !p.blocked && p.class_name===cls).map(p=>p.id);
+    if(!ids.length){ toast('그 반에 보낼 학생이 없어요'); btn.disabled = false; return; }
+    cnt = ids.length;
+    payload = ids.map(id=>({sender: DB.auth.uid, recipient: id, body}));
+  } else {
+    payload = {sender: DB.auth.uid, recipient: to, body};
+  }
   const r = await api('/rest/v1/messages', {method:'POST', headers:{'Prefer':'return=minimal'},
-    body: JSON.stringify({sender: DB.auth.uid, recipient: to, body})});
+    body: JSON.stringify(payload)});
   btn.disabled = false;
   if(!r || !r.ok){ toast('전송 실패 ('+(r?r.status:'연결')+')'); return; }
   $('mc-body').value = ''; $('msg-compose').style.display = 'none';
-  toast('쪽지를 보냈어요');
+  $('mc-class').value = ''; $('mc-to').style.display = 'block';
+  toast(cls ? (cls+' 반 '+cnt+'명에게 보냈어요') : '쪽지를 보냈어요');
   renderMsgs();
 });
 $('msg-list').addEventListener('click', e=>{
@@ -2080,12 +2174,12 @@ $('msg-list').addEventListener('click', e=>{
 
 
 /* ════════ 계정 관리 (관리자) ════════ */
-$('m-admin').addEventListener('click', ()=>{ adminGroup = null; $('admin-q').value = ''; go('scr-admin'); renderAdmin(); });
+$('m-admin').addEventListener('click', ()=>{ $('ad-notice').value = DB.notice || ''; adminGroup = null; $('admin-q').value = ''; go('scr-admin'); renderAdmin(); });
 let adminProfs = null;
 async function renderAdmin(){
   const box = $('admin-body');
   box.innerHTML = '<div class="note">불러오는 중…</div>';
-  const r = await api('/rest/v1/profiles?select=id,name,email,role,blocked,class_name&order=created_at.desc');
+  const r = await api('/rest/v1/profiles?select=id,name,email,role,blocked,class_name,managed_classes&order=created_at.desc');
   if(!r || !r.ok){ box.innerHTML = '<div class="note">불러오기 실패 — 관리자 권한을 확인해 주세요.</div>'; return; }
   adminProfs = await r.json();
   drawAdmin();
@@ -2103,12 +2197,12 @@ function drawAdmin(){
     const groups = {};
     all.forEach(p=>{ const g = accGroupOf(p); (groups[g] = groups[g]||[]).push(p); });
     const keys = Object.keys(groups).sort((a,b)=>{
-      if(a==='교직원') return -1; if(b==='교직원') return 1;
-      if(a==='미배정') return 1;  if(b==='미배정') return -1;
+      const RK={교직원:0,퇴원:98,미배정:99}; const ra=(RK[a]!==undefined?RK[a]:50), rb=(RK[b]!==undefined?RK[b]:50); if(ra!==rb) return ra-rb;
+      
       return a.localeCompare(b,'ko');
     });
     box.innerHTML = keys.map(g=>'<button type="button" class="grp" data-g="'+esc(g)+'"><span class="gn">'
-      +(g==='교직원' ? '🧑‍🏫 ' : (g==='미배정' ? '⏳ ' : '🏫 '))+esc(g)
+      +(g==='교직원' ? '🧑‍🏫 ' : (g==='미배정' ? '⏳ ' : (g==='퇴원' ? '🚪 ' : '🏫 ')))+esc(g)
       +'</span><span class="gc">'+groups[g].length+'명</span><span class="ga">›</span></button>').join('')
       || '<div class="note">계정이 없어요.</div>';
     return;
@@ -2125,17 +2219,98 @@ function drawAdmin(){
       +['student','teacher','admin'].map(rr=>'<option value="'+rr+'"'+(p.role===rr?' selected':'')+'>'+roleKo(rr)+'</option>').join('')
       +'</select>'
       +'<button class="blk'+(p.blocked?' on':'')+'" data-id="'+p.id+'" data-b="'+(!p.blocked)+'"'+(me?' disabled':'')+'>'+(p.blocked?'차단 해제':'차단')+'</button>'
-      +'<button class="del-user" data-id="'+p.id+'" data-name="'+esc(p.name)+'"'+(me?' disabled':'')+'>삭제</button>'
+      +''+(p.role==='student' && !me ? '<button class="retire" data-id="'+p.id+'" data-name="'+esc(p.name)+'">퇴원</button>' : '')+'<button class="del-user" data-id="'+p.id+'" data-name="'+esc(p.name)+'"'+(me?' disabled':'')+'>삭제</button>'
+      +(p.role==='teacher' ? '<div class="mng-row" data-id="'+p.id+'"><select class="mng-school" style="flex:1.4;min-width:0"><option value="">학교 선택</option>'+SCHOOLS.map(sc=>'<option value="'+sc+'">'+sc+'</option>').join('')+'</select><select class="mng-grade" style="flex:.8;min-width:0"><option value="">학년</option><option value="1">1학년</option><option value="2">2학년</option></select><button type="button" class="grp-back mng-add" style="flex:0 0 auto">＋</button><button type="button" class="btn primary mng-save" data-id="'+p.id+'" style="flex:0 0 auto;padding:9px 14px">담당 저장</button></div><div class="tchips mng-chips" data-id="'+p.id+'">'+(p.managed_classes||[]).map(c=>'<button type="button" class="tchip" data-c="'+esc(c)+'">'+esc(c)+'</button>').join('')+'</div>' : '')
       +'</div>';
   }).join('');
   box.innerHTML = head + (rows || '<div class="note">'+(($('admin-q').value||'').trim() ? '검색 결과가 없어요. 철자를 다시 확인해 보세요.' : '계정이 없어요.')+'</div>');
 }
-$('admin-body').addEventListener('click', e=>{
+$('admin-body').addEventListener('click', async e=>{
+  const rt = e.target.closest('.retire');
+  if(rt){
+    const nm = rt.dataset.name, id = rt.dataset.id;
+    if(!confirm(nm + ' 학생을 퇴원 처리할까요?\n\n· 이용이 즉시 잠기고, [퇴원] 그룹으로 이동해요\n· 기록은 보존돼요 (재원 복귀 가능)\n· 완전 삭제는 따로 [삭제] 버튼으로')) return;
+    const r1 = await api('/rest/v1/rpc/staff_set_class', {method:'POST', body: JSON.stringify({target: id, cls: '퇴원'})});
+    const r2 = await api('/rest/v1/rpc/admin_set_blocked', {method:'POST', body: JSON.stringify({target: id, b: true})});
+    toast((r1 && r1.ok && r2 && r2.ok) ? '퇴원 처리했어요' : '일부 실패 — 다시 시도해 주세요');
+    renderAdmin(); return;
+  }
+  const ad = e.target.closest('.mng-add');
+  if(ad){
+    const row = ad.closest('.mng-row');
+    const sc = row.querySelector('.mng-school').value, gd = row.querySelector('.mng-grade').value;
+    if(!sc || !gd){ toast('학교와 학년을 먼저 골라 주세요'); return; }
+    const chips = document.querySelector('.mng-chips[data-id="'+row.dataset.id+'"]');
+    const c = sc + gd;
+    if(![...chips.querySelectorAll('.tchip')].some(x=>x.dataset.c===c)){
+      chips.insertAdjacentHTML('beforeend', '<button type="button" class="tchip" data-c="'+esc(c)+'">'+esc(c)+'</button>');
+    }
+    return;
+  }
+  const tc = e.target.closest('.mng-chips .tchip');
+  if(tc){ tc.remove(); return; }
+  const ms = e.target.closest('.mng-save');
+  if(ms){
+    const id = ms.dataset.id;
+    const chips = document.querySelector('.mng-chips[data-id="'+id+'"]');
+    const classes = [...chips.querySelectorAll('.tchip')].map(x=>x.dataset.c);
+    const r = await api('/rest/v1/rpc/admin_set_managed', {method:'POST', body: JSON.stringify({target: id, classes})});
+    toast(r && r.ok ? (classes.length ? '담당 반을 저장했어요: '+classes.join(', ') : '담당 지정을 비웠어요') : '실패 — 관리자 권한 확인');
+    if(r && r.ok) renderAdmin(); return;
+  }
   const g = e.target.closest('.grp');
   if(g){ adminGroup = g.dataset.g; drawAdmin(); return; }
   if(e.target.closest('.grp-back')){ adminGroup = null; drawAdmin(); }
 });
 $('admin-q').addEventListener('input', drawAdmin);
+function csvCell(v){ v = String(v==null?'':v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }
+function dlFile(name, text, mime){
+  const b = new Blob(['\ufeff'+text], {type: mime||'text/csv;charset=utf-8'});
+  const u = URL.createObjectURL(b);
+  const el = document.createElement('a'); el.href = u; el.download = name;
+  document.body.appendChild(el); el.click(); el.remove();
+  setTimeout(()=>URL.revokeObjectURL(u), 4000);
+}
+$('btn-backup').addEventListener('click', async ()=>{
+  const btn = $('btn-backup'); btn.disabled = true; toast('백업을 만드는 중…');
+  try{
+    const day = new Date().toISOString().slice(0,10);
+    const rp = await api('/rest/v1/profiles?select=id,name,email,role,blocked,class_name&order=name.asc');
+    if(!rp || !rp.ok) throw 0;
+    const profs = await rp.json();
+    const nameOf = {}; profs.forEach(p=>{ nameOf[p.id] = p; });
+    dlFile('VOCA꾹_학생명단_'+day+'.csv',
+      '이름,아이디,역할,반,상태\n' + profs.map(p=>[p.name, p.email||'', roleKo(p.role), p.class_name||'', p.blocked?'차단':''].map(csvCell).join(',')).join('\n'));
+    const since = new Date(Date.now() - 90*864e5).toISOString();
+    let all = [], off = 0;
+    for(let i=0; i<20; i++){
+      const r = await api('/rest/v1/sessions?select=user_id,list_name,mode,total,correct_count,created_at&created_at=gte.'+encodeURIComponent(since)+'&order=created_at.desc&limit=1000&offset='+off);
+      if(!r || !r.ok) break;
+      const rows = await r.json();
+      all = all.concat(rows); off += rows.length;
+      if(rows.length < 1000) break;
+    }
+    const MODE_KO2 = {quiz:'퀴즈', spell:'스펠링', flash:'카드'};
+    dlFile('VOCA꾹_학습기록_최근90일_'+day+'.csv',
+      '날짜,이름,반,리스트,방법,문항,정답\n' + all.map(x=>{
+        const p = nameOf[x.user_id] || {};
+        const d = new Date(x.created_at);
+        return [d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),
+          p.name||'', p.class_name||'', x.list_name||'', MODE_KO2[x.mode]||x.mode, x.total, x.correct_count==null?'':x.correct_count].map(csvCell).join(',');
+      }).join('\n'));
+    const rl = await api('/rest/v1/word_lists?select=name,target_classes,published,updated_at,words&order=name.asc');
+    if(rl && rl.ok) dlFile('VOCA꾹_리스트전체_'+day+'.json', JSON.stringify(await rl.json(), null, 1), 'application/json;charset=utf-8');
+    toast('백업 3개 파일을 내려받았어요 (명단·기록·리스트)');
+  } catch(e){ toast('백업 실패 — 연결을 확인해 주세요'); }
+  btn.disabled = false;
+});
+$('btn-ad-notice').addEventListener('click', async ()=>{
+  const v = $('ad-notice').value.trim();
+  const r = await api('/rest/v1/rpc/admin_set_notice', {method:'POST', body: JSON.stringify({v})});
+  if(!r || !r.ok){ toast('저장 실패 — 관리자 권한 확인'); return; }
+  DB.notice = v; scheduleSave(); pullNotice();
+  toast(v ? '공지를 올렸어요' : '공지를 내렸어요');
+});
 $('admin-body').addEventListener('change', async e=>{
   const s = e.target.closest('.role-sel'); if(!s) return;
   const r = await api('/rest/v1/rpc/admin_set_role', {method:'POST', body: JSON.stringify({target:s.dataset.id, new_role:s.value})});
@@ -2447,16 +2622,18 @@ $('nk-confirm').addEventListener('click', async ()=>{
 });
 
 /* ════════ 주간 리그 ════════ */
-async function pushLeague(){
-  const g = ensureGame();
-  if(!DB.auth || !g.nickname) return;
-  api('/rest/v1/rpc/league_report', {method:'POST', body: JSON.stringify({p_week:g.weekKey, p_xp:g.weekXp, p_nickname:g.nickname, p_avatar:g.avatar||'🙂'})});
-}
+async function pushLeague(){ /* 리그는 서버가 학습 기록으로 직접 집계한다 */ }
 async function fetchLeague(){
-  const r = await api('/rest/v1/rpc/league_top', {method:'POST', body: JSON.stringify({p_week:weekKeyOf(Date.now())})});
+  const now = Date.now();
+  if(leagueCache && (now - leagueCache.t) < 5*60*1000) return leagueCache.rows;
+  const r = await api('/rest/v1/rpc/league_week', {method:'POST', body:'{}'});
   if(!r || !r.ok) return null;
-  try{ const d = await r.json(); return Array.isArray(d) ? d : null; }catch(e){ return null; }
+  const raw = await r.json();
+  const rows = (raw||[]).map(x=>({nickname:x.nick, avatar:x.avatar, class_name:'', week_xp:x.score, me:!!x.me}));
+  leagueCache = {t: now, rows};
+  return rows;
 }
+let leagueCache = null;
 
 /* ════════ 성장 화면 ════════ */
 function renderStats(){
@@ -2522,11 +2699,18 @@ async function renderLeague(){
   }
   let mine=false;
   const html = rows.slice(0,10).map((r,i)=>{
-    const me = g.nickname && r.nickname===g.nickname;
+    const me = !!r.me;
     if(me) mine=true;
     return '<div class="lg-row r'+(i+1)+(me?' me':'')+'"><span class="rank">'+(i+1)+'</span><span class="avt">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc(r.class_name||'')+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
   }).join('');
-  el.innerHTML = html + (mine ? '' : meRow);
+  let tail = '';
+  if(!mine){
+    const idx = rows.findIndex(r=>r.me);
+    tail = (idx >= 0)
+      ? '<div class="lg-row me"><span class="rank">'+(idx+1)+'</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'')+' <span class="mebadge">나</span></span><span class="sg"></span></span><span class="wxp">'+fmtXp(rows[idx].week_xp)+' XP</span></div>'
+      : meRow;
+  }
+  el.innerHTML = html + tail;
 }
 /* ════════ 시작 ════════ */
 const APP_VERSION = '2.1.0';
