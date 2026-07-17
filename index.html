@@ -583,12 +583,53 @@ html[data-theme=dark] .bars .bar i{background:var(--red)}
 .brand .logo{font-size:50px}
 .brand .logo em{display:inline-block;animation:floaty 3.2s ease-in-out .4s infinite}
 .brand .sub{margin-top:10px;display:inline-block;background:var(--red-soft);color:var(--red-deep);border:1.5px solid var(--red-line);border-radius:99px;padding:5px 15px;letter-spacing:.14em;font-size:12.5px;font-weight:800}
-.brand .sub::after{content:' · UI v2';letter-spacing:0;font-weight:900}
+.brand .sub::after{content:' · UI v4';letter-spacing:0;font-weight:900}
 .auth-wrap{background:var(--card);border:2px solid var(--line);border-radius:26px;padding:22px 18px 16px;box-shadow:0 7px 0 var(--edge);max-width:430px}
 .auth-tabs button.on{box-shadow:inset 0 -3px 0 var(--red-line)}
 .pf-card .pfa{background:linear-gradient(180deg,var(--red-soft),var(--card));box-shadow:0 3px 0 var(--red-line)}
 @media print{body{background-image:none}}
 @media (prefers-reduced-motion:reduce){.hero .h-bar i::after,.pbar i::after,.lvhero .lbar i::after,.hero .deco,.lvhero .bignum,.brand .logo em,.pillchip.streak,.combochip{animation:none!important}}
+
+/* ═══ V4 프리미엄 폴리시 — 절제된 고급 스타일 ═══ */
+body{background-image:radial-gradient(1200px 420px at 50% -180px,rgba(255,75,62,.05),transparent 70%);background-size:auto}
+html[data-theme=dark] body{background-image:radial-gradient(1200px 420px at 50% -180px,rgba(255,107,92,.07),transparent 70%)}
+.pillchip{border:none;box-shadow:0 1px 2px rgba(31,32,51,.06);padding:6px 13px}
+.pillchip.streak{animation:none}
+.hero{box-shadow:0 14px 34px rgba(224,58,46,.26),0 2px 6px rgba(224,58,46,.12)}
+html[data-theme=dark] .hero{box-shadow:none}
+.hero::before{background:radial-gradient(420px 220px at 85% -40px,rgba(255,255,255,.2),transparent 70%)}
+.hero .h-cta{box-shadow:0 6px 16px rgba(0,0,0,.16);transition:transform .16s cubic-bezier(.2,1.4,.4,1),box-shadow .16s}
+.hero .h-cta:active{transform:scale(.98)}
+.btn:active{transform:scale(.97)}
+.btn.primary{box-shadow:0 8px 18px rgba(224,58,46,.3),inset 0 1px 0 rgba(255,255,255,.22);border-color:transparent}
+.btn.primary:active{box-shadow:0 3px 10px rgba(224,58,46,.28)}
+.btn.know{box-shadow:0 8px 18px rgba(0,163,126,.28),inset 0 1px 0 rgba(255,255,255,.22);border-color:transparent}
+.btn.know:active{box-shadow:0 3px 10px rgba(0,163,126,.26)}
+.btn.ghost{box-shadow:0 1px 2px rgba(31,32,51,.05),0 4px 12px rgba(31,32,51,.06)}
+.btn.ghost:active{box-shadow:0 1px 3px rgba(31,32,51,.08)}
+.btn.dunno{box-shadow:0 4px 12px rgba(224,58,46,.12)}
+.btn.dunno:active{box-shadow:0 2px 6px rgba(224,58,46,.12)}
+.mode,.mode.wide{border-width:1.5px;box-shadow:0 1px 2px rgba(31,32,51,.04),0 6px 16px rgba(31,32,51,.06)}
+.wcard,.q-card,.tri .tchip,.lvrow,.li-card,.lg-card,.set-card,.pf-card,.msg,.stu,.acc,.tset,.msg-compose,.auth-wrap{border-width:1.5px;box-shadow:0 1px 2px rgba(31,32,51,.04),0 8px 20px rgba(31,32,51,.05)}
+.face{border-width:1.5px;box-shadow:0 2px 4px rgba(31,32,51,.05),0 16px 36px rgba(31,32,51,.1)}
+.opt{box-shadow:0 1px 2px rgba(31,32,51,.04),0 3px 10px rgba(31,32,51,.05)}
+.opt.picked-wrong,.opt.reveal-right{box-shadow:none}
+.qt{border-width:1.5px}
+.search,.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld select,.fld textarea{border-width:1.5px}
+.tabbar{border-width:1.5px;box-shadow:0 2px 6px rgba(31,32,51,.05),0 18px 44px rgba(31,32,51,.14)}
+html[data-theme=dark] .tabbar{box-shadow:0 20px 44px rgba(0,0,0,.55)}
+.tab.on .ticon{box-shadow:0 6px 14px rgba(255,75,62,.35)}
+.lvhero{box-shadow:0 14px 32px rgba(110,107,240,.24)}
+html[data-theme=dark] .lvhero{box-shadow:none}
+.lvhero::before{background:radial-gradient(380px 200px at 85% -40px,rgba(255,255,255,.16),transparent 70%)}
+.grp-bar{border-width:1.5px;box-shadow:none}
+.top .back{box-shadow:0 1px 3px rgba(31,32,51,.06)}
+.auth-tabs button{box-shadow:0 1px 2px rgba(31,32,51,.05)}
+.listrow .mng{box-shadow:0 1px 2px rgba(31,32,51,.05)}
+.lvrow .lvn{box-shadow:0 4px 10px rgba(110,107,240,.35)}
+.pf-card .pfa{box-shadow:0 4px 10px rgba(224,58,46,.15)}
+.sec-h::after{height:1px}
+.ovl .card{border-width:1.5px}
 </style>
 </head>
 <body>
