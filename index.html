@@ -2580,8 +2580,11 @@ window.addEventListener('online', ()=>{ if(DB && DB.auth) fullSync().then(()=>{ 
 /* ══ VOCA꾹: 학교 목록 (갱신은 이 배열만 고치면 된다) ══ */
 const SCHOOLS = ['강동고','경명여고','경북고','경북여고','경북예고','경상여고','경신고','경일여고','계성고','구암고','군위고','남산고','능인고','달서고','달성고','대구고','대구국제고','대구여고','대구외고','대륜고','덕원고','도개고','동문고','동부고','사대부고','성광고','성산고','수성고','시지고','신명고','오성고','운암고','원화여고','정화여고','중앙고','청구고','포산고','학남고','현일고','협성고','혜화여고'];
 (function(){
-  const opts = '<option value="">학교 선택</option>' + SCHOOLS.map(sc=>'<option value="'+sc+'">'+sc+'</option>').join('');
-  ['su-school','lf-school'].forEach(id=>{ const el = document.getElementById(id); if(el) el.innerHTML = opts; });
+  const base = SCHOOLS.map(sc=>'<option value="'+sc+'">'+sc+'</option>').join('');
+  const su = document.getElementById('su-school');
+  if(su) su.innerHTML = '<option value="">학교 선택</option>' + base;
+  const lf = document.getElementById('lf-school');
+  if(lf) lf.innerHTML = '<option value="">학교 선택</option><option value="__ALL">🏫 전체학교</option>' + base;
 })();
 function renderTargetChips(){
   const box = document.getElementById('lf-target-chips');
@@ -2595,7 +2598,7 @@ document.getElementById('lf-add').addEventListener('click', ()=>{
   if(!sc || !g){ toast('학교와 학년을 먼저 골라 주세요'); return; }
   const t = document.getElementById('lf-target');
   let cur = (t.value||'').split(',').map(x=>x.trim()).filter(Boolean);
-  const c = sc + g;
+  const c = (sc === '__ALL') ? (g + '학년전체') : (sc + g);
   if(!cur.includes(c)) cur.push(c);
   t.value = cur.join(', ');
   renderTargetChips();
