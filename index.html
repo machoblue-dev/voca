@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy.css">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#FF4B3E">
-<title>기원T VOCA</title>
+<title>VOCA꾹</title>
 <style>
 :root{
   --bg:#FFFDF6; --card:#FFFFFF; --card2:#F7F4EC; --line:#F2EDE2; --line2:#F0EDE4; --edge:#F0E9DA;
@@ -462,6 +462,27 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
   .anskey{break-before:page;page-break-before:always;border-top:none;margin-top:0;padding-top:0}
   @page{size:A4;margin:14mm 13mm}
 }
+
+/* ── VOCA꾹 개정: 그룹 보기·대상 반 태그·크레딧 ── */
+.devcredit{margin:26px 0 8px;text-align:center;font-size:10.5px;line-height:1.6;
+color:var(--ink-soft,#B9AFA3);letter-spacing:.04em}
+.tchips{display:flex;flex-wrap:wrap;gap:7px;padding:6px 0 2px;min-height:8px}
+.tchip{border:1.5px solid var(--red,#FF4B3E);background:var(--red-soft,#FFEDEB);border-radius:99px;
+padding:7px 13px;font-size:13px;font-weight:800;color:var(--red,#FF4B3E);cursor:pointer}
+.tchip::after{content:' ×';font-weight:900;opacity:.7}
+.tchips .hint{flex-basis:100%;font-size:11.5px;color:var(--ink-soft,#B9AFA3)}
+.grp{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card,#fff);
+border:1px solid var(--line,#EAE3D6);border-radius:16px;padding:15px 16px;margin-bottom:9px;
+font-size:15px;font-weight:800;color:var(--ink,#2B2622)}
+.grp .gn{flex:1;min-width:0}
+.grp .gc{flex:0 0 auto;font-size:12px;font-weight:800;color:var(--red,#FF4B3E);
+background:var(--red-soft,#FFEDEB);border-radius:99px;padding:3px 11px}
+.grp .ga{flex:0 0 auto;color:var(--ink-soft,#B9AFA3);font-weight:900}
+.grp-head{display:flex;align-items:center;gap:10px;margin:2px 0 12px}
+.grp-back{border:1.5px solid var(--line,#EAE3D6);background:var(--card,#fff);
+border-radius:99px;padding:7px 14px;font-size:13px;font-weight:800;color:var(--ink2,#8A8175);cursor:pointer}
+.grp-title{font-size:15px;font-weight:900}
+.grp-title small{font-weight:700;color:var(--ink2,#8A8175);margin-left:6px}
 </style>
 </head>
 <body>
@@ -475,7 +496,7 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
   <!-- ═══ 로그인 / 가입 ═══ -->
   <section class="scr on" id="scr-auth" data-screen-label="로그인">
     <div class="brand">
-      <div class="logo">기원T <em>VOCA</em></div>
+      <div class="logo">VOCA<em>꾹</em></div>
       <div class="sub">학문당 조은희시스템영어</div>
     </div>
     <div class="auth-wrap">
@@ -491,6 +512,12 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
       </div>
       <div id="auth-signup" style="display:none">
         <div class="fld"><label>이름 (실명 — 선생님 화면에만 표시돼요)</label><input type="text" id="su-name"></div>
+        <div class="fld"><label>학교와 학년 (반이 자동으로 배정돼요)</label>
+          <div class="row" style="gap:8px">
+            <select id="su-school" style="flex:1.6"><option value="">학교 선택</option></select>
+            <select id="su-grade" style="flex:1"><option value="">학년</option><option value="1">1학년</option><option value="2">2학년</option></select>
+          </div>
+        </div>
         <div class="fld"><label>이메일</label><input type="email" id="su-email" autocomplete="username"></div>
         <div class="fld"><label>비밀번호 (6자 이상)</label><input type="password" id="su-pw" autocomplete="new-password"></div>
         <div class="fld"><label>학원 가입 코드</label><input type="text" id="su-code" placeholder="선생님께 받은 코드" autocapitalize="off" autocomplete="off"></div>
@@ -504,7 +531,7 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
   <!-- ═══ 홈 ═══ -->
   <section class="scr" id="scr-home" data-screen-label="홈">
     <div class="hd">
-      <div class="logo">기원T <em>VOCA</em></div>
+      <div class="logo">VOCA<em>꾹</em></div>
       <div class="hd-chips">
         <div class="pillchip streak" id="hd-streak"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1.5 4-4.5 5.5-4.5 10.5a4.5 4.5 0 0 0 9 0c0-2.2-1.2-3.8-1.8-5C14 9.5 12 8 12 2Z"></path></svg><span>0</span></div>
         <div class="pillchip xp" id="hd-xp"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="m13 2-8 12h6l-2 8 8-12h-6l2-8Z"></path></svg><span>0</span></div>
@@ -567,6 +594,7 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
         </button>
       </div>
     </div>
+  <div class="devcredit">Developed by 나기원T<br>조은희시스템영어</div>
   </section>
 
   <!-- ═══ 리스트 관리 ═══ -->
@@ -576,8 +604,14 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
     <div id="list-form" style="display:none">
       <div class="hr"></div>
       <div class="fld"><label>리스트 이름</label><input type="text" id="lf-name" placeholder="예) 어근 어휘 1강 contra·counter"></div>
-      <div class="fld"><label>대상 반 — 비우면 전체 배포. 여러 반은 쉼표로 (예: 경신고2, 동문고2)</label>
-        <input type="text" id="lf-target" list="class-suggest" placeholder="전체 배포">
+      <div class="fld"><label>대상 반 — 학교·학년을 골라 [추가]. 아무것도 안 담으면 전체 배포</label>
+        <div class="row" style="gap:8px">
+          <select id="lf-school" style="flex:1.6"><option value="">학교 선택</option></select>
+          <select id="lf-grade" style="flex:1"><option value="">학년</option><option value="1">1학년</option><option value="2">2학년</option></select>
+          <button type="button" class="grp-back" id="lf-add" style="flex:0 0 auto">＋ 추가</button>
+        </div>
+        <div class="tchips" id="lf-target-chips"></div>
+        <input type="hidden" id="lf-target">
         <datalist id="class-suggest"></datalist>
       </div>
       <div class="fld"><label>단어 데이터 (엑셀에서 복사해 붙여넣기)</label><textarea id="lf-data" placeholder="첫 줄: 항목 이름 (그룹, 어휘, 의미 …)&#10;둘째 줄부터: 단어 한 줄씩"></textarea></div>
@@ -976,7 +1010,7 @@ $('list-cards').addEventListener('click', async e=>{
     editListId = id;
     $('lf-name').value = L.name;
     $('lf-data').value = wordsToTSV(L.words||[]);
-    $('lf-target').value = (L.target_classes||[]).join(', ');
+    $('lf-target').value = (L.target_classes||[]).join(', '); renderTargetChips();
     $('list-form').style.display='block';
     window.scrollTo({top:0, behavior:'smooth'});
   }
@@ -989,7 +1023,7 @@ $('list-cards').addEventListener('click', async e=>{
 });
 $('btn-new-list').addEventListener('click', ()=>{
   editListId = null;
-  $('lf-name').value=''; $('lf-data').value=''; $('lf-target').value='';
+  $('lf-name').value=''; $('lf-data').value=''; $('lf-target').value=''; renderTargetChips();
   $('list-form').style.display='block';
   $('lf-name').focus();
 });
@@ -1662,10 +1696,10 @@ async function doLogin(email, pw){
   DB.auth = {access_token:d.access_token, refresh_token:d.refresh_token, uid:d.user.id, email:d.user.email};
   await storageSave();
 }
-async function doSignup(name, email, pw, code){
+async function doSignup(name, email, pw, code, cls){
   const r = await fetch(BACKEND.url + '/auth/v1/signup', {method:'POST',
     headers:{apikey:BACKEND.anonKey, 'Content-Type':'application/json'},
-    body: JSON.stringify({email, password: pw, data:{name, join_code: code}})});
+    body: JSON.stringify({email, password: pw, data:{name, join_code: code, class_name: cls}})});
   const d = await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(d.error_description || d.msg || d.message || ('HTTP '+r.status));
   if(!d.access_token) throw new Error('not confirmed');
@@ -1819,8 +1853,10 @@ $('btn-signup').addEventListener('click', async ()=>{
   const b = $('btn-signup'); b.disabled = true; $('su-err').textContent = '';
   const name = $('su-name').value.trim();
   if(!name){ $('su-err').textContent = '이름을 넣어 주세요.'; b.disabled = false; return; }
+  const school = $('su-school').value, grade = $('su-grade').value;
+  if(!school || !grade){ $('su-err').textContent = '학교와 학년을 선택해 주세요.'; b.disabled = false; return; }
   try{
-    await doSignup(name, $('su-email').value.trim(), $('su-pw').value, $('su-code').value);
+    await doSignup(name, $('su-email').value.trim(), $('su-pw').value, $('su-code').value, school + grade);
     await enterApp(true);
   }catch(e){ $('su-err').textContent = authErrKo(e.message); }
   b.disabled = false;
@@ -1843,7 +1879,7 @@ $('btn-sync').addEventListener('click', async ()=>{
 
 
 /* ════════ 학생 학습 현황 (교사·관리자) ════════ */
-$('m-dash').addEventListener('click', ()=>{ go('scr-dash'); renderDash(); });
+$('m-dash').addEventListener('click', ()=>{ dashGroup = null; $('dash-q').value = ''; go('scr-dash'); renderDash(); });
 async function renderDash(){
   const box = $('dash-body');
   box.innerHTML = '<div class="note">서버에서 불러오는 중…</div>';
@@ -1863,18 +1899,40 @@ async function renderDash(){
   drawDash();
 }
 let dashCtx = null;
+let dashGroup = null;
 function drawDash(){
   if(!dashCtx) return;
   const box = $('dash-body');
   const {smap, pmap} = dashCtx;
   const MODE_KO = {quiz:'퀴즈', spell:'스펠링', flash:'카드'};
   const q = ($('dash-q').value||'').trim().toLowerCase();
-  const students = dashCtx.profs.filter(p=>p.role==='student' && (!q
-    || (p.name||'').toLowerCase().includes(q)
-    || (p.email||'').toLowerCase().includes(q)
-    || (p.class_name||'').toLowerCase().includes(q)));
   const today = new Date(); today.setHours(0,0,0,0);
-  box.innerHTML = students.map(p=>{
+  let students, ghead = '';
+  const allStu = dashCtx.profs.filter(p=>p.role==='student');
+  if(q){
+    students = allStu.filter(p=>(p.name||'').toLowerCase().includes(q)
+      || (p.email||'').toLowerCase().includes(q)
+      || (p.class_name||'').toLowerCase().includes(q));
+  } else if(dashGroup === null){
+    const groups = {};
+    allStu.forEach(p=>{ const g = p.class_name || '미배정'; (groups[g] = groups[g]||[]).push(p); });
+    const keys = Object.keys(groups).sort((a,b)=>{
+      if(a==='미배정') return 1; if(b==='미배정') return -1;
+      return a.localeCompare(b,'ko');
+    });
+    box.innerHTML = keys.map(g=>{
+      const week = groups[g].reduce((acc,p)=>acc + ((smap[p.id]||[]).filter(x=>(Date.now()-new Date(x.created_at).getTime()) < 7*864e5).length), 0);
+      return '<button type="button" class="grp" data-g="'+esc(g)+'"><span class="gn">'
+        +(g==='미배정' ? '⏳ ' : '🏫 ')+esc(g)
+        +'</span><span class="gc">'+groups[g].length+'명 · 주간 '+week+'회</span><span class="ga">›</span></button>';
+    }).join('') || '<div class="note">아직 가입한 학생이 없어요.</div>';
+    return;
+  } else {
+    students = allStu.filter(p=>(p.class_name || '미배정') === dashGroup);
+    ghead = '<div class="grp-head"><button type="button" class="grp-back" data-back="1">‹ 그룹</button>'
+      +'<span class="grp-title">'+esc(dashGroup)+'<small>'+students.length+'명</small></span></div>';
+  }
+  const rows = students.map(p=>{
     const ss = smap[p.id]||[];
     const graded = ss.filter(s=>s.correct_count!=null);
     const tot = graded.reduce((a,s)=>a+s.total,0), rt = graded.reduce((a,s)=>a+s.correct_count,0);
@@ -1912,8 +1970,14 @@ function drawDash(){
       +'<div class="stat-h">반 지정 — 반별 리스트 배포의 기준이 된다</div>'
       +'<div class="row"><input type="text" class="cls-in" data-id="'+p.id+'" value="'+esc(p.class_name||'')+'" list="class-suggest" placeholder="예: 경신고2"><button class="btn primary cls-save" data-id="'+p.id+'" style="flex:0 0 auto;padding:9px 14px">저장</button></div>'
       +'</div></div>';
-  }).join('') || '<div class="note">'+(($('dash-q').value||'').trim() ? '검색 결과가 없어요. 철자나 반 이름을 다시 확인해 보세요.' : '아직 가입한 학생이 없어요. 가입 코드를 학생들에게 알려 주세요.')+'</div>';
+  }).join('');
+  box.innerHTML = ghead + (rows || '<div class="note">아직 가입한 학생이 없어요. 가입 코드를 학생들에게 알려 주세요.</div>');
 }
+$('dash-body').addEventListener('click', e=>{
+  const g = e.target.closest('.grp');
+  if(g){ dashGroup = g.dataset.g; drawDash(); return; }
+  if(e.target.closest('.grp-back')){ dashGroup = null; drawDash(); }
+});
 $('dash-q').addEventListener('input', drawDash);
 $('dash-body').addEventListener('click', async e=>{
   const save = e.target.closest('.cls-save');
@@ -2016,7 +2080,7 @@ $('msg-list').addEventListener('click', e=>{
 
 
 /* ════════ 계정 관리 (관리자) ════════ */
-$('m-admin').addEventListener('click', ()=>{ go('scr-admin'); renderAdmin(); });
+$('m-admin').addEventListener('click', ()=>{ adminGroup = null; $('admin-q').value = ''; go('scr-admin'); renderAdmin(); });
 let adminProfs = null;
 async function renderAdmin(){
   const box = $('admin-body');
@@ -2026,13 +2090,34 @@ async function renderAdmin(){
   adminProfs = await r.json();
   drawAdmin();
 }
+let adminGroup = null;
+function accGroupOf(p){ return p.role!=='student' ? '교직원' : (p.class_name || '미배정'); }
 function drawAdmin(){
   const box = $('admin-body');
+  const all = adminProfs||[];
   const q = ($('admin-q').value||'').trim().toLowerCase();
-  const profs = (adminProfs||[]).filter(p=>!q
-    || (p.name||'').toLowerCase().includes(q)
-    || (p.email||'').toLowerCase().includes(q));
-  box.innerHTML = profs.map(p=>{
+  let profs, head = '';
+  if(q){
+    profs = all.filter(p=>(p.name||'').toLowerCase().includes(q) || (p.email||'').toLowerCase().includes(q));
+  } else if(adminGroup === null){
+    const groups = {};
+    all.forEach(p=>{ const g = accGroupOf(p); (groups[g] = groups[g]||[]).push(p); });
+    const keys = Object.keys(groups).sort((a,b)=>{
+      if(a==='교직원') return -1; if(b==='교직원') return 1;
+      if(a==='미배정') return 1;  if(b==='미배정') return -1;
+      return a.localeCompare(b,'ko');
+    });
+    box.innerHTML = keys.map(g=>'<button type="button" class="grp" data-g="'+esc(g)+'"><span class="gn">'
+      +(g==='교직원' ? '🧑‍🏫 ' : (g==='미배정' ? '⏳ ' : '🏫 '))+esc(g)
+      +'</span><span class="gc">'+groups[g].length+'명</span><span class="ga">›</span></button>').join('')
+      || '<div class="note">계정이 없어요.</div>';
+    return;
+  } else {
+    profs = all.filter(p=>accGroupOf(p) === adminGroup);
+    head = '<div class="grp-head"><button type="button" class="grp-back" data-back="1">‹ 그룹</button>'
+      +'<span class="grp-title">'+esc(adminGroup)+'<small>'+profs.length+'명</small></span></div>';
+  }
+  const rows = profs.map(p=>{
     const me = DB.profile && p.id===DB.profile.id;
     return '<div class="acc"><span class="an">'+esc(p.name)+(me?' <span class="rolebadge">나</span>':'')
       +'<span class="ae2">'+esc(p.email||'아이디 미기록')+'</span></span>'
@@ -2042,8 +2127,14 @@ function drawAdmin(){
       +'<button class="blk'+(p.blocked?' on':'')+'" data-id="'+p.id+'" data-b="'+(!p.blocked)+'"'+(me?' disabled':'')+'>'+(p.blocked?'차단 해제':'차단')+'</button>'
       +'<button class="del-user" data-id="'+p.id+'" data-name="'+esc(p.name)+'"'+(me?' disabled':'')+'>삭제</button>'
       +'</div>';
-  }).join('') || '<div class="note">'+(($('admin-q').value||'').trim() ? '검색 결과가 없어요. 철자를 다시 확인해 보세요.' : '계정이 없어요.')+'</div>';
+  }).join('');
+  box.innerHTML = head + (rows || '<div class="note">'+(($('admin-q').value||'').trim() ? '검색 결과가 없어요. 철자를 다시 확인해 보세요.' : '계정이 없어요.')+'</div>');
 }
+$('admin-body').addEventListener('click', e=>{
+  const g = e.target.closest('.grp');
+  if(g){ adminGroup = g.dataset.g; drawAdmin(); return; }
+  if(e.target.closest('.grp-back')){ adminGroup = null; drawAdmin(); }
+});
 $('admin-q').addEventListener('input', drawAdmin);
 $('admin-body').addEventListener('change', async e=>{
   const s = e.target.closest('.role-sel'); if(!s) return;
@@ -2485,6 +2576,37 @@ async function init(){
 }
 init();
 window.addEventListener('online', ()=>{ if(DB && DB.auth) fullSync().then(()=>{ if(curScr==='scr-home') renderHome(); }); });
+
+/* ══ VOCA꾹: 학교 목록 (갱신은 이 배열만 고치면 된다) ══ */
+const SCHOOLS = ['강동고','경명여고','경북고','경북여고','경북예고','경상여고','경신고','경일여고','계성고','구암고','군위고','남산고','능인고','달서고','달성고','대구고','대구국제고','대구여고','대구외고','대륜고','덕원고','도개고','동문고','동부고','사대부고','성광고','성산고','수성고','시지고','신명고','오성고','운암고','원화여고','정화여고','중앙고','청구고','포산고','학남고','현일고','협성고','혜화여고'];
+(function(){
+  const opts = '<option value="">학교 선택</option>' + SCHOOLS.map(sc=>'<option value="'+sc+'">'+sc+'</option>').join('');
+  ['su-school','lf-school'].forEach(id=>{ const el = document.getElementById(id); if(el) el.innerHTML = opts; });
+})();
+function renderTargetChips(){
+  const box = document.getElementById('lf-target-chips');
+  if(!box) return;
+  const cur = (document.getElementById('lf-target').value||'').split(',').map(x=>x.trim()).filter(Boolean);
+  box.innerHTML = cur.map(c=>'<button type="button" class="tchip" data-c="'+esc(c)+'">'+esc(c)+'</button>').join('')
+    + '<span class="hint">'+(cur.length ? '위 반에만 배포된다. 태그를 누르면 뺀다.' : '담긴 반 없음 — 전체 학생에게 배포된다.')+'</span>';
+}
+document.getElementById('lf-add').addEventListener('click', ()=>{
+  const sc = document.getElementById('lf-school').value, g = document.getElementById('lf-grade').value;
+  if(!sc || !g){ toast('학교와 학년을 먼저 골라 주세요'); return; }
+  const t = document.getElementById('lf-target');
+  let cur = (t.value||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const c = sc + g;
+  if(!cur.includes(c)) cur.push(c);
+  t.value = cur.join(', ');
+  renderTargetChips();
+});
+document.getElementById('lf-target-chips').addEventListener('click', e=>{
+  const ch = e.target.closest('.tchip'); if(!ch) return;
+  const t = document.getElementById('lf-target');
+  const cur = (t.value||'').split(',').map(x=>x.trim()).filter(Boolean).filter(x=>x!==ch.dataset.c);
+  t.value = cur.join(', ');
+  renderTargetChips();
+});
 </script>
 </body>
 </html>
