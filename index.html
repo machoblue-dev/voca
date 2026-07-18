@@ -1318,7 +1318,31 @@ $('browse-q').addEventListener('input', e=>renderBrowse(e.target.value));
 let FL = null;
 function startFlash(words, fromWrong){
   if(!words || !words.length){ go('scr-home'); return; }
-  FL = {deck: shuffleArr(words), i:0, fromWrong: !!fromWrong}; resetSessXp();
+  const L = fromWrong ? null : activeList();
+  const g = ensureGame();
+  const rs = (!fromWrong && L && g.flashResume
+              && g.flashResume.listId === L.id
+              && g.flashResume.wcount === words.length
+              && Array.isArray(g.flashResume.order)
+              && g.flashResume.i > 0
+              && g.flashResume.i < g.flashResume.order.length) ? g.flashResume : null;
+  if(rs && confirm('이 리스트, 지난번에 '+rs.i+'번째 카드까지 봤어요.\n이어서 볼까요?\n\n확인 = 이어서 보기 · 취소 = 처음부터 새로 섞기')){
+    FL = {deck: rs.order.map(ix=>words[ix]).filter(Boolean), i: rs.i, fromWrong:false,
+          order: rs.order, listId: L.id, wcount: words.length};
+  } else {
+    const order = words.map((_, ix)=>ix);
+    for(let k = order.length - 1; k > 0; k--){
+      const j = Math.floor(Math.random() * (k + 1));
+      const t = order[k]; order[k] = order[j]; order[j] = t;
+    }
+    FL = {deck: order.map(ix=>words[ix]), i:0, fromWrong: !!fromWrong,
+          order, listId: L ? L.id : null, wcount: words.length};
+    if(!fromWrong && L){
+      g.flashResume = {listId: L.id, order, i: 0, wcount: words.length, ts: Date.now()};
+      scheduleSave();
+    }
+  }
+  resetSessXp();
   $('fl-mode-label').textContent = fromWrong ? '오답 복습' : (activeList()?activeList().name:'');
   $('fl-done').style.display='none';
   $('fl-stage').style.display='block';
@@ -1356,6 +1380,15 @@ function renderFlash(){
 }
 function nextFlash(){
   FL.i++;
+  if(!FL.fromWrong && FL.listId){
+    const g = ensureGame();
+    if(FL.i < FL.deck.length){
+      g.flashResume = {listId: FL.listId, order: FL.order, i: FL.i, wcount: FL.wcount, ts: Date.now()};
+    } else if(g.flashResume && g.flashResume.listId === FL.listId){
+      delete g.flashResume;
+    }
+    scheduleSave();
+  }
   if(FL.i >= FL.deck.length) endFlash(); else renderFlash();
 }
 function endFlash(){
