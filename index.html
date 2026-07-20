@@ -194,6 +194,16 @@ html[data-theme=dark] .hero .h-cta{box-shadow:var(--glow-red)}
 .listrow{display:flex;gap:8px;align-items:center;margin-top:12px}
 .listrow select{flex:1;min-width:0;padding:12px 13px;border:2px solid var(--line);border-radius:15px;background:var(--card);font-weight:800;font-size:14.5px;appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink2) 50%),linear-gradient(135deg,var(--ink2) 50%,transparent 50%);background-position:calc(100% - 20px) 55%,calc(100% - 14px) 55%;background-size:6px 6px;background-repeat:no-repeat}
 .listrow .mng{padding:12px 15px;border-radius:15px;background:var(--card);border:2px solid var(--line);font-weight:800;font-size:13.5px;color:var(--red);white-space:nowrap;box-shadow:0 3px 0 var(--edge)}
+.pickcard{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:13px 14px 14px;margin-top:12px;box-shadow:0 4px 0 var(--edge)}
+.pk-top{display:flex;align-items:center;justify-content:space-between}
+.pk-label{font-size:12.5px;font-weight:800;color:var(--ink2);letter-spacing:-.01em}
+.pk-hint{font-size:11.5px;font-weight:700;color:var(--ink2);opacity:.7}
+.pickcard .listrow{margin-top:9px}
+.pickcard .listrow select{padding:14px 15px;font-size:15.5px;font-weight:900;border-radius:14px}
+.opt-row{display:flex;align-items:center;gap:9px;width:100%;margin-top:10px;padding:12px 15px;border-radius:16px;background:transparent;border:1.5px dashed var(--line2);color:var(--ink2)}
+.opt-row .ot{font-weight:800;font-size:13.5px;white-space:nowrap}
+.opt-row .od{flex:1;text-align:left;font-size:12px;font-weight:600;opacity:.72;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opt-row .oc{font-size:17px;font-weight:800;opacity:.55;line-height:1}
 .lvrow{display:flex;align-items:center;gap:10px;margin-top:12px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:11px 14px}
 .lvrow .lvn{width:34px;height:34px;border-radius:11px;background:var(--plum);color:var(--on-plum);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex:0 0 auto}
 .lvrow .lvi{flex:1;min-width:0}
@@ -803,9 +813,12 @@ html[data-theme=dark] .lvhero{box-shadow:none}
       <button class="h-cta" id="hero-cta">이어서 학습하기</button>
     </div>
     <div id="quest-card" class="hcard" style="display:none"></div>
-    <div class="listrow">
-      <select id="home-list"></select>
-      <button class="mng" id="btn-lists" style="display:none">배포 관리</button>
+    <div class="pickcard">
+      <div class="pk-top"><span class="pk-label">📚 지금 공부하는 단어장</span><span class="pk-hint">눌러서 바꿔요</span></div>
+      <div class="listrow">
+        <select id="home-list"></select>
+        <button class="mng" id="btn-lists" style="display:none">배포 관리</button>
+      </div>
     </div>
     <div class="lvrow" id="lvrow">
       <div class="lvn" id="lv-num">1</div>
@@ -837,15 +850,16 @@ html[data-theme=dark] .lvhero{box-shadow:none}
         <span class="badge" id="wrong-badge" style="display:none">0</span>
         <b>오답 복습</b><span class="d">틀린 단어만 다시</span>
       </button>
-      <button class="mode c-teal" id="m-explore">
-        <span style="font-size:24px;line-height:1">🔎</span>
-        <b>남의 단어장</b><span class="d">모든 단어장 보기</span>
-      </button>
       <button class="mode c-yellow" id="m-maketest">
         <span style="font-size:24px;line-height:1">🖨️</span>
         <b>시험지 만들기</b><span class="d">뽑아서 미리 시험</span>
       </button>
     </div>
+    <button class="opt-row" id="m-explore">
+      <span class="ot">🔎 남의 단어장</span>
+      <span class="od">모든 단어장 보기</span>
+      <span class="oc">›</span>
+    </button>
     <div id="staff-zone" style="display:none">
       <div class="sec-h">선생님 도구</div>
       <div class="modes" style="margin-top:9px">
@@ -3225,7 +3239,7 @@ async function renderHall(){
   }).join('');
   el.innerHTML = h;
 }
-/* ════════ 단어장 탐험 ════════ */
+/* ════════ 남의 단어장 (탐험) ════════ */
 let exploreCat = null;
 async function fetchExplore(){
   const now = Date.now();
@@ -3490,10 +3504,11 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-8';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-8'; });
+const APP_VER = '2026.07.21-9';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-9'; });
 const WN_ITEMS = [
- ['🔎','단어장 탐험','내게 배정 안 된 단어장도 골라서 공부할 수 있어요'],
+ ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
+ ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
  ['🏅','티어 보너스','어려운 단어장일수록 경험치가 최대 2배!'],
  ['🎖️','레벨 40단계','최고 칭호 "어휘의 신" — 아레나의 레벨 안내에서 확인'],
  ['🖨️','시험지 만들기','단어장에서 시험지를 뽑아 집에서 미리 시험 보기'],
@@ -3507,7 +3522,8 @@ const WN_ITEMS = [
 const WN_STAFF = [
  ['🏅','단어장 티어','리스트마다 난이도 티어를 달 수 있어요. 높을수록 학생 경험치 최대 2배'],
  ['⠿','드래그 순서 변경','리스트 관리에서 왼쪽 손잡이를 끌어 순서를 바꿔요'],
- ['🔎','단어장 탐험','학생이 배정 안 된 단어장도 골라서 공부할 수 있어요'],
+ ['📚','홈 화면 정리','단어장 고르는 칸이 카드로 커지고, 남의 단어장은 아래 옵션 줄로 옮겼어요'],
+ ['🔎','남의 단어장','학생이 배정 안 된 단어장도 골라서 공부할 수 있어요'],
  ['🖨️','시험지 만들기','학생·선생님 모두 A·B형 시험지를 뽑을 수 있어요 (정답지 포함)'],
  ['🔁','자동 복습','학생이 공부한 단어장을 1·3·7·14일째에 홈으로 다시 불러요'],
  ['🎯','일일 퀘스트','학생이 매일 세 미션을 채우면 +150 XP 보너스'],
