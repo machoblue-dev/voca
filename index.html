@@ -89,6 +89,9 @@
 .bl-head b{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bl-head span{font-size:12px;font-weight:800;color:var(--ink2,#8A8175);flex:0 0 auto}
 .bl-head .tbadge{margin-left:0;font-size:12px;padding:2.5px 9px}
+
+.rv-next{font-size:12.5px;font-weight:700;color:var(--ink2,#8A8175);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-row ~ .rv-next{border-top:1.5px dashed var(--line,#EAE3D6);padding-top:9px;margin-top:5px}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#FF4B3E">
@@ -3296,21 +3299,37 @@ function scheduleReview(lid){
     rv.stage = ns; rv.due = now + REV_GAPS[ns]*864e5;
   }
 }
+function revDayLabel(ts){
+  const a = new Date(); a.setHours(0,0,0,0);
+  const b = new Date(ts); b.setHours(0,0,0,0);
+  const d = Math.round((b - a) / 864e5);
+  if(d <= 0) return '오늘';
+  if(d === 1) return '내일';
+  if(d === 2) return '모레';
+  return d + '일 뒤';
+}
 function renderReview(){
   const el = $('rev-card'); if(!el) return;
   const g = ensureGame();
   if(!g.review || (DB.profile && DB.profile.role !== 'student')){ el.style.display='none'; el.innerHTML=''; return; }
   Object.keys(g.review).forEach(lid=>{ if(!DB.lists.find(l=>l.id===lid)) delete g.review[lid]; });
   const now = Date.now();
-  const due = Object.keys(g.review)
+  const all = Object.keys(g.review)
     .map(lid=>({lid, rv: g.review[lid], L: DB.lists.find(l=>l.id===lid)}))
-    .filter(x=>x.L && x.rv.due <= now);
-  if(!due.length){ el.style.display='none'; el.innerHTML=''; return; }
+    .filter(x=>x.L);
+  const due = all.filter(x=>x.rv.due <= now);
+  const up = all.filter(x=>x.rv.due > now).sort((a,b)=>a.rv.due - b.rv.due);
+  if(!due.length && !up.length){ el.style.display='none'; el.innerHTML=''; return; }
   el.style.display='block';
+  const nextLine = up.length
+    ? '<div class="rv-next">🗓️ 다음 복습 — '+up.slice(0,2).map(x=>revDayLabel(x.rv.due)+' '+(TIERS[x.L.tier||1]||TIERS[1]).e+' '+esc(x.L.name)).join(' · ')+(up.length>2?' 외 '+(up.length-2)+'개':'')+'</div>'
+    : '';
+  if(!due.length){ el.innerHTML = nextLine; return; }
   el.innerHTML = '<div class="rv-h">🔁 오늘의 복습<span>잊어버리기 전에 한 번 더 — 이게 진짜 암기다</span></div>'
     + due.map(x=>'<div class="rv-row"><div class="rv-info"><b>'+esc(x.L.name)+'</b><span>'
       +(x.rv.stage+1)+'번째 복습 (배운 지 '+REV_GAPS[x.rv.stage]+'일)</span></div>'
-      +'<button class="btn primary rv-go" data-id="'+esc(x.lid)+'">지금 복습</button></div>').join('');
+      +'<button class="btn primary rv-go" data-id="'+esc(x.lid)+'">지금 복습</button></div>').join('')
+    + nextLine;
 }
 $('rev-card').addEventListener('click', e=>{
   const b = e.target.closest('.rv-go'); if(!b) return;
