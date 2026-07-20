@@ -204,6 +204,14 @@ html[data-theme=dark] .hero .h-cta{box-shadow:var(--glow-red)}
 .opt-row .ot{font-weight:800;font-size:13.5px;white-space:nowrap}
 .opt-row .od{flex:1;text-align:left;font-size:12px;font-weight:600;opacity:.72;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .opt-row .oc{font-size:17px;font-weight:800;opacity:.55;line-height:1}
+span.tbadge.t1{background:#EAF6EC;color:#2E7D46}
+span.tbadge.t2{background:#FFF4D9;color:#8F6400}
+span.tbadge.t3{background:#FFE9E0;color:#D14A1E}
+span.tbadge.t4{background:#EFE7FF;color:#6A3FD8}
+html[data-theme=dark] span.tbadge.t1{background:rgba(87,196,123,.17);color:#8FE0A8}
+html[data-theme=dark] span.tbadge.t2{background:rgba(255,193,84,.17);color:#FFD584}
+html[data-theme=dark] span.tbadge.t3{background:rgba(255,122,80,.18);color:#FFA48C}
+html[data-theme=dark] span.tbadge.t4{background:rgba(155,132,245,.2);color:#BFB4FF}
 .lvrow{display:flex;align-items:center;gap:10px;margin-top:12px;background:var(--card);border:2px solid var(--line);border-radius:18px;padding:11px 14px}
 .lvrow .lvn{width:34px;height:34px;border-radius:11px;background:var(--plum);color:var(--on-plum);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex:0 0 auto}
 .lvrow .lvi{flex:1;min-width:0}
@@ -3504,8 +3512,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-9';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-9'; });
+const APP_VER = '2026.07.21-10';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-10'; });
 const WN_ITEMS = [
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
  ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
