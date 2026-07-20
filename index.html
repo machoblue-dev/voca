@@ -80,6 +80,15 @@
 .wn-row b{display:block;font-size:14.5px}
 .wn-row span{display:block;font-size:12.5px;color:var(--ink2,#8A8175);line-height:1.45;margin-top:1px}
 #whatsnew .card{max-height:84vh;overflow:auto}
+
+.drag-h{touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none;font-size:17px;color:var(--ink2,#8A8175);padding:6px 9px 6px 2px;flex:0 0 auto;align-self:center}
+.li-card.dragging{opacity:.88;box-shadow:0 10px 24px rgba(0,0,0,.2);transform:scale(1.01);position:relative;z-index:5}
+.vertag{text-align:center;font-size:11.5px;color:var(--soft,#B9AFA3);font-weight:700;margin:10px 0 2px;letter-spacing:.04em}
+
+.bl-head{display:flex;align-items:center;gap:7px;background:var(--card,#fff);border:2px solid var(--line,#EAE3D6);border-radius:14px;padding:11px 14px;margin-bottom:10px}
+.bl-head b{font-size:15px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bl-head span{font-size:12px;font-weight:800;color:var(--ink2,#8A8175);flex:0 0 auto}
+.bl-head .tbadge{margin-left:0;font-size:12px;padding:2.5px 9px}
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#FF4B3E">
@@ -734,7 +743,8 @@ html[data-theme=dark] .lvhero{box-shadow:none}
         <div class="auth-err" id="li-err"></div>
         <button class="btn primary block" id="btn-login">로그인</button>
       </div>
-      <div id="auth-signup" style="display:none">
+      <div class="vertag" id="ver-tag"></div>
+        <div id="auth-signup" style="display:none">
         <div class="fld"><label>이름 (실명 — 선생님 화면에만 표시돼요)</label><input type="text" id="su-name"></div>
         <div class="fld"><label>학교와 학년 (반이 자동으로 배정돼요)</label>
           <div class="row" style="gap:8px">
@@ -977,6 +987,7 @@ html[data-theme=dark] .lvhero{box-shadow:none}
       </div>
     </div>
     <button class="btn" id="btn-whatsnew" style="width:100%;margin-bottom:12px">🎁 새로워진 기능 보기</button>
+    <div class="vertag" id="ver-tag2"></div>
     <div class="set-card">
       <div class="set-row">
         <span class="sic" style="background:var(--plum-soft);color:var(--plum)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a7 7 0 0 0 11 11Z"></path></svg></span>
@@ -1287,12 +1298,12 @@ function renderLists(){
   const box = $('list-cards');
   const card = l=>{
     const act = l.id===DB.activeListId;
-    return '<div class="li-card'+(act?' active':'')+(l.published===false?' arch':'')+'">'
-      +'<div class="li-info"><b>'+esc(l.name)+' '+tierBadge(l.tier)+(l.published===false?'<span class="li-badge">보관</span>':'')+'</b>'
+    return '<div class="li-card'+(act?' active':'')+(l.published===false?' arch':'')+'" data-id="'+esc(l.id)+'">'
+      +(l.published===false?'':'<span class="drag-h" title="끌어서 순서 바꾸기">⠿</span>')
+      +'<div class="li-info"><b>'+tierBadge(l.tier)+' '+esc(l.name)+(l.published===false?'<span class="li-badge">보관</span>':'')+'</b>'
       +'<span>단어 '+(l.words||[]).length+'개 · '+((l.target_classes&&l.target_classes.length)?('대상: '+esc(l.target_classes.join(', '))):'전체 배포')
       +(l.created_name?(' · '+esc(l.created_name)+'T'):'')+(act?' · 사용 중':'')+'</span></div>'
       +'<div class="li-act">'
-      +(l.published===false?'':'<button data-act="up" data-id="'+esc(l.id)+'" title="위로">▲</button><button data-act="dn" data-id="'+esc(l.id)+'" title="아래로">▼</button>')
       +(act?'':'<button data-act="use" data-id="'+esc(l.id)+'">선택</button>')
       +'<button data-act="edit" data-id="'+esc(l.id)+'">수정</button>'
       +'<button data-act="arch" data-id="'+esc(l.id)+'" data-p="'+(l.published===false?'1':'0')+'">'+(l.published===false?'복원':'보관')+'</button>'
@@ -1316,22 +1327,6 @@ $('list-cards').addEventListener('click', async e=>{
     $('lf-target').value = (L.target_classes||[]).join(', '); renderTargetChips();
     $('list-form').style.display='block';
     window.scrollTo({top:0, behavior:'smooth'});
-  }
-  if(act==='up' || act==='dn'){
-    const live = DB.lists.filter(x=>x.published!==false);
-    const i = live.findIndex(x=>x.id===id);
-    const j = act==='up' ? i-1 : i+1;
-    if(i<0 || j<0 || j>=live.length) return;
-    const t = live[i]; live[i] = live[j]; live[j] = t;
-    for(let k=0; k<live.length; k++){
-      const so = (k+1)*10;
-      if(live[k].sort_order !== so){
-        await api('/rest/v1/word_lists?id=eq.'+live[k].id, {method:'PATCH', headers:{'Prefer':'return=minimal'}, body: JSON.stringify({sort_order: so})});
-        live[k].sort_order = so;
-      }
-    }
-    await pullLists(); renderLists();
-    return;
   }
   if(act==='arch'){
     const cur = e.target.dataset.p === '1';
@@ -1469,7 +1464,7 @@ function renderBrowse(q){
     if(w.group && w.group !== lastGroup){ html += '<div class="grp-bar">'+esc(w.group)+'</div>'; lastGroup = w.group; }
     html += wordCard(w, i+1);
   });
-  $('browse-body').innerHTML = html || '<div class="note">검색 결과가 없다.</div>';
+  $('browse-body').innerHTML = '<div class="bl-head">'+tierBadge(L.tier)+'<b>'+esc(L.name)+'</b><span>'+L.words.length+'단어</span></div>' + (html || '<div class="note">검색 결과가 없다.</div>');
 }
 $('browse-q').addEventListener('input', e=>renderBrowse(e.target.value));
 
@@ -2750,7 +2745,7 @@ function todayCount(){
 }
 function renderHome(){
   const sel = $('home-list');
-  sel.innerHTML = DB.lists.map(l=>'<option value="'+esc(l.id)+'"'+(l.id===DB.activeListId?' selected':'')+'>'+esc(l.name)+' ('+l.words.length+')</option>').join('');
+  sel.innerHTML = DB.lists.map(l=>'<option value="'+esc(l.id)+'"'+(l.id===DB.activeListId?' selected':'')+'>'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+' ('+l.words.length+')</option>').join('');
   if(!DB.lists.length) sel.innerHTML = '<option value="">배포된 리스트 대기 중</option>';
   const L = activeList();
   const n = L ? L.words.length : 0;
@@ -2763,7 +2758,7 @@ function renderHome(){
   const today = todayCount();
   const goal = g.goal || 40;
   const left = Math.max(0, goal - today);
-  $('hero-sub').textContent = L ? '오늘의 학습 · '+L.name : '오늘의 학습';
+  $('hero-sub').textContent = L ? '오늘의 학습 · '+(TIERS[L.tier||1]||TIERS[1]).e+' '+L.name : '오늘의 학습';
   $('hero-head').innerHTML = !n ? '단어장이 도착하길<br>기다리고 있어요' : (left>0 ? left+'단어만 더 하면<br>목표 달성!' : '오늘 목표 달성!<br>더 달려볼까요? 🎉');
   $('hero-bar').style.width = Math.min(100, Math.round(today/goal*100))+'%';
   $('hero-meta-l').textContent = Math.min(today,goal)+' / '+goal+' 단어';
@@ -3223,7 +3218,7 @@ async function renderExplore(){
   const rows = cat.filter(c=>!mine.has(c.id));
   if(!rows.length){ box.innerHTML = '<div class="note">지금 받은 단어장 말고는 더 없어요. 새 단어장이 올라오면 여기 나타나요.</div>'; return; }
   box.innerHTML = '<div class="note" style="margin-bottom:8px">내게 배정되지 않은 단어장도 골라서 공부할 수 있어요. 티어가 높을수록 경험치가 더 쌓여요!</div>'
-    + rows.map(c=>'<div class="ex-row" data-id="'+esc(c.id)+'"><div class="ex-info"><b>'+esc(c.name)+'</b> '+tierBadge(c.tier)
+    + rows.map(c=>'<div class="ex-row" data-id="'+esc(c.id)+'"><div class="ex-info">'+tierBadge(c.tier)+' <b>'+esc(c.name)+'</b>'
       +'<span>단어 '+c.wcount+'개 · 대상 '+esc(c.target)+'</span></div>'
       +'<button class="btn primary ex-go" data-id="'+esc(c.id)+'" data-name="'+esc(c.name)+'" data-tier="'+c.tier+'" style="flex:0 0 auto;padding:9px 14px">공부하기</button></div>').join('');
 }
@@ -3248,7 +3243,7 @@ $('explore-body').addEventListener('click', async e=>{
     DB.activeListId = obj.id;
     scheduleSave();
     const row = g.closest('.ex-row');
-    row.innerHTML = '<div class="ex-info"><b>'+esc(obj.name)+'</b> '+tierBadge(obj.tier)
+    row.innerHTML = '<div class="ex-info">'+tierBadge(obj.tier)+' <b>'+esc(obj.name)+'</b>'
       +'<span>단어장을 갈아 끼웠어요! 무엇으로 공부할까요?</span></div>'
       +'<div class="ex-modes"><button class="btn primary" data-exmode="flash">카드</button>'
       +'<button class="btn primary" data-exmode="quiz">퀴즈</button>'
@@ -3458,7 +3453,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21';
+const APP_VER = '2026.07.21-2';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-2'; });
 const WN_ITEMS = [
  ['🔎','단어장 탐험','내게 배정 안 된 단어장도 골라서 공부할 수 있어요'],
  ['🏅','티어 보너스','어려운 단어장일수록 경험치가 최대 2배!'],
@@ -3492,6 +3488,52 @@ document.addEventListener('click', e=>{
   if(e.target.closest('#btn-whatsnew')) openWhatsNew();
   if(e.target.closest('#wn-close')) $('whatsnew').classList.remove('on');
 });
+/* ════════ 리스트 드래그 순서 변경 ════════ */
+async function saveListOrder(){
+  const ids = [...$('list-cards').querySelectorAll('.li-card:not(.arch)')].map(c=>c.dataset.id).filter(Boolean);
+  for(let k = 0; k < ids.length; k++){
+    const so = (k + 1) * 10;
+    const L = DB.lists.find(x=>x.id === ids[k]);
+    if(L && L.sort_order !== so){
+      await api('/rest/v1/word_lists?id=eq.'+ids[k], {method:'PATCH', headers:{'Prefer':'return=minimal'}, body: JSON.stringify({sort_order: so})});
+      L.sort_order = so;
+    }
+  }
+  await pullLists(); renderLists();
+  toast('순서를 저장했어요');
+}
+let DRAG = null;
+$('list-cards').addEventListener('pointerdown', e=>{
+  const h = e.target.closest('.drag-h'); if(!h) return;
+  const card = h.closest('.li-card'); if(!card || card.classList.contains('arch')) return;
+  e.preventDefault();
+  DRAG = {card, moved: false};
+  card.classList.add('dragging');
+});
+document.addEventListener('pointermove', e=>{
+  if(!DRAG) return;
+  e.preventDefault();
+  DRAG.moved = true;
+  const others = [...$('list-cards').querySelectorAll('.li-card:not(.arch)')].filter(c=>c !== DRAG.card);
+  let placed = false;
+  for(const c of others){
+    const r = c.getBoundingClientRect();
+    if(e.clientY < r.top + r.height/2){ c.parentNode.insertBefore(DRAG.card, c); placed = true; break; }
+  }
+  if(!placed && others.length){
+    const last = others[others.length - 1];
+    last.parentNode.insertBefore(DRAG.card, last.nextSibling);
+  }
+}, {passive:false});
+async function dragEnd(){
+  if(!DRAG) return;
+  const card = DRAG.card, moved = DRAG.moved;
+  DRAG = null;
+  card.classList.remove('dragging');
+  if(moved) await saveListOrder();
+}
+document.addEventListener('pointerup', dragEnd);
+document.addEventListener('pointercancel', dragEnd);
 </script>
 <script>
 /* V2 축하 이펙트 — 기존 앱 신호(XP 플로트·결과 화면·레벨업 모달)를 관찰만 함. 앱 로직 무변경 */
