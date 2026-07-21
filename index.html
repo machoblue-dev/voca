@@ -3144,10 +3144,12 @@ async function renderLeaguePersonal(){
   const el = document.getElementById('lg-body'); if(!el) return;
   const g = ensureGame();
   const cls = (DB.profile && DB.profile.class_name) || '';
+  const ghost = !!(DB.profile && DB.profile.hidden);
+  const ghostNote = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">\uD83D\uDD4A\uFE0F 이 계정은 순위표에 오르지 않아요. 순위 걱정 없이 편하게 공부해요!</span></span></div>';
   const meRow = '<div class="lg-row me"><span class="rank">—</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'닉네임 미정')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+cls)+'</span></span><span class="wxp">'+fmtXp(0)+' XP</span></div>';
   const rows = await fetchLeague();
   if(!rows || !rows.length){
-    el.innerHTML = meRow + '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">이번 달 랭킹이 아직 비어 있어요. 학습하면 순위가 생겨요!</span></span></div>';
+    el.innerHTML = (ghost ? ghostNote : meRow) + '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">이번 달 랭킹이 아직 비어 있어요. 학습하면 순위가 생겨요!</span></span></div>';
     return;
   }
   let mine=false;
@@ -3157,13 +3159,13 @@ async function renderLeaguePersonal(){
     return '<div class="lg-row r'+(i+1)+(me?' me':'')+'"><span class="rank">'+(i+1)+'</span><span class="avt">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.class_name||''))+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
   }).join('');
   let tail = '';
-  if(!mine){
+  if(!mine && !ghost){
     const idx = rows.findIndex(r=>r.me);
     tail = (idx >= 0)
       ? '<div class="lg-row me"><span class="rank">'+(idx+1)+'</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+((DB.profile && DB.profile.class_name)||''))+'</span></span><span class="wxp">'+fmtXp(rows[idx].week_xp)+' XP</span></div>'
       : meRow;
   }
-  el.innerHTML = html + tail;
+  el.innerHTML = html + (ghost ? ghostNote : tail);
 }
 /* ════════ 시작 ════════ */
 const APP_VERSION = '2.1.0';
@@ -3488,7 +3490,7 @@ async function renderLeagueClass(){
       +'<span class="who" style="flex:1"><b>'+esc(c.cls)+'</b> <span class="sg">참여 '+c.active+' / '+c.students+'명</span></span>'
       +'<span class="clsc">평균 '+Number(c.avg_score).toLocaleString()+'점</span></div>';
   }).join('')
-  +'<div class="note" style="margin-top:8px">반 점수 = 반 전체 점수 ÷ 반 인원 전원. 내가 안 하면 우리 반 평균이 내려간다!</div>';
+  +'<div class="note" style="margin-top:8px">반 점수 = 반 전체 점수 ÷ 반 인원 전원.'+((DB.profile && DB.profile.hidden)?'':' 내가 안 하면 우리 반 평균이 내려간다!')+'</div>';
 }
 document.addEventListener('click', e=>{
   const p = e.target.closest('#lg-tab-p'), c = e.target.closest('#lg-tab-c');
@@ -3552,8 +3554,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-12';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-12'; });
+const APP_VER = '2026.07.21-13';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-13'; });
 const WN_ITEMS = [
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
  ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
