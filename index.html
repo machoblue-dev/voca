@@ -27,8 +27,8 @@
 
 #home-greet{font-size:23px;font-weight:900;letter-spacing:-.02em;line-height:1.32}
 .tab .ticon svg{width:25px;height:25px;display:block}
-.face.front .w.sz2{font-size:34px}
-.face.front .w.sz3{font-size:27px}
+.face.front .w.sz2{font-size:clamp(48px,17vw,96px)}
+.face.front .w.sz3{font-size:clamp(36px,12vw,68px)}
 .lvg-row{display:flex;align-items:center;gap:10px;padding:7px 4px;border-bottom:1.5px dashed var(--line,#EAE3D6);font-size:14px}
 .lvg-row:last-child{border-bottom:none}
 .lvg-row .lvg-lv{flex:0 0 54px;font-weight:900;color:var(--red,#FF4B3E)}
@@ -311,11 +311,11 @@ html[data-theme=dark] .pbar i{background:var(--red);box-shadow:0 0 10px rgba(255
 /* ── 플래시카드 ── */
 .fc-inner{position:relative;min-height:380px}
 .face{position:relative;border-radius:26px;background:var(--card);border:2px solid var(--line);box-shadow:0 8px 0 var(--edge)}
-.face.front{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:24px;text-align:center;height:min(520px,62vh);min-height:380px;animation:flipin .3s ease}
+.face.front{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px 16px;text-align:center;height:min(560px,66vh);min-height:400px;animation:flipin .3s ease}
 .fc.flip .face.front{display:none}
 @keyframes flipin{from{transform:rotateY(-70deg);opacity:.3}to{transform:rotateY(0);opacity:1}}
 .face.front .gchip{font-size:12px;font-weight:900;color:var(--red-deep);background:var(--red-soft);border:1.5px solid var(--red-line);border-radius:99px;padding:4px 13px}
-.face.front .w{font-family:Paperlogy,Pretendard,sans-serif;font-size:46px;font-weight:800;letter-spacing:-.02em;word-break:break-word;overflow-wrap:anywhere;line-height:1.15;max-width:100%}
+.face.front .w{font-family:Paperlogy,Pretendard,sans-serif;font-size:clamp(64px,24vw,140px);font-weight:900;letter-spacing:-.03em;word-break:break-word;overflow-wrap:anywhere;line-height:1.02;max-width:100%;text-wrap:balance}
 .face.front .pr{color:var(--ink2);font-size:14.5px}
 .face.front .tip{position:absolute;bottom:16px;font-size:12px;color:var(--ink3);font-weight:800;animation:pulse 2.4s ease infinite}
 .face.back{display:none;padding:16px;height:min(520px,62vh);min-height:380px;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -682,7 +682,7 @@ html[data-theme=dark] .btn.know{background:var(--teal);box-shadow:var(--glow-tea
 .grp-bar{box-shadow:0 3px 0 var(--red-line)}
 .search:focus,.fld input:focus,.fld select:focus,.fld textarea:focus,.sp-in:focus{box-shadow:0 0 0 4px var(--red-soft)}
 .face{border-radius:28px;box-shadow:0 10px 0 var(--edge)}
-.face.front .w{font-size:46px}
+.face.front .w{font-size:clamp(64px,24vw,140px)}
 .q-card{box-shadow:0 8px 0 var(--edge)}
 .opt{box-shadow:0 3px 0 var(--edge)}
 .opt.picked-wrong{box-shadow:0 3px 0 var(--red-line)}
@@ -1558,6 +1558,26 @@ function startFlash(words, fromWrong){
   $('fl-stage').style.display='block';
   renderFlash();
 }
+function fitWord(el){
+  if(!el) return;
+  const face = el.closest('.face.front');
+  if(!face) return;
+  const run = ()=>{
+    if(!el.isConnected) return;
+    const avail = face.clientWidth - 36;
+    if(avail <= 0) return;
+    el.style.whiteSpace = 'nowrap';
+    el.style.fontSize = '140px';
+    const w = el.scrollWidth;
+    if(w > 0){
+      let size = Math.floor(140 * avail / w);
+      size = Math.max(24, Math.min(140, size));
+      el.style.fontSize = size + 'px';
+    }
+  };
+  run();
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+}
 function renderFlash(){
   const n = FL.deck.length, i = FL.i, w = FL.deck[i];
   $('fl-bar').style.width = (i/n*100)+'%';
@@ -1581,6 +1601,7 @@ function renderFlash(){
     +'<button class="btn dunno" id="fl-no">'+(FL.fromWrong?'아직 헷갈린다':'몰라요 ✗')+'</button>'
     +'<button class="btn know" id="fl-yes">'+(FL.fromWrong?'이제 안다 ✓':'알아요 ✓')+'</button>'
     +'</div>';
+  fitWord($('fc').querySelector('.face.front .w'));
   $('fc').addEventListener('click', e=>{
     if(e.target.closest('[data-say]')) return;
     $('fc').classList.toggle('flip');
