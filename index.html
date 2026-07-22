@@ -1154,6 +1154,16 @@ html[data-theme=dark] .lvhero{box-shadow:none}
     <button class="btn primary" id="lvg-close" style="width:100%;margin-top:12px">알겠어!</button>
   </div>
 </div>
+<div class="ovl" id="tts-help">
+  <div class="card">
+    <h3>📢 여기서는 발음이 안 나와요</h3>
+    <div class="desc">카카오톡·인스타그램 같은 <b>앱 속 화면</b>에서는 발음 듣기가 막혀 있어요.<br><b>Chrome(크롬)</b>이나 <b>삼성 인터넷</b>으로 열면 바로 들을 수 있어요.<br><br>카카오톡이라면 오른쪽 아래 <b>⋮ → 다른 브라우저로 열기</b>를 눌러도 돼요.</div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn ghost" id="tts-close">닫기</button>
+      <button class="btn primary" id="tts-open-chrome">Chrome으로 열기</button>
+    </div>
+  </div>
+</div>
 <div class="ovl" id="nick-modal">
   <div class="card">
     <h3>랭킹에서 쓸 닉네임 뽑기</h3>
@@ -1232,8 +1242,19 @@ function pickVoice(){
   }catch(e){}
 }
 if('speechSynthesis' in window){ pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
+function openInBrowser(){
+  const url = location.origin + location.pathname;
+  const ua = navigator.userAgent || '';
+  if(/KAKAOTALK/i.test(ua)) location.href = 'kakaotalk://web/openExternal?url=' + encodeURIComponent(url);
+  else if(/Android/i.test(ua)) location.href = 'intent://' + location.host + location.pathname + '#Intent;scheme=https;package=com.android.chrome;end';
+  else location.href = url;
+}
+function ttsHelp(){
+  const m = document.getElementById('tts-help');
+  if(m) m.classList.add('on'); else toast('이 브라우저에서는 발음 듣기가 안 돼요. Chrome으로 열어 주세요');
+}
 function speak(text){
-  if(!('speechSynthesis' in window)){ toast('이 기기에서는 발음 듣기가 지원되지 않아요'); return; }
+  if(!('speechSynthesis' in window)){ ttsHelp(); return; }
   try{
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
@@ -3051,6 +3072,8 @@ function maybeNick(){
   rollNick();
   $('nick-modal').classList.add('on');
 }
+$('tts-close').addEventListener('click', ()=>$('tts-help').classList.remove('on'));
+$('tts-open-chrome').addEventListener('click', openInBrowser);
 $('nk-reroll').addEventListener('click', ()=>{ rollNick(); if(fxOn()) beep(500,.06,0,'sine',.08); });
 $('nk-confirm').addEventListener('click', async ()=>{
   if(!nickDraft) return;
@@ -3554,8 +3577,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-14';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-14'; });
+const APP_VER = '2026.07.21-15';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-15'; });
 const WN_ITEMS = [
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
  ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
