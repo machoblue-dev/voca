@@ -3393,7 +3393,7 @@ function revDayLabel(ts){
 function renderReview(){
   const el = $('rev-card'); if(!el) return;
   const g = ensureGame();
-  if(!g.review || (DB.profile && DB.profile.role !== 'student')){ el.style.display='none'; el.innerHTML=''; return; }
+  if(!g.review || (DB.profile && DB.profile.role !== 'student' && DB.profile.role !== 'admin')){ el.style.display='none'; el.innerHTML=''; return; }
   Object.keys(g.review).forEach(lid=>{ if(!DB.lists.find(l=>l.id===lid)) delete g.review[lid]; });
   const now = Date.now();
   const all = Object.keys(g.review)
@@ -3554,8 +3554,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-13';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-13'; });
+const APP_VER = '2026.07.21-14';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-14'; });
 const WN_ITEMS = [
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
  ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
