@@ -397,6 +397,16 @@ html[data-theme=dark] .pbar i{background:var(--red);box-shadow:0 0 10px rgba(255
 .fmt-help table{width:100%;border-collapse:collapse;font-size:11.5px;margin-top:8px;background:var(--card)}
 .fmt-help th,.fmt-help td{border:1px solid var(--line);padding:5px 7px;text-align:left}
 .fmt-help th{background:var(--card2);font-weight:800}
+.li-grp{margin-bottom:10px}
+.li-grp-h{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:13px 14px;font-weight:900;font-size:14.5px;text-align:left}
+.li-grp-h .gname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.li-grp-h .gmeta{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--ink2);flex:0 0 auto}
+.li-grp-h .chev{font-style:normal;display:inline-block;transition:transform .18s}
+.li-grp.open .li-grp-h{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.li-grp.open .li-grp-h .chev{transform:rotate(180deg)}
+.li-grp-body{display:none;border:2px solid var(--line);border-top:none;border-radius:0 0 16px 16px;padding:10px 10px 2px;background:var(--card2)}
+.li-grp.open .li-grp-body{display:block}
+.li-grp-body .li-card:last-child,.li-grp-body .ex-row:last-child{margin-bottom:8px}
 
 /* ── 아레나 ── */
 .lvhero{background:linear-gradient(135deg,var(--plum),#8B5CF6);border-radius:24px;padding:18px;color:#fff;box-shadow:0 8px 20px rgba(110,107,240,.25);position:relative;overflow:hidden;margin-top:12px}
@@ -897,6 +907,7 @@ html[data-theme=dark] .lvhero{box-shadow:none}
 
   <!-- ═══ 리스트 관리 ═══ -->
   <section class="scr" id="scr-lists" data-screen-label="리스트 관리">
+    <input class="search" id="list-q" type="text" placeholder="🔍 단어장 이름 검색" autocomplete="off">
     <div id="list-cards"></div>
     <button class="btn primary block" id="btn-new-list">＋ 새 단어 리스트 만들기</button>
     <div id="list-form" style="display:none">
@@ -1370,12 +1381,38 @@ function wordsToTSV(words){
 
 /* ════════ 단어 리스트 배포 관리 (교사·관리자, 서버 연동) ════════ */
 let editListId = null;
+/* ── 단어장 시리즈 묶기 (Day 1·2·3 → 한 묶음) ── */
+function grpBaseOf(name){
+  const m = String(name||'').match(/^(.+?)[\s\-–—·:~(\[]*(?:day|데이)?\s*\.?\s*\d+\s*(?:일차|주차|단계|강|과|회|차|편|번)?\s*[)\]]?\s*$/i);
+  if(!m) return null;
+  const base = m[1].replace(/[\s\-–—·:~(\[]+$/,'').trim();
+  if(base.length < 2 || /^(?:day|데이)$/i.test(base)) return null;
+  return base;
+}
+function groupLists(arr){
+  const bag = new Map();
+  arr.forEach(l=>{ const b = grpBaseOf(l.name); if(b){ if(!bag.has(b)) bag.set(b, []); bag.get(b).push(l); } });
+  const grouped = new Set();
+  bag.forEach(v=>{ if(v.length >= 2) v.forEach(l=>grouped.add(l.id)); });
+  const out = [], done = new Set();
+  arr.forEach(l=>{
+    if(!grouped.has(l.id)){ out.push({one: l}); return; }
+    const b = grpBaseOf(l.name);
+    if(done.has(b)) return;
+    done.add(b);
+    out.push({grp: b, lists: bag.get(b)});
+  });
+  return out;
+}
+const listGrpState = new Map();
 function renderLists(){
   const box = $('list-cards');
-  const card = l=>{
+  const qEl = document.getElementById('list-q');
+  const q = qEl ? qEl.value.trim().toLowerCase() : '';
+  const card = (l, noDrag)=>{
     const act = l.id===DB.activeListId;
     return '<div class="li-card'+(act?' active':'')+(l.published===false?' arch':'')+'" data-id="'+esc(l.id)+'">'
-      +(l.published===false?'':'<span class="drag-h" title="끌어서 순서 바꾸기">⠿</span>')
+      +((l.published===false||noDrag)?'':'<span class="drag-h" title="끌어서 순서 바꾸기">⠿</span>')
       +'<div class="li-info"><b>'+tierBadge(l.tier)+' '+esc(l.name)+(l.published===false?'<span class="li-badge">보관</span>':'')+'</b>'
       +'<span>단어 '+(l.words||[]).length+'개 · '+((l.target_classes&&l.target_classes.length)?('대상: '+esc(l.target_classes.join(', '))):'전체 배포')
       +(l.created_name?(' · '+esc(l.created_name)+'T'):'')+(act?' · 사용 중':'')+'</span></div>'
@@ -1386,12 +1423,35 @@ function renderLists(){
       +'<button class="del" data-act="del" data-id="'+esc(l.id)+'">삭제</button>'
       +'</div></div>';
   };
-  const live = DB.lists.filter(l=>l.published!==false);
-  const arch = DB.lists.filter(l=>l.published===false);
-  box.innerHTML = (live.map(card).join('') || '<div class="note">배포 중인 리스트가 없어요. 새 리스트를 올리면 학생 앱에 자동으로 내려가요.</div>')
-    + (arch.length ? '<div class="stat-h" style="margin-top:16px">보관함 — 학생에게 안 보이고 기록은 보존</div>'+arch.map(card).join('') : '');
+  let live = DB.lists.filter(l=>l.published!==false);
+  let arch = DB.lists.filter(l=>l.published===false);
+  if(q){
+    const hit = l=>String(l.name||'').toLowerCase().includes(q);
+    live = live.filter(hit); arch = arch.filter(hit);
+    box.innerHTML = (live.map(l=>card(l, true)).join('') || '<div class="note">검색과 맞는 단어장이 없어요.</div>')
+      + (arch.length ? '<div class="stat-h" style="margin-top:16px">보관함 — 학생에게 안 보이고 기록은 보존</div>'+arch.map(l=>card(l, true)).join('') : '');
+    return;
+  }
+  const html = groupLists(live).map(it=>{
+    if(it.one) return card(it.one);
+    const open = listGrpState.has(it.grp) ? listGrpState.get(it.grp) : it.lists.some(l=>l.id===DB.activeListId);
+    return '<div class="li-grp'+(open?' open':'')+'" data-grp="'+esc(it.grp)+'">'
+      +'<button type="button" class="li-grp-h"><span class="gname">🗂️ '+esc(it.grp)+'</span>'
+      +'<span class="gmeta">'+it.lists.length+'개<i class="chev">▾</i></span></button>'
+      +'<div class="li-grp-body">'+it.lists.map(l=>card(l)).join('')+'</div></div>';
+  }).join('');
+  box.innerHTML = (html || '<div class="note">배포 중인 리스트가 없어요. 새 리스트를 올리면 학생 앱에 자동으로 내려가요.</div>')
+    + (arch.length ? '<div class="stat-h" style="margin-top:16px">보관함 — 학생에게 안 보이고 기록은 보존</div>'+arch.map(l=>card(l)).join('') : '');
 }
 $('list-cards').addEventListener('click', async e=>{
+  const gh = e.target.closest('.li-grp-h');
+  if(gh){
+    const g = gh.closest('.li-grp');
+    const open = !g.classList.contains('open');
+    g.classList.toggle('open', open);
+    listGrpState.set(g.dataset.grp, open);
+    return;
+  }
   const b = e.target.closest('button'); if(!b) return;
   const id = b.dataset.id, act = b.dataset.act;
   const L = DB.lists.find(l=>l.id===id); if(!L) return;
@@ -1419,6 +1479,7 @@ $('list-cards').addEventListener('click', async e=>{
     else toast('삭제 실패 ('+r.status+') — 권한·연결 확인');
   }
 });
+$('list-q').addEventListener('input', ()=>renderLists());
 $('btn-new-list').addEventListener('click', ()=>{
   editListId = null;
   $('lf-name').value=''; $('lf-data').value=''; $('lf-target').value=''; renderTargetChips();
@@ -2859,7 +2920,8 @@ function todayCount(){
 }
 function renderHome(){
   const sel = $('home-list');
-  sel.innerHTML = DB.lists.map(l=>'<option value="'+esc(l.id)+'"'+(l.id===DB.activeListId?' selected':'')+'>'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+' ('+l.words.length+')</option>').join('');
+  const homeOpt = l=>'<option value="'+esc(l.id)+'"'+(l.id===DB.activeListId?' selected':'')+'>'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+' ('+l.words.length+')</option>';
+  sel.innerHTML = groupLists(DB.lists).map(it=> it.one ? homeOpt(it.one) : '<optgroup label="'+esc(it.grp)+'">'+it.lists.map(homeOpt).join('')+'</optgroup>').join('');
   if(!DB.lists.length) sel.innerHTML = '<option value="">배포된 리스트 대기 중</option>';
   const L = activeList();
   const n = L ? L.words.length : 0;
@@ -3335,12 +3397,33 @@ async function renderExplore(){
   const mine = new Set(DB.lists.map(l=>l.id));
   const rows = cat.filter(c=>!mine.has(c.id));
   if(!rows.length){ box.innerHTML = '<div class="note">지금 받은 단어장 말고는 더 없어요. 새 단어장이 올라오면 여기 나타나요.</div>'; return; }
+  const exRow = c=>'<div class="ex-row" data-id="'+esc(c.id)+'"><div class="ex-info"><div class="ex-tt">'+tierBadge(c.tier)+'<b>'+esc(c.name)+'</b></div>'
+    +'<span>단어 '+c.wcount+'개 · 대상 '+esc(c.target)+'</span></div>'
+    +'<button class="btn primary ex-go" data-id="'+esc(c.id)+'" data-name="'+esc(c.name)+'" data-tier="'+c.tier+'" style="flex:0 0 auto;padding:9px 14px">공부하기</button></div>';
   box.innerHTML = '<div class="note" style="margin-bottom:8px">내게 배정되지 않은 단어장도 골라서 공부할 수 있어요. 티어가 높을수록 경험치가 더 쌓여요!</div>'
-    + rows.map(c=>'<div class="ex-row" data-id="'+esc(c.id)+'"><div class="ex-info"><div class="ex-tt">'+tierBadge(c.tier)+'<b>'+esc(c.name)+'</b></div>'
-      +'<span>단어 '+c.wcount+'개 · 대상 '+esc(c.target)+'</span></div>'
-      +'<button class="btn primary ex-go" data-id="'+esc(c.id)+'" data-name="'+esc(c.name)+'" data-tier="'+c.tier+'" style="flex:0 0 auto;padding:9px 14px">공부하기</button></div>').join('');
+    +'<input class="search" id="ex-q" type="text" placeholder="🔍 단어장 이름 검색" autocomplete="off" style="margin-bottom:10px">'
+    +'<div id="ex-list"></div>';
+  const paint = ()=>{
+    const q = $('ex-q').value.trim().toLowerCase();
+    if(q){
+      const hit = rows.filter(c=>String(c.name||'').toLowerCase().includes(q));
+      $('ex-list').innerHTML = hit.map(exRow).join('') || '<div class="note">검색과 맞는 단어장이 없어요.</div>';
+      return;
+    }
+    $('ex-list').innerHTML = groupLists(rows).map(it=>{
+      if(it.one) return exRow(it.one);
+      return '<div class="li-grp" data-grp="'+esc(it.grp)+'">'
+        +'<button type="button" class="li-grp-h"><span class="gname">🗂️ '+esc(it.grp)+'</span>'
+        +'<span class="gmeta">'+it.lists.length+'개<i class="chev">▾</i></span></button>'
+        +'<div class="li-grp-body">'+it.lists.map(exRow).join('')+'</div></div>';
+    }).join('');
+  };
+  $('ex-q').addEventListener('input', paint);
+  paint();
 }
 $('explore-body').addEventListener('click', async e=>{
+  const eh = e.target.closest('.li-grp-h');
+  if(eh){ eh.closest('.li-grp').classList.toggle('open'); return; }
   const g = e.target.closest('.ex-go');
   if(g){
     g.disabled = true; g.textContent = '가져오는 중…';
@@ -3581,9 +3664,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-17';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-17'; });
+const APP_VER = '2026.07.21-18';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-18'; });
 const WN_ITEMS = [
+ ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
  ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
  ['🏅','티어 보너스','어려운 단어장일수록 경험치가 최대 2배!'],
@@ -3597,6 +3681,7 @@ const WN_ITEMS = [
  ['📊','주간 리포트','매주 월요일, 지난주 성적표가 쪽지함에 도착']
 ];
 const WN_STAFF = [
+ ['🗂️','배포 관리 정리','단어장 이름 검색 + 같은 시리즈 묶어 보기 — Day별 리스트가 한 줄로 접혀요'],
  ['🏅','단어장 티어','리스트마다 난이도 티어를 달 수 있어요. 높을수록 학생 경험치 최대 2배'],
  ['⠿','드래그 순서 변경','리스트 관리에서 왼쪽 손잡이를 끌어 순서를 바꿔요'],
  ['🔑','비번 재설정','계정 관리에서 학생 비밀번호를 새로 정해줄 수 있어요 — 잊어버려도 그 자리에서 해결'],
@@ -3658,7 +3743,7 @@ document.addEventListener('pointermove', e=>{
   if(!DRAG) return;
   e.preventDefault();
   DRAG.moved = true;
-  const others = [...$('list-cards').querySelectorAll('.li-card:not(.arch)')].filter(c=>c !== DRAG.card);
+  const others = [...$('list-cards').querySelectorAll('.li-card:not(.arch)')].filter(c=>c !== DRAG.card && c.offsetParent !== null);
   let placed = false;
   for(const c of others){
     const r = c.getBoundingClientRect();
