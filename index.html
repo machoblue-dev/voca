@@ -1383,10 +1383,20 @@ function wordsToTSV(words){
 let editListId = null;
 /* ── 단어장 시리즈 묶기 (Day 1·2·3 → 한 묶음) ── */
 function grpBaseOf(name){
-  const m = String(name||'').match(/^(.+?)[\s\-–—·:~(\[]*(?:day|데이)?\s*\.?\s*\d+\s*(?:일차|주차|단계|강|과|회|차|편|번)?\s*[)\]]?\s*$/i);
-  if(!m) return null;
-  const base = m[1].replace(/[\s\-–—·:~(\[]+$/,'').trim();
-  if(base.length < 2 || /^(?:day|데이)$/i.test(base)) return null;
+  const s = String(name||'').trim();
+  /* 꼬리 번호 토큰: [구분자][단원 키워드] 번호[~번호] [단위] — Day 3, Day 01~10, 5강, (2), Unit 4 등 */
+  const TAIL = /[\s\-–—·:~〜∼(\[]*(?:day|데이|chapter|챕터|unit|유닛|lesson|레슨|part|파트|step|스텝|set|세트|list|리스트|level|레벨|week|위크|round|라운드|test|테스트|stage|no|vol)?\s*\.?\s*\d+(?:\s*[~\-–—〜∼]\s*\d+)?\s*(?:일차|주차|단계|강|과|회|차|편|번|권|부|탄|장|주)?\s*[)\]]?\s*$/i;
+  let m = s.match(TAIL);
+  if(m && m.index > 0){
+    const prev = s[m.index - 1];
+    /* 단어 중간 절단 오탐 방지(Sunday 3, 홀리데이 100 등): 같은 문자 종류가 붙어 있으면 키워드 없는 꼬리로 재시도 */
+    if((/[A-Za-z]/.test(prev) && /^[A-Za-z]/.test(m[0])) || (/[가-힣]/.test(prev) && /^[가-힣]/.test(m[0]))){
+      m = s.match(/[\s\-–—·:~〜∼(\[]+\d+(?:\s*[~\-–—〜∼]\s*\d+)?\s*(?:일차|주차|단계|강|과|회|차|편|번|권|부|탄|장|주)?\s*[)\]]?\s*$/i);
+    }
+  }
+  if(!m || m.index === 0) return null;
+  const base = s.slice(0, m.index).replace(/[\s\-–—·:~〜∼(\[]+$/,'').trim();
+  if(base.length < 2 || /^(?:day|데이|chapter|챕터|unit|유닛|lesson|레슨|part|파트|step|스텝|set|세트|list|리스트|level|레벨|week|위크|round|라운드|test|테스트|stage|no|vol)$/i.test(base)) return null;
   return base;
 }
 function groupLists(arr){
@@ -3664,8 +3674,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-18';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-18'; });
+const APP_VER = '2026.07.21-19';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-19'; });
 const WN_ITEMS = [
  ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
