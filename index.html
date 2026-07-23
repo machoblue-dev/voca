@@ -3246,7 +3246,7 @@ window.addEventListener('online', ()=>{ if(DB && DB.auth) fullSync().then(()=>{ 
 /* ══ VOCA꾹: 학교 목록 (갱신은 이 배열만 고치면 된다) ══ */
 const TIERS = {1:{n:'새싹',e:'🌱',m:1}, 2:{n:'도전',e:'⚡',m:1.3}, 3:{n:'정예',e:'🔥',m:1.6}, 4:{n:'전설',e:'👑',m:2}};
 function tierBadge(t){ const x = TIERS[t]||TIERS[1]; return '<span class="tbadge t'+(TIERS[t]?t:1)+'">'+x.e+' '+x.n+'</span>'; }
-const SCHOOLS = ['강동고','경명여고','경북고','경북여고','경북예고','경상여고','경신고','경일여고','계성고','구암고','군위고','남산고','능인고','달서고','달성고','대구고','대구국제고','대구여고','대구외고','대륜고','덕원고','도개고','동문고','동부고','사대부고','성광고','성산고','수성고','시지고','신명고','오성고','운암고','원화여고','정화여고','중앙고','청구고','포산고','학남고','현일고','협성고','혜화여고'];
+const SCHOOLS = ['강동고','경명여고','경북고','경북여고','경북예고','경상여고','경신고','경일여고','계성고','구암고','군위고','남산고','능인고','달서고','달성고','대구고','대구국제고','대구여고','대구외고','대륜고','덕원고','도개고','동문고','동부고','보정고','사대부고','성광고','성산고','수성고','시지고','신명고','오성고','운암고','원화여고','정화여고','중앙고','청구고','포산고','학남고','현일고','협성고','혜화여고'];
 (function(){
   const base = SCHOOLS.map(sc=>'<option value="'+sc+'">'+sc+'</option>').join('');
   const su = document.getElementById('su-school');
@@ -3581,8 +3581,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-16';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-16'; });
+const APP_VER = '2026.07.21-17';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-17'; });
 const WN_ITEMS = [
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
  ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
