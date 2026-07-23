@@ -323,6 +323,7 @@ html[data-theme=dark] .pbar i{background:var(--red);box-shadow:0 0 10px rgba(255
 .face.back .bw{font-family:Paperlogy,Pretendard,sans-serif;font-size:21px;font-weight:800;margin-bottom:2px}
 .face.back .wc-mean{font-size:17px}
 .fc-btns{display:flex;gap:10px;margin-top:16px}
+.fc-btns .btn:disabled{opacity:.45}
 .fc-btns .btn{flex:1;padding:15px 10px;font-size:16px}
 
 /* ── 퀴즈 ── */
@@ -1630,6 +1631,9 @@ function renderFlash(){
   });
   $('fl-no').addEventListener('click', ()=>{ addWrong(w.word); nextFlash(); });
   $('fl-yes').addEventListener('click', ()=>{ if(FL.fromWrong){ removeWrong(w.word); awardXp(20); } else awardXp(2); nextFlash(); });
+  const bn = $('fl-no'), by = $('fl-yes');
+  bn.disabled = true; by.disabled = true;
+  setTimeout(()=>{ if(bn.isConnected){ bn.disabled = false; by.disabled = false; } }, 1000);
 }
 function nextFlash(){
   questBump('flash', 1);
@@ -3577,8 +3581,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-15';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-15'; });
+const APP_VER = '2026.07.21-16';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-16'; });
 const WN_ITEMS = [
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
  ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
