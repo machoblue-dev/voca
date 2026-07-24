@@ -1618,13 +1618,12 @@ $('browse-q').addEventListener('input', e=>renderBrowse(e.target.value));
 
 /* ════════ 플래시카드 ════════ */
 let FL = null;
-function startFlash(words, fromWrong){
+function startFlash(words, fromWrong, partial){
   if(!words || !words.length){ go('scr-home'); return; }
   const L = fromWrong ? null : activeList();
   STUDY.mult = fromWrong ? 1 : ((TIERS[(L && L.tier) || 1] || TIERS[1]).m);
-  if(!fromWrong && L) scheduleReview(L.id);
   const g = ensureGame();
-  const rs = (!fromWrong && L && g.flashResume
+  const rs = (!fromWrong && !partial && L && g.flashResume
               && g.flashResume.listId === L.id
               && g.flashResume.wcount === words.length
               && Array.isArray(g.flashResume.order)
@@ -1639,15 +1638,15 @@ function startFlash(words, fromWrong){
       const j = Math.floor(Math.random() * (k + 1));
       const t = order[k]; order[k] = order[j]; order[j] = t;
     }
-    FL = {deck: order.map(ix=>words[ix]), i:0, fromWrong: !!fromWrong,
+    FL = {deck: order.map(ix=>words[ix]), i:0, fromWrong: !!fromWrong, partial: !!partial,
           order, listId: L ? L.id : null, wcount: words.length};
-    if(!fromWrong && L){
+    if(!fromWrong && !partial && L){
       g.flashResume = {listId: L.id, order, i: 0, wcount: words.length, ts: Date.now()};
       scheduleSave();
     }
   }
   resetSessXp();
-  $('fl-mode-label').textContent = fromWrong ? '오답 복습' : (activeList()?activeList().name:'');
+  $('fl-mode-label').textContent = fromWrong ? '오답 복습' : ((partial ? '🔒 ' : '') + (activeList()?activeList().name:''));
   $('fl-done').style.display='none';
   $('fl-stage').style.display='block';
   renderFlash();
@@ -1708,8 +1707,9 @@ function renderFlash(){
 }
 function nextFlash(){
   questBump('flash', 1);
+  { const cw = FL.deck[FL.i]; if(cw) revTouch(FL.listId || DB.activeListId, cw.word); }
   FL.i++;
-  if(!FL.fromWrong && FL.listId){
+  if(!FL.fromWrong && !FL.partial && FL.listId){
     const g = ensureGame();
     if(FL.i < FL.deck.length){
       g.flashResume = {listId: FL.listId, order: FL.order, i: FL.i, wcount: FL.wcount, ts: Date.now()};
@@ -1763,7 +1763,7 @@ function updateQzMax(){
   if(parseInt(inp.value,10) > m) inp.value = m || 1;
 }
 function openQuizSetup(){
-  { const aL = activeList(); STUDY.mult = (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; if(aL) scheduleReview(aL.id); }
+  { const aL = activeList(); STUDY.mult = (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; }
   $('qz-setup').style.display='block';
   $('qz-play').style.display='none';
   $('qz-done').style.display='none';
@@ -1902,6 +1902,7 @@ $('qz-opts').addEventListener('click', e=>{
   const b = e.target.closest('.opt'); if(!b || !QZ) return;
   const q = QZ.qs[QZ.i];
   const pick = parseInt(b.dataset.i,10);
+  revTouch(DB.activeListId, q.w.word);
   document.querySelectorAll('#qz-opts .opt').forEach(o=>o.setAttribute('disabled',''));
   if(pick===q.ans){ QZ.right++; QZ.combo++; awardXp(Math.round(10*(QZ.combo>=5?1.5:1))); b.classList.add('reveal-right'); fxRight(); }
   else{
@@ -1942,7 +1943,7 @@ function endQuiz(){
 let SP = null;
 function startSpell(words, listen){
   if(!words || !words.length){ go('scr-home'); return; }
-  { const aL = activeList(); STUDY.mult = (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; if(aL) scheduleReview(aL.id); }
+  { const aL = activeList(); STUDY.mult = (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; }
   SP = {deck: shuffleArr(words), i:0, right:0, answered:false, listen: !!listen}; resetSessXp();
   $('sp-done').style.display='none';
   $('sp-play').style.display='block';
@@ -1980,6 +1981,7 @@ function checkSpell(){
   const ok = normSpell($('sp-in').value) === normSpell(w.word);
   if(!normSpell($('sp-in').value)){ toast('철자를 입력해 주세요'); return; }
   SP.answered = true;
+  revTouch(DB.activeListId, w.word);
   $('sp-in').disabled = true;
   const fb = $('sp-fb');
   if(ok){ SP.right++; awardXp(15); fb.className='sp-fb ok';
@@ -3039,6 +3041,18 @@ function mergeGame(a,b){
   g.nickname = a.nickname || b.nickname;
   g.avatar = a.avatar || b.avatar;
   g.stars = Object.assign({}, b.stars||{}, a.stars||{});
+  if(a.rev2 || b.rev2){
+    const A = a.rev2 || {}, B = b.rev2 || {}, R = {};
+    Object.keys(A).concat(Object.keys(B)).forEach(lid=>{
+      if(R[lid]) return;
+      const x = A[lid] || {}, y = B[lid] || {};
+      const m = Object.assign({}, y, x);
+      Object.keys(y).forEach(w=>{ if(x[w] !== undefined && y[w] !== undefined) m[w] = Math.max(x[w], y[w]); });
+      R[lid] = m;
+    });
+    g.rev2 = R;
+  }
+  if(a.review || b.review) g.review = Object.assign({}, b.review||{}, a.review||{});
   return g;
 }
 let STUDY = {mult: 1};
@@ -3076,7 +3090,6 @@ function checkDailyGoal(){
 function gameOnSession(rec){
   const g = ensureGame();
   if(rec.mode === 'quiz') questBump('quiz', 1);
-  scheduleReview(rec.lid);
   const dk = dayKeyOf(rec.t);
   if(g.lastDay !== dk){
     const y = new Date(rec.t); y.setDate(y.getDate()-1);
@@ -3486,57 +3499,124 @@ function openMakeTest(){
   if(!L || !L.words.length){ toast('먼저 공부할 단어장을 선택해 주세요'); return; }
   initTestForm(); go('scr-test');
 }
-/* ════════ 망각 곡선 복습 큐 ════════ */
-const REV_GAPS = [1, 3, 7, 14];
-function scheduleReview(lid){
-  if(!lid) return;
+/* ════════ 메모리 락 (망각 곡선 복습 큐 — 단어 단위) ════════ */
+const REV_GAPS = [1, 3, 7, 14, 30];
+function revDayNum(t){ const d = new Date(t); d.setHours(0,0,0,0); return Math.round(d.getTime()/864e5); }
+let revDoneCnt = 0, revDoneTimer = null;
+function revTouch(lid, word){
+  if(!lid || !word) return;
   const g = ensureGame();
-  if(!g.review) g.review = {};
-  const now = Date.now();
-  const rv = g.review[lid];
-  if(!rv){ g.review[lid] = {stage: 0, due: now + REV_GAPS[0]*864e5}; return; }
-  if(now >= rv.due){
-    const ns = rv.stage + 1;
-    if(ns >= REV_GAPS.length){ delete g.review[lid]; toast('🧠 뇌새김 완성! 이 단어장은 오래 남는 기억으로 새겨졌어요'); return; }
-    rv.stage = ns; rv.due = now + REV_GAPS[ns]*864e5;
+  if(!g.rev2) g.rev2 = {};
+  if(!g.rev2[lid]) g.rev2[lid] = {};
+  const m = g.rev2[lid];
+  const today = revDayNum(Date.now());
+  const v = m[word];
+  if(v === undefined){ m[word] = today + REV_GAPS[0]; return; }
+  const st = Math.floor(v/100000), due = v%100000;
+  if(today >= due){
+    const ns = st + 1;
+    if(ns >= REV_GAPS.length){
+      delete m[word];
+      revDoneCnt++;
+      clearTimeout(revDoneTimer);
+      revDoneTimer = setTimeout(()=>{ toast('🔒 단어 '+revDoneCnt+'개 메모리 락 완성! 오래 남는 기억으로 잠겼어요'); revDoneCnt = 0; }, 1500);
+      return;
+    }
+    m[word] = ns*100000 + (today + REV_GAPS[ns]);
   }
 }
-function revDayLabel(ts){
-  const a = new Date(); a.setHours(0,0,0,0);
-  const b = new Date(ts); b.setHours(0,0,0,0);
-  const d = Math.round((b - a) / 864e5);
+function revMigrate(){
+  const g = ensureGame();
+  if(!g.review) return;
+  if(!g.rev2) g.rev2 = {};
+  let moved = false;
+  const today = revDayNum(Date.now());
+  Object.keys(g.review).forEach(lid=>{
+    const rv = g.review[lid];
+    if(!rv){ delete g.review[lid]; moved = true; return; }
+    const L = DB.lists.find(l=>l.id===lid);
+    if(!L || !Array.isArray(L.words)){
+      if(today - revDayNum(rv.due || 0) > 60){ delete g.review[lid]; moved = true; }
+      return;
+    }
+    const st = Math.min(rv.stage || 0, REV_GAPS.length - 1);
+    const due = revDayNum(rv.due || Date.now());
+    if(!g.rev2[lid]) g.rev2[lid] = {};
+    L.words.forEach(w=>{ if(w.word && g.rev2[lid][w.word] === undefined) g.rev2[lid][w.word] = st*100000 + due; });
+    delete g.review[lid]; moved = true;
+  });
+  if(!Object.keys(g.review).length) delete g.review;
+  if(moved) scheduleSave();
+}
+function revDayLabel(dn, today){
+  const d = dn - today;
   if(d <= 0) return '오늘';
   if(d === 1) return '내일';
   if(d === 2) return '모레';
   return d + '일 뒤';
 }
+function revDueWords(lid){
+  const g = ensureGame();
+  const m = (g.rev2 && g.rev2[lid]) || {};
+  const today = revDayNum(Date.now());
+  const L = DB.lists.find(l=>l.id===lid);
+  if(!L) return [];
+  return L.words.filter(w=>{ const v = m[w.word]; return v !== undefined && v%100000 <= today; });
+}
 function renderReview(){
   const el = $('rev-card'); if(!el) return;
   const g = ensureGame();
-  if(!g.review || (DB.profile && DB.profile.role !== 'student' && DB.profile.role !== 'admin')){ el.style.display='none'; el.innerHTML=''; return; }
-  Object.keys(g.review).forEach(lid=>{ if(!DB.lists.find(l=>l.id===lid)) delete g.review[lid]; });
-  const now = Date.now();
-  const all = Object.keys(g.review)
-    .map(lid=>({lid, rv: g.review[lid], L: DB.lists.find(l=>l.id===lid)}))
-    .filter(x=>x.L);
-  const due = all.filter(x=>x.rv.due <= now);
-  const up = all.filter(x=>x.rv.due > now).sort((a,b)=>a.rv.due - b.rv.due);
+  revMigrate();
+  if(!g.rev2 || (DB.profile && DB.profile.role !== 'student' && DB.profile.role !== 'admin')){ el.style.display='none'; el.innerHTML=''; return; }
+  const today = revDayNum(Date.now());
+  const due = [], up = [];
+  Object.keys(g.rev2).forEach(lid=>{
+    const m = g.rev2[lid];
+    const L = DB.lists.find(l=>l.id===lid);
+    if(!L){
+      Object.keys(m).forEach(w=>{ if(today - (m[w]%100000) > 60) delete m[w]; });
+      if(!Object.keys(m).length) delete g.rev2[lid];
+      return;
+    }
+    const have = new Set(L.words.map(w=>w.word));
+    Object.keys(m).forEach(w=>{ if(!have.has(w)) delete m[w]; });
+    let dueN = 0, minDue = Infinity, minStage = Infinity, nextDue = Infinity, nextN = 0;
+    Object.keys(m).forEach(w=>{
+      const v = m[w], st = Math.floor(v/100000), d = v%100000;
+      if(d <= today){ dueN++; if(d < minDue) minDue = d; if(st < minStage) minStage = st; }
+      else if(d < nextDue){ nextDue = d; nextN = 1; }
+      else if(d === nextDue) nextN++;
+    });
+    if(!Object.keys(m).length){ delete g.rev2[lid]; return; }
+    if(dueN) due.push({lid, L, dueN, minDue, minStage});
+    else if(nextN) up.push({lid, L, nextDue, nextN});
+  });
   if(!due.length && !up.length){ el.style.display='none'; el.innerHTML=''; return; }
   el.style.display='block';
+  due.sort((a,b)=>a.minDue - b.minDue);
+  up.sort((a,b)=>a.nextDue - b.nextDue);
   const nextLine = up.length
-    ? '<div class="rv-next">🧠 다음 뇌새김 — '+up.slice(0,2).map(x=>revDayLabel(x.rv.due)+' '+(TIERS[x.L.tier||1]||TIERS[1]).e+' '+esc(x.L.name)).join(' · ')+(up.length>2?' 외 '+(up.length-2)+'개':'')+'</div>'
+    ? '<div class="rv-next">🔒 다음 메모리 락 — '+up.slice(0,2).map(x=>revDayLabel(x.nextDue, today)+' '+(TIERS[x.L.tier||1]||TIERS[1]).e+' '+esc(x.L.name)+' '+x.nextN+'단어').join(' · ')+(up.length>2?' 외 '+(up.length-2)+'개':'')+'</div>'
     : '';
   if(!due.length){ el.innerHTML = nextLine; return; }
-  el.innerHTML = '<div class="rv-h">🧠 오늘의 뇌새김<span>잊기 직전에 다시 보면 뇌에 오래 새겨져요</span></div>'
-    + due.map(x=>'<div class="rv-row"><div class="rv-info"><b>'+esc(x.L.name)+'</b><span>'
-      +(x.rv.stage+1)+'번째 새김 (배운 지 '+REV_GAPS[x.rv.stage]+'일)</span></div>'
-      +'<button class="btn primary rv-go" data-id="'+esc(x.lid)+'">지금 새기기</button></div>').join('')
+  el.innerHTML = '<div class="rv-h">🔒 오늘의 메모리 락<span>잊기 직전에 다시 보면 기억이 단단히 잠겨요</span></div>'
+    + due.map(x=>{
+        const late = today - x.minDue;
+        return '<div class="rv-row"><div class="rv-info"><b>'+esc(x.L.name)+'</b><span>'
+          +x.dueN+'단어 · '+(x.minStage+1)+'번째 잠금'
+          +(late > 0 ? ' · <b style="color:var(--red,#E5484D)">'+late+'일 밀렸어요</b>' : '')
+          +'</span></div>'
+          +'<button class="btn primary rv-go" data-id="'+esc(x.lid)+'">지금 잠그기</button></div>';
+      }).join('')
     + nextLine;
 }
 $('rev-card').addEventListener('click', e=>{
   const b = e.target.closest('.rv-go'); if(!b) return;
   DB.activeListId = b.dataset.id; scheduleSave();
-  startFlash(activeList().words, false); go('scr-flash');
+  const ws = revDueWords(b.dataset.id);
+  const L = activeList();
+  startFlash(ws.length ? ws : (L ? L.words : []), false, ws.length > 0);
+  go('scr-flash');
 });
 /* ════════ 일일 퀘스트 ════════ */
 const QUESTS = [
@@ -3674,8 +3754,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-20';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-20'; });
+const APP_VER = '2026.07.21-21';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-21'; });
 const WN_ITEMS = [
  ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
@@ -3684,7 +3764,7 @@ const WN_ITEMS = [
  ['🎖️','레벨 40단계','최고 칭호 "어휘의 신" — 아레나의 레벨 안내에서 확인'],
  ['🖨️','시험지 만들기','단어장에서 시험지를 뽑아 집에서 미리 시험 보기'],
  ['▶️','카드 이어하기','하다 만 카드 학습, 나갔다 와도 그 자리부터'],
- ['🧠','뇌새김','잊기 직전인 1·3·7·14일째에 다시 불러 뇌에 새겨요 — 복습의 새 이름이에요'],
+ ['🔒','메모리 락','공부한 단어를 1·3·7·14·30일째에 다시 불러 기억을 잠가요 — 이제 단어 하나하나 챙겨요'],
  ['🎯','일일 퀘스트','세 가지 미션 채우면 매일 +150 XP 보너스'],
  ['🏫','반 대항전','아레나에서 우리 반 평균 점수로 겨뤄요'],
  ['🎧','듣기 모드','발음을 듣고 철자 쓰기 — 듣기 시험 대비까지'],
@@ -3698,7 +3778,7 @@ const WN_STAFF = [
  ['📚','홈 화면 정리','단어장 고르는 칸이 카드로 커지고, 남의 단어장은 아래 옵션 줄로 옮겼어요'],
  ['🔎','남의 단어장','학생이 배정 안 된 단어장도 골라서 공부할 수 있어요'],
  ['🖨️','시험지 만들기','학생·선생님 모두 A·B형 시험지를 뽑을 수 있어요 (정답지 포함)'],
- ['🧠','뇌새김 (자동 복습)','학생이 공부한 단어장을 1·3·7·14일째에 다시 불러 장기 기억으로 새겨요'],
+ ['🔒','메모리 락 (자동 복습)','학생이 공부한 단어를 1·3·7·14·30일째에 다시 불러 장기 기억으로 잠가요'],
  ['🎯','일일 퀘스트','학생이 매일 세 미션을 채우면 +150 XP 보너스'],
  ['🏫','반 대항전','아레나에서 반 평균 점수로 겨뤄요. 반 전원이 분모예요'],
  ['🎧','듣기 모드','발음을 듣고 철자를 쓰는 학습이 추가됐어요'],
