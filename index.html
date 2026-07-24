@@ -91,6 +91,11 @@
 .bl-head .tbadge{margin-left:0;font-size:12px;padding:2.5px 9px}
 
 .rv-next{font-size:12.5px;font-weight:700;color:var(--ink2,#8A8175);line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-next.tap{cursor:pointer}
+.rv-del{flex:0 0 auto;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--line,#EAE3D6);border-radius:10px;background:transparent;color:var(--ink2,#8A8175);font-size:14px;font-weight:800;cursor:pointer;padding:0}
+.rv-up-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-top:1.5px dashed var(--line,#EAE3D6);font-size:12.5px;color:var(--ink2,#8A8175)}
+.rv-up-row .sp{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rv-up-row .sp b{color:inherit;font-size:13px}
 .rv-row ~ .rv-next{border-top:1.5px dashed var(--line,#EAE3D6);padding-top:9px;margin-top:5px}
 
 .ex-tt{display:flex;align-items:center;gap:7px;min-width:0}
@@ -3596,7 +3601,8 @@ function renderReview(){
   due.sort((a,b)=>a.minDue - b.minDue);
   up.sort((a,b)=>a.nextDue - b.nextDue);
   const nextLine = up.length
-    ? '<div class="rv-next">🔒 다음 메모리 락 — '+up.slice(0,2).map(x=>revDayLabel(x.nextDue, today)+' '+(TIERS[x.L.tier||1]||TIERS[1]).e+' '+esc(x.L.name)+' '+x.nextN+'단어').join(' · ')+(up.length>2?' 외 '+(up.length-2)+'개':'')+'</div>'
+    ? '<div class="rv-next tap" data-act="rv-toggle">🔒 다음 메모리 락 '+(revExpand?'▴':'▾')+' — '+up.slice(0,2).map(x=>revDayLabel(x.nextDue, today)+' '+(TIERS[x.L.tier||1]||TIERS[1]).e+' '+esc(x.L.name)+' '+x.nextN+'단어').join(' · ')+(up.length>2?' 외 '+(up.length-2)+'개':'')+'</div>'
+      + (revExpand ? up.map(x=>'<div class="rv-up-row"><span class="sp">'+(TIERS[x.L.tier||1]||TIERS[1]).e+' <b>'+esc(x.L.name)+'</b> — '+revDayLabel(x.nextDue, today)+' · '+x.nextN+'단어</span><button class="rv-del" data-del="'+esc(x.lid)+'" aria-label="메모리 락에서 빼기">✕</button></div>').join('') : '')
     : '';
   if(!due.length){ el.innerHTML = nextLine; return; }
   el.innerHTML = '<div class="rv-h">🔒 오늘의 메모리 락<span>잊기 직전에 다시 보면 기억이 단단히 잠겨요</span></div>'
@@ -3606,11 +3612,27 @@ function renderReview(){
           +x.dueN+'단어 · '+(x.minStage+1)+'번째 잠금'
           +(late > 0 ? ' · <b style="color:var(--red,#E5484D)">'+late+'일 밀렸어요</b>' : '')
           +'</span></div>'
-          +'<button class="btn primary rv-go" data-id="'+esc(x.lid)+'">지금 잠그기</button></div>';
+          +'<button class="btn primary rv-go" data-id="'+esc(x.lid)+'">지금 잠그기</button>'
+          +'<button class="rv-del" data-del="'+esc(x.lid)+'" aria-label="메모리 락에서 빼기">✕</button></div>';
       }).join('')
     + nextLine;
 }
+let revExpand = false;
 $('rev-card').addEventListener('click', e=>{
+  const d = e.target.closest('.rv-del');
+  if(d){
+    const lid = d.dataset.del;
+    const L = DB.lists.find(l=>l.id===lid);
+    const nm = L ? L.name : '이 단어장';
+    if(!confirm('"'+nm+'" 메모리 락 기록을 지울까요?\n쌓아 온 잠금 단계가 사라지고, 다시 공부하면 처음부터 시작돼요.')) return;
+    const g = ensureGame();
+    if(g.rev2) delete g.rev2[lid];
+    scheduleSave();
+    renderReview();
+    toast('메모리 락에서 뺐어요');
+    return;
+  }
+  if(e.target.closest('[data-act="rv-toggle"]')){ revExpand = !revExpand; renderReview(); return; }
   const b = e.target.closest('.rv-go'); if(!b) return;
   DB.activeListId = b.dataset.id; scheduleSave();
   const ws = revDueWords(b.dataset.id);
@@ -3754,8 +3776,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-21';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-21'; });
+const APP_VER = '2026.07.21-22';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-22'; });
 const WN_ITEMS = [
  ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
