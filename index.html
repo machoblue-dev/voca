@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="VOCA꾹">
 <link rel="preload" href="./fonts/PretendardVariable.woff2" as="font" type="font/woff2" crossorigin>
 
 <style>
@@ -894,6 +899,68 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
 #ml-guide .ml-how div b{color:var(--ink)}
 #ml-guide .ml-end{font-size:13px;line-height:1.6;color:var(--ink2);text-align:center;margin:0 0 13px;padding-top:11px;border-top:1.5px dashed var(--line)}
 #ml-guide .ml-end b{color:var(--ink)}
+
+/* ═══ v2.2 ═══ */
+/* 스펠링 판독 — 정답 글자별 맞음(초록)/틀림(빨강)/빠짐(빨강 밑줄) */
+.sp-diff{display:inline-flex;gap:2px;font-weight:900;font-size:19px;letter-spacing:.05em;margin:4px 0 2px}
+.sp-diff i{font-style:normal}
+.sp-diff i.eq{color:#2E7D46}
+.sp-diff i.sub{color:var(--red)}
+.sp-diff i.ins{color:var(--red);border-bottom:2.5px solid var(--red)}
+.sp-fb .myans{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-top:3px}
+/* 오답 화면 — 출신 단어장 표시 */
+.wi-l{display:block;font-size:11px;font-weight:700;color:var(--ink2);margin-top:1px}
+/* 단어장 보기 — 메모리 락 게이지 */
+.mlb{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:800;color:var(--ink2);margin-top:4px}
+.mlb.done{color:var(--teal-deep)}
+.mlc{display:inline-flex;gap:2.5px}
+.mlc i{width:7px;height:7px;border-radius:2.5px;background:var(--line)}
+.mlc i.f{background:var(--teal)}
+.ml-sum{font-size:11.5px;font-weight:800;color:var(--ink2);margin-left:auto}
+/* 홈 — 목표 연필 */
+.goalpen{border:0;background:rgba(255,255,255,.22);color:var(--hero-ink2);font-size:10.5px;font-weight:900;border-radius:8px;padding:2.5px 7px;cursor:pointer}
+/* 목표 설정 모달 */
+.goal-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.goalopt{background:var(--card);border:2px solid var(--line);border-radius:14px;padding:10px 4px;text-align:center;cursor:pointer}
+.goalopt b{display:block;font-size:17px;font-weight:900}
+.goalopt span{font-size:10.5px;font-weight:700;color:var(--ink2)}
+.goalopt.on{border-color:var(--red);background:var(--red-soft)}
+/* XP 상점 */
+.shop{display:flex;flex-direction:column;gap:9px}
+.shop-row{display:flex;align-items:center;gap:11px;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:11px 12px}
+.shop-row .sh-e{font-size:24px}
+.shop-row .sh-i{flex:1;min-width:0}
+.shop-row .sh-i b{display:block;font-size:13.5px;font-weight:900}
+.shop-row .sh-i span{display:block;font-size:11.5px;font-weight:700;color:var(--ink2);margin-top:1px}
+.shop-row .btn{padding:8px 12px;font-size:12.5px;white-space:nowrap}
+.shop-own{font-size:11.5px;font-weight:900;color:var(--teal-deep);white-space:nowrap}
+/* 카드 테마 */
+.fc.th-night .face.front{background:linear-gradient(160deg,#232752 0%,#3A3F7A 55%,#4A4F96 100%);border-color:#1B1E40}
+.fc.th-night .face.front .w,.fc.th-night .face.front .pr,.fc.th-night .face.front .tip{color:#fff}
+.fc.th-night .face.front .tip{opacity:.75}
+.fc.th-mint .face.front{background:linear-gradient(160deg,#D8F6EC 0%,#BFEFDE 60%,#A9E8D2 100%);border-color:#8CD8BE}
+/* 아바타 테두리 */
+.pfa.fr-gold,.avt.fr-gold{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(240,177,0,.25)}
+.pfa.fr-fire,.avt.fr-fire{box-shadow:0 0 0 3px var(--red),0 0 0 6px rgba(255,75,62,.28)}
+/* 리그 기간 토글 */
+.lg-per{margin-top:7px}
+/* 과제 카드(학생 홈) */
+.hw-card{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:13px 14px;margin-top:12px}
+.hw-h{display:flex;align-items:center;gap:7px;font-size:13.5px;font-weight:900;margin-bottom:9px}
+.hw-h span{font-size:11px;font-weight:800;color:var(--ink2);margin-left:auto}
+.hw-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1.5px dashed var(--line)}
+.hw-row:first-of-type{border-top:0}
+.hw-i{flex:1;min-width:0}
+.hw-i b{display:block;font-size:13px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hw-i span{display:block;font-size:11.5px;font-weight:700;color:var(--ink2);margin-top:1px}
+.hw-dday{font-size:11.5px;font-weight:900;color:var(--red-deep);white-space:nowrap}
+.hw-dday.ok{color:var(--teal-deep)}
+.hw-go{border:0;background:var(--red);color:#fff;font-weight:900;font-size:12px;border-radius:10px;padding:8px 11px;cursor:pointer;white-space:nowrap}
+.hw-go:disabled{background:var(--line);color:var(--ink2)}
+/* 과제 관리(교사) */
+.as-form{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px}
+.as-status{font-size:12px;font-weight:700;color:var(--ink2);line-height:1.55;margin-top:7px}
+.as-status b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -952,12 +1019,13 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
     </div>
     <div class="greet" id="home-greet"></div>
     <div id="rev-card" class="hcard" style="display:none"></div>
+    <div id="hw-card" style="display:none"></div>
     <div class="hero">
       <div class="deco"></div>
       <div class="h-sub" id="hero-sub">오늘의 학습</div>
       <div class="h-head disp" id="hero-head">단어장을 기다리는 중</div>
       <div class="h-bar"><i id="hero-bar" style="width:0%"></i></div>
-      <div class="h-meta"><span id="hero-meta-l">0 / 0 단어</span><span id="hero-meta-r"></span></div>
+      <div class="h-meta"><span style="display:flex;gap:7px;align-items:center"><span id="hero-meta-l">0 / 0 단어</span><button class="goalpen" id="btn-goal" type="button" aria-label="목표 설정">✎ 목표</button></span><span id="hero-meta-r"></span></div>
       <button class="h-cta" id="hero-cta">이어서 학습하기</button>
     </div>
     <div id="quest-card" class="hcard" style="display:none"></div>
@@ -1018,6 +1086,10 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
         <button class="mode wide" id="m-test">
           <span class="wic" style="background:var(--plum-soft);color:var(--plum)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8V3h10v5"></path><rect x="4" y="8" width="16" height="8" rx="2"></rect><path d="M7 13h10v8H7z"></path></svg></span>
           <div><b>단어 시험지 출력</b><span class="d">유형·범위 골라서 인쇄 / PDF 저장</span></div>
+        </button>
+        <button class="mode wide" id="m-assign">
+          <span class="wic" style="background:var(--yellow-soft);color:var(--yellow-deep)"><span style="font-size:19px;line-height:1">📌</span></span>
+          <div><b>과제 내기</b><span class="d">단어장·모드·정답률·마감 지정, 완료 현황 확인</span></div>
         </button>
         <button class="mode wide" id="m-admin" style="display:none">
           <span class="wic" style="background:var(--red-soft);color:var(--red)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 5 6v5c0 4.5 3 8 7 10 4-2 7-5.5 7-10V6l-7-3Z"></path></svg></span>
@@ -1196,6 +1268,16 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
         <span class="lbl">효과음·진동<small>정답·오답 피드백</small></span>
         <button class="sw" id="fx-tog" aria-label="효과음"></button>
       </div>
+      <div class="set-row" id="row-install" style="display:none">
+        <span class="sic" style="background:var(--yellow-soft);color:var(--yellow-deep)"><span style="font-size:17px;line-height:1">📲</span></span>
+        <span class="lbl">홈 화면에 설치<small>앱처럼 바로 열어요 · 알림의 첫걸음</small></span>
+        <button class="act" id="btn-install">설치</button>
+      </div>
+      <div class="set-row" id="row-push" style="display:none">
+        <span class="sic" style="background:var(--teal-soft);color:var(--teal-deep)"><span style="font-size:17px;line-height:1">🔔</span></span>
+        <span class="lbl">복습 알림<small>저녁에 오늘 치 메모리 락을 알려줘요</small></span>
+        <button class="sw" id="push-tog" aria-label="복습 알림"></button>
+      </div>
       <div class="set-row">
         <span class="sic" style="background:var(--teal-soft);color:var(--teal-deep)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6"></path></svg></span>
         <span class="lbl">동기화<small>기록을 서버와 맞춰요</small></span>
@@ -1211,6 +1293,34 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
   </section>
 
   <!-- ═══ 학생 학습 현황 (교사·관리자) ═══ -->
+  <!-- ═══ 과제 내기 (교사) ═══ -->
+  <section class="scr" id="scr-assign" data-screen-label="과제">
+    <div class="as-form">
+      <div class="fld"><label>과제 제목 — 비우면 단어장 이름으로</label><input type="text" id="as-title" placeholder="예) 3월 2주차 필수 어휘 과제"></div>
+      <div class="fld"><label>단어장</label><select id="as-list"></select></div>
+      <div class="row" style="gap:8px">
+        <div class="fld" style="flex:1;margin-bottom:0"><label>학습 모드</label><select id="as-mode"><option value="any">아무 모드나</option><option value="quiz">객관식 퀴즈</option><option value="spell">스펠링 쓰기</option><option value="listen">듣기</option><option value="flash">플래시카드</option></select></div>
+        <div class="fld" style="flex:1;margin-bottom:0"><label>기준 정답률(%)</label><input type="number" id="as-acc" min="1" max="100" placeholder="비우면 없음"></div>
+      </div>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <div class="fld" style="flex:1;margin-bottom:0"><label>완료 횟수</label><select id="as-count"><option value="1">1회</option><option value="2">2회</option><option value="3">3회</option></select></div>
+        <div class="fld" style="flex:1.5;margin-bottom:0"><label>마감</label><input type="datetime-local" id="as-due"></div>
+      </div>
+      <div class="fld" style="margin-top:12px"><label>대상 반 — 아무것도 안 담으면 전체 학생</label>
+        <div class="row" style="gap:8px">
+          <select id="as-school" style="flex:1.6"><option value="">학교 선택</option></select>
+          <select id="as-grade" style="flex:1"><option value="">학년</option><option value="1">1학년</option><option value="2">2학년</option></select>
+          <button type="button" class="grp-back" id="as-add" style="flex:0 0 auto">＋ 추가</button>
+        </div>
+        <div class="tchips" id="as-target-chips"></div>
+        <input type="hidden" id="as-target">
+      </div>
+      <button class="btn primary block" id="as-create">📌 과제 내기</button>
+    </div>
+    <div class="stat-h">낸 과제<span class="sub">학생 홈에 D-day와 함께 떠요</span></div>
+    <div id="as-list-body"></div>
+  </section>
+
   <section class="scr" id="scr-dash" data-screen-label="학생 현황"><input class="search" id="dash-q" type="text" placeholder="🔍 이름·아이디·반으로 검색" autocomplete="off"><div id="dash-body"></div></section>
 
   <!-- ═══ 계정 관리 (관리자) ═══ -->
@@ -1302,8 +1412,9 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
     <div class="ml-p">메모리 락은 이 타이밍에 맞춰, 공부한 단어를 홈으로 다시 데려와요. 한 번의 복습은 몇 분이면 끝나요. 다섯 번을 채운 단어는 벼락치기와 달라요 — <b>한 달 뒤에도, 시험장에서도</b> 남아 있어요.</div>
     <div class="ml-how"><b>이렇게 써요</b>
       <div>· 공부만 하면 자동으로 예약돼요. 따로 신청할 게 없어요.</div>
-      <div>· 복습 날엔 홈에 <b>[지금 복습]</b>이 떠요. 그날 치 단어만 봐요.</div>
-      <div>· 밀려도 사라지지 않아요. 30일차를 마치면 졸업이에요.</div>
+      <div>· 복습 날엔 홈에 <b>[지금 복습]</b>이 떠요. 그날 치 단어만 퀴즈로 물어봐요.</div>
+      <div>· <b>정답으로 꺼낸 단어만</b> 다음 단계로 잠겨요. 틀리면 그날 다시 물어봐요.</div>
+      <div>· 밀려도 사라지지 않아요. 5번을 성공하면 졸업이에요.</div>
     </div>
     <div class="ml-end">결국 메모리 락은 숙제가 아니라,<br><b>한 번 외운 단어를 두 번 외우지 않게 지켜 주는 자물쇠</b>예요.</div>
     </div>
@@ -1357,6 +1468,33 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
   </div>
 </div>
 
+<!-- 목표 설정 -->
+<div class="ovl" id="goal-modal">
+  <div class="card">
+    <h3>🎯 목표 설정</h3>
+    <div class="desc">하루에 몇 문항을 풀지, 연속 학습을 며칠까지 이어갈지 정해요.</div>
+    <div class="stat-h" style="margin-top:8px">하루 목표<span class="sub">달성하면 +50 XP</span></div>
+    <div class="goal-grid" id="gm-daily"></div>
+    <div class="stat-h">스트릭 목표<span class="sub">달성하면 +200 XP</span></div>
+    <div class="goal-grid" id="gm-streak"></div>
+    <button class="btn primary block" id="gm-close" style="margin-top:14px">확인</button>
+  </div>
+</div>
+
+<!-- iOS 홈 화면 설치 안내 -->
+<div class="ovl" id="ios-install">
+  <div class="card">
+    <h3>📲 홈 화면에 설치</h3>
+    <div class="desc">아이폰·아이패드는 <b>Safari</b>에서만 설치돼요.</div>
+    <div class="note" style="text-align:left;line-height:1.8;margin-top:10px">
+      1. Safari 아래 <b>공유</b> 버튼(네모＋화살표)을 눌러요.<br>
+      2. <b>홈 화면에 추가</b>를 눌러요.<br>
+      3. 홈 화면의 <b>VOCA꾹</b> 아이콘으로 열면 앱처럼 실행돼요.
+    </div>
+    <button class="btn primary block" id="ios-install-ok" style="margin-top:14px">알겠어요</button>
+  </div>
+</div>
+
 <div id="print-area"></div>
 <div id="toast"></div>
 <div id="xp-float"></div>
@@ -1381,11 +1519,19 @@ const GREETS = [
  '{n}, 오늘도 꾹 눌러 보자!', '{n}, 단어왕은 바로 너야!', '{n}, 미루면 내일의 내가 힘들어!',
  '{n}, 시작이 반이다. 지금 시작!'
 ];
+const GREETS_HYPE = [   /* 🛍️ 상점 '인사말 팩 — 응원 폭발' 보유 시 추가 */
+ '{n}, 오늘의 주인공 등장! 🎬', '{n}, 지금 컨디션 최상이지?! 🔥', '{n}, 어휘 천재 출근 완료! 🧠',
+ '{n}, 오늘 리그 뒤집으러 왔다! ⚡', '{n}, 박수 먼저 치고 시작하자! 👏', '{n}, 넌 이미 반은 외웠어! 💪',
+ '{n}, 전설의 시작은 오늘부터! 🏆', '{n}, 단어들아 각오해라! 😤', '{n}, 스트릭 부자 되러 가자! 🔥',
+ '{n}, 오늘의 너, 어제보다 강하다! 🚀', '{n}, 만점의 향기가 난다! ✨', '{n}, 꾹꾹 눌러 담아 보자! 🍯'
+];
 function greetLine(){
   if(!DB.profile) return '';
   const nm = callName();
   if(!nm) return '오늘도 가 보자!';
-  return GREETS[Math.floor(Math.random()*GREETS.length)].replace('{n}', nm);
+  const hype = DB.game && DB.game.items && DB.game.items.greet_hype;
+  const pool = hype ? GREETS.concat(GREETS_HYPE) : GREETS;
+  return pool[Math.floor(Math.random()*pool.length)].replace('{n}', nm);
 }
 
 'use strict';
@@ -1400,6 +1546,27 @@ function strHash(s){ let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCod
 function mulberry32(a){ return function(){ a|=0; a=(a+0x6D2B79F5)|0; let t=Math.imul(a^(a>>>15),1|a); t=(t+Math.imul(t^(t>>>7),61|t))^t; return ((t^(t>>>14))>>>0)/4294967296; }; }
 function shuffleArr(arr, rng){ const a=arr.slice(); const r=rng||Math.random; for(let i=a.length-1;i>0;i--){ const j=Math.floor(r()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 const normSpell = s => String(s||'').toLowerCase().replace(/[^a-z]/g,'');
+/* 철자 오답 판독 — 편집 거리 + 역추적으로 정답 글자별 맞음/틀림/빠짐을 표시한다 */
+function levOps(a, b){   /* a = 입력, b = 정답 (정규화된 문자열) */
+  const n = a.length, m = b.length;
+  const D = []; for(let i=0;i<=n;i++){ D[i]=[i]; }
+  for(let j=1;j<=m;j++) D[0][j]=j;
+  for(let i=1;i<=n;i++) for(let j=1;j<=m;j++)
+    D[i][j] = Math.min(D[i-1][j]+1, D[i][j-1]+1, D[i-1][j-1] + (a[i-1]===b[j-1]?0:1));
+  const ops = []; let i = n, j = m;
+  while(i>0 || j>0){
+    if(i>0 && j>0 && a[i-1]===b[j-1] && D[i][j]===D[i-1][j-1]){ ops.push({ch:b[j-1], t:'eq'}); i--; j--; }
+    else if(i>0 && j>0 && D[i][j]===D[i-1][j-1]+1){ ops.push({ch:b[j-1], t:'sub'}); i--; j--; }
+    else if(j>0 && D[i][j]===D[i][j-1]+1){ ops.push({ch:b[j-1], t:'ins'}); j--; }
+    else { i--; }   /* 입력 쪽 여분 글자 — 정답 줄에는 표시하지 않는다 */
+  }
+  ops.reverse();
+  return {dist: D[n][m], ops};
+}
+function spellDiffHTML(input, answer){
+  const r = levOps(normSpell(input), normSpell(answer));
+  return '<span class="sp-diff">'+r.ops.map(o=>'<i class="'+o.t+'">'+esc(o.ch)+'</i>').join('')+'</span>';
+}
 
 /* ════════ 발음 (TTS) ════════ */
 let ttsVoice = null;
@@ -1497,13 +1664,23 @@ function engPart(item){
   if(!m) return {en:'', ko:String(item||'').trim()};
   return {en:m[0].trim(), ko:item.slice(m[0].length).trim()};
 }
-function wrongMap(){ if(!DB.wrong) DB.wrong={}; const lid=DB.activeListId; if(!DB.wrong[lid]) DB.wrong[lid]={}; return DB.wrong[lid]; }
-function addWrong(word){ const m=wrongMap(); m[word]=(m[word]||0)+1; scheduleSave(); }
-function removeWrong(word){ const m=wrongMap(); if(m[word]) questBump('wrong', 1); delete m[word]; scheduleSave(); }
+function wrongMapOf(lid){ if(!DB.wrong) DB.wrong={}; if(!DB.wrong[lid]) DB.wrong[lid]={}; return DB.wrong[lid]; }
+function wrongMap(){ return wrongMapOf(DB.activeListId); }
+function addWrong(word, lid){ const m=wrongMapOf(lid||DB.activeListId); m[word]=(m[word]||0)+1; scheduleSave(); }
+function removeWrong(word, lid){ const m=wrongMapOf(lid||DB.activeListId); if(m[word]) questBump('wrong', 1); delete m[word]; scheduleSave(); }
 function wrongWords(){
   const L=activeList(); if(!L) return [];
   const m=wrongMap();
   return L.words.filter(w=>m[w.word]).map(w=>({w, cnt:m[w.word]}));
+}
+function wrongWordsAll(){   /* 모든 단어장의 오답을 한 번에 — 단어에 출신 리스트를 태워 보낸다 */
+  const out = [];
+  if(!DB.wrong) return out;
+  (DB.lists||[]).forEach(L=>{
+    const m = DB.wrong[L.id]; if(!m) return;
+    (L.words||[]).forEach(w=>{ if(m[w.word]) out.push({w:Object.assign({_lid:L.id, _lname:L.name}, w), cnt:m[w.word]}); });
+  });
+  return out;
 }
 
 /* ════════ 붙여넣기 파서 ════════ */
@@ -1842,11 +2019,22 @@ document.addEventListener('click', e=>{
 });
 
 /* ════════ 단어장 보기 ════════ */
+function mlBadgeHTML(lid, word){
+  /* 단어별 메모리 락 진행 게이지 — 5칸(성공 인출 횟수), 졸업은 🔓 */
+  const g = ensureGame();
+  if(g.revDone && g.revDone[lid] && g.revDone[lid][word]) return '<span class="mlb done" title="메모리 락 졸업 — 5회 인출 성공">🔓 졸업</span>';
+  const v = g.rev2 && g.rev2[lid] ? g.rev2[lid][word] : undefined;
+  if(v === undefined) return '';
+  const st = Math.floor(v/100000);
+  let cells = ''; for(let i=0;i<REV_GAPS.length;i++) cells += '<i class="'+(i<st?'f':'')+'"></i>';
+  return '<span class="mlb" title="메모리 락 '+st+'/5회 성공">🔒<span class="mlc">'+cells+'</span></span>';
+}
 function wordCard(w, no){
   return '<div class="wcard"><div class="wc-head">'
     +'<div class="wc-no">'+String(no).padStart(2,'0')+'</div>'
     +'<div class="wc-word"><div class="w">'+wordHTML(w.word, w.group)+'</div>'
-    +(w.pron?'<div class="pr">'+esc(w.pron)+'</div>':'')+'</div>'
+    +(w.pron?'<div class="pr">'+esc(w.pron)+'</div>':'')
+    +mlBadgeHTML(DB.activeListId, w.word)+'</div>'
     +'<button class="spk" data-say="'+esc(w.word)+'">🔊</button>'
     +'</div>'+detailHTML(w)+'</div>';
 }
@@ -1859,7 +2047,11 @@ function renderBrowse(q){
     if(w.group && w.group !== lastGroup){ html += '<div class="grp-bar">'+esc(w.group)+'</div>'; lastGroup = w.group; }
     html += wordCard(w, i+1);
   });
-  $('browse-body').innerHTML = '<div class="bl-head">'+tierBadge(L.tier)+'<b>'+esc(L.name)+'</b><span>'+L.words.length+'단어</span></div>' + (html || '<div class="note">검색 결과가 없다.</div>');
+  const g = ensureGame();
+  const doneN = (g.revDone && g.revDone[L.id]) ? Object.keys(g.revDone[L.id]).length : 0;
+  const inN = (g.rev2 && g.rev2[L.id]) ? Object.keys(g.rev2[L.id]).length : 0;
+  const mlSum = (doneN || inN) ? '<span class="ml-sum">🔓 '+doneN+' · 🔒 '+inN+'</span>' : '';
+  $('browse-body').innerHTML = '<div class="bl-head">'+tierBadge(L.tier)+'<b>'+esc(L.name)+'</b><span>'+L.words.length+'단어</span>'+mlSum+'</div>' + (html || '<div class="note">검색 결과가 없다.</div>');
 }
 $('browse-q').addEventListener('input', e=>renderBrowse(e.target.value));
 
@@ -1924,8 +2116,9 @@ function renderFlash(){
   $('fl-bar').style.width = (i/n*100)+'%';
   $('fl-pos').textContent = (i+1)+' / '+n;
   const stage = $('fl-stage');
+  const thm = (DB.game && DB.game.cardTheme) ? ' th-'+DB.game.cardTheme : '';   /* 🛍️ 카드 테마 */
   stage.innerHTML =
-    '<div class="fc" id="fc"><div class="fc-inner">'
+    '<div class="fc'+thm+'" id="fc"><div class="fc-inner">'
     +'<div class="face front">'
     +(w.group?'<div class="gchip">'+esc(w.group)+'</div>':'')
     +'<div class="w'+(w.word.length>18?' sz3':(w.word.length>12?' sz2':''))+'">'+wordHTML(w.word, w.group)+'</div>'
@@ -1947,15 +2140,14 @@ function renderFlash(){
     if(e.target.closest('[data-say]')) return;
     $('fc').classList.toggle('flip');
   });
-  $('fl-no').addEventListener('click', ()=>{ addWrong(w.word); nextFlash(); });
-  $('fl-yes').addEventListener('click', ()=>{ if(FL.fromWrong){ removeWrong(w.word); awardXp(20); } else awardXp(2); nextFlash(); });
+  $('fl-no').addEventListener('click', ()=>{ const lid = w._lid || FL.listId || DB.activeListId; addWrong(w.word, lid); revTouch(lid, w.word, false); nextFlash(); });
+  $('fl-yes').addEventListener('click', ()=>{ const lid = w._lid || FL.listId || DB.activeListId; if(FL.fromWrong){ removeWrong(w.word, lid); awardXp(10); } else awardXp(2); revTouch(lid, w.word, true); nextFlash(); });
   const bn = $('fl-no'), by = $('fl-yes');
   bn.disabled = true; by.disabled = true;
   setTimeout(()=>{ if(bn.isConnected){ bn.disabled = false; by.disabled = false; } }, 1000);
 }
 function nextFlash(){
   questBump('flash', 1);
-  { const cw = FL.deck[FL.i]; if(cw) revTouch(FL.listId || DB.activeListId, cw.word); }
   FL.i++;
   if(!FL.fromWrong && !FL.partial && FL.listId){
     const g = ensureGame();
@@ -1979,7 +2171,7 @@ function endFlash(){
     +'<div class="row" style="margin-top:8px"><button class="btn ghost" id="fl-again">다시 한 번</button><button class="btn primary" id="fl-home">홈으로</button></div>'
     +(wn?'<button class="btn soft block" id="fl-gowrong" style="margin-top:10px">오답 복습 하러 가기</button>':'');
   $('fl-again').addEventListener('click', ()=>{
-    const src = FL.fromWrong ? wrongWords().map(x=>x.w) : (activeList()?activeList().words:[]);
+    const src = FL.fromWrong ? (wrScope==='all'?wrongWordsAll():wrongWords()).map(x=>x.w) : (activeList()?activeList().words:[]);
     startFlash(src, FL.fromWrong);
   });
   $('fl-home').addEventListener('click', ()=>go('scr-home'));
@@ -1995,6 +2187,8 @@ const QZ_TYPES = [
   {v:'word', t:'단어 고르기',  d:'뜻 → 단어'},
   {v:'rel',  t:'유의어·반의어', d:'같은 뜻·반대 뜻'},
   {v:'conf', t:'혼동어 구별',  d:'닮은 단어 가려내기'},
+  {v:'etym', t:'어원 조각',    d:'어근·접사 뜻 맞히기'},
+  {v:'root', t:'어근 찾기',    d:'같은 어근 단어 찾기'},
   {v:'ex',   t:'예문 빈칸',    d:'문장 속 알맞은 단어'}
 ];
 let qzSel = new Set(QZ_TYPES.map(t=>t.v));   /* 기본: 전부 켜짐 = 전 유형 무작위 */
@@ -2092,25 +2286,71 @@ function qEx(w, allWords){
     + ((w.exKo && showKo) ? '<div class="q-ko">'+esc(w.exKo)+'</div>' : '');
   return {kind:'예문 빈칸', prompt:'', phtml, say:null, opts, ans:opts.indexOf(w.word), w, xsmall:true};
 }
+/* ── 어원 학습 유형 (v2.2) — 데이터의 어원·그룹 필드를 문제로 바꾼다 ── */
+function etymPieces(etym){
+  /* "contra(반대로) + dict(말하다) + ion(명접) → …" 꼴에서 조각(뜻) 쌍을 뽑는다 */
+  const head = String(etym||'').split('→')[0];
+  const out = [];
+  head.split('+').forEach(p=>{
+    const m = p.match(/([A-Za-z\-']+)\s*\(([^)]+)\)/);
+    if(m && m[2].trim()) out.push({tok:m[1], ko:m[2].trim()});
+  });
+  return out;
+}
+function qEtym(w, etymPool){
+  const ps = etymPieces(w.etym);
+  if(!ps.length) return null;
+  const p = ps[Math.floor(Math.random()*ps.length)];
+  const own = new Set(ps.map(x=>x.ko));
+  const seen = new Set();
+  const dsPool = etymPool.filter(x=>x.owner!==w.word && !own.has(x.ko) && !seen.has(x.ko) && seen.add(x.ko));
+  const ds = shuffleArr(dsPool).slice(0,4).map(x=>x.ko);
+  if(ds.length<4) return null;
+  const opts = shuffleArr([p.ko].concat(ds));
+  return {kind:'어원 조각', prompt:'“'+w.word+'”의 조각 “'+p.tok+'”의 뜻은?', say:w.word, opts, ans:opts.indexOf(p.ko), w, small:true};
+}
+function qRoot(w, allW){
+  if(!w.group) return null;
+  const pref = rootPrefixes(w.group);
+  if(!pref.length) return null;
+  const ds = []; const seen = new Set([w.word.toLowerCase()]);
+  for(const o of shuffleArr(allW)){
+    if(o.group === w.group) continue;
+    const k = o.word.toLowerCase();
+    if(seen.has(k)) continue;
+    if(pref.some(p=>p.length>=2 && k.startsWith(p))) continue;   /* 겉보기 혼동 방지 — 정답 어근으로 시작하는 오답 배제 */
+    seen.add(k); ds.push(o.word);
+    if(ds.length===4) break;
+  }
+  if(ds.length<4) return null;
+  const opts = shuffleArr([w.word].concat(ds));
+  return {kind:'어근 찾기', prompt:'“'+w.group+'” 어근으로 만들어진 단어는?', say:null, opts, ans:opts.indexOf(w.word), w, small:true};
+}
 const QZ_ELIG = {
   mean: w=>!!w.meaning,
   word: w=>!!w.meaning,
   rel:  w=>!!(w.syn || w.ant),
   conf: w=>!!w.meaning && splitDot(w.conf).some(it=>engPart(it).en),
+  etym: w=>etymPieces(w.etym).length>=1,
+  root: w=>!!w.group && rootPrefixes(w.group).length>0,
   ex:   w=>!!(w.ex && findToken(w.ex, w.word))
 };
-function buildQuestions(types, count){
+function buildQuestions(types, count, srcPool){
   const L = activeList();
-  const pool = shuffleArr(L.words.filter(w=>types.some(t=>QZ_ELIG[t](w)))).slice(0, count);
+  const pool = shuffleArr((srcPool || L.words).filter(w=>types.some(t=>QZ_ELIG[t](w)))).slice(0, count);
   const allMeanings = Array.from(new Set(L.words.map(w=>w.meaning).filter(Boolean)));
   const allWords = Array.from(new Set(L.words.map(w=>w.word)));
   const relPool = [];
   L.words.forEach(w=>{ splitDot(w.syn).concat(splitDot(w.ant)).forEach(it=>{ const en=engPart(it).en; if(en) relPool.push({en, owner:w.word}); }); });
+  const etymPool = [];
+  L.words.forEach(w=>{ etymPieces(w.etym).forEach(p=>etymPool.push({tok:p.tok, ko:p.ko, owner:w.word})); });
   const make = {
     mean: w=>qMean(w, allMeanings),
     word: w=>qWord(w, allWords),
     rel:  w=>qRel(w, relPool, allMeanings),
     conf: w=>qConf(w),
+    etym: w=>qEtym(w, etymPool),
+    root: w=>qRoot(w, L.words),
     ex:   w=>qEx(w, allWords)
   };
   const qs = [];
@@ -2150,9 +2390,14 @@ $('qz-opts').addEventListener('click', e=>{
   const b = e.target.closest('.opt'); if(!b || !QZ) return;
   const q = QZ.qs[QZ.i];
   const pick = parseInt(b.dataset.i,10);
-  revTouch(DB.activeListId, q.w.word);
+  revTouch(DB.activeListId, q.w.word, pick===q.ans);
   document.querySelectorAll('#qz-opts .opt').forEach(o=>o.setAttribute('disabled',''));
-  if(pick===q.ans){ QZ.right++; QZ.combo++; awardXp(Math.round(10*(QZ.combo>=5?1.5:1))); b.classList.add('reveal-right'); fxRight(); }
+  if(pick===q.ans){
+    QZ.right++; QZ.combo++;
+    let gain = Math.round(10*(QZ.combo>=5?1.5:1));
+    if(wrongMap()[q.w.word]){ removeWrong(q.w.word); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
+    awardXp(gain); b.classList.add('reveal-right'); fxRight();
+  }
   else{
     QZ.combo=0;
     b.classList.add('picked-wrong'); fxWrong();
@@ -2176,11 +2421,19 @@ function endQuiz(){
   QZ.wrongL.forEach(w=>{ if(!seen.has(w.word)){ seen.add(w.word); uniq.push(w); } });
   const box = $('qz-done');
   box.style.display='block';
-  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars('quiz', QZ.right, QZ.qs.length))+'<div class="sc"><em>'+QZ.right+'</em> / '+QZ.qs.length+'</div><p>'+(uniq.length?'틀린 단어 '+uniq.length+'개는 오답 목록에 저장했어요.':'전부 맞혔어요. 완벽해요!')+'</p>'+xpLineHTML()+revNextLine()+'</div>'
+  const rv = QZ.review;
+  const remain = rv ? revDueWords(rv.lid).length : 0;
+  const headP = rv
+    ? (remain ? '오늘 큐에 <b>'+remain+'단어</b>가 남았어요. 정답으로 꺼내야 다음 단계로 잠겨요.' : '오늘의 메모리 락 완료 — 전부 다음 단계로 잠겼어요 🔒')
+    : (uniq.length?'틀린 단어 '+uniq.length+'개는 오답 목록에 저장했어요.':'전부 맞혔어요. 완벽해요!');
+  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars('quiz', QZ.right, QZ.qs.length))+'<div class="sc"><em>'+QZ.right+'</em> / '+QZ.qs.length+'</div><p>'+headP+'</p>'+xpLineHTML()+revNextLine()+'</div>'
     +(uniq.length?'<div class="wrong-list">'+uniq.map(w=>'<div class="wrong-item"><span class="wi-w">'+esc(w.word)+'</span><span class="wi-m">'+esc(w.meaning)+'</span><button class="spk sm" data-say="'+esc(w.word)+'">🔊</button></div>').join('')+'</div>':'')
-    +'<div class="row"><button class="btn ghost" id="qz-again">다시 풀기</button><button class="btn primary" id="qz-home">홈으로</button></div>'
-    +(uniq.length?'<button class="btn soft block" id="qz-gowrong" style="margin-top:10px">오답 복습 하러 가기</button>':'');
-  $('qz-again').addEventListener('click', openQuizSetup);
+    +(rv
+      ? '<div class="row">'+(remain?'<button class="btn primary" id="qz-rv-again">남은 '+remain+'단어 다시 인출</button>':'')+'<button class="btn '+(remain?'ghost':'primary')+'" id="qz-home">홈으로</button></div>'
+      : '<div class="row"><button class="btn ghost" id="qz-again">다시 풀기</button><button class="btn primary" id="qz-home">홈으로</button></div>')
+    +(uniq.length && !rv?'<button class="btn soft block" id="qz-gowrong" style="margin-top:10px">오답 복습 하러 가기</button>':'');
+  if(rv){ const ra = $('qz-rv-again'); if(ra) ra.addEventListener('click', ()=>startReviewSession(rv.lid)); }
+  else $('qz-again').addEventListener('click', openQuizSetup);
   $('qz-home').addEventListener('click', ()=>go('scr-home'));
   const g = $('qz-gowrong');
   if(g) g.addEventListener('click', ()=>{ renderWrong(); go('scr-wrong'); });
@@ -2189,10 +2442,10 @@ function endQuiz(){
 
 /* ════════ 스펠링 쓰기 ════════ */
 let SP = null;
-function startSpell(words, listen){
+function startSpell(words, listen, fromWrong){
   if(!words || !words.length){ go('scr-home'); return; }
-  { const aL = activeList(); STUDY.mult = (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; }
-  SP = {deck: shuffleArr(words), i:0, right:0, answered:false, listen: !!listen}; resetSessXp();
+  { const aL = activeList(); STUDY.mult = fromWrong ? 1 : (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; }
+  SP = {deck: shuffleArr(words), i:0, right:0, answered:false, listen: !!listen, fromWrong: !!fromWrong}; resetSessXp();
   $('sp-done').style.display='none';
   $('sp-play').style.display='block';
   renderSpell();
@@ -2226,16 +2479,32 @@ $('btn-sp-first').addEventListener('click', ()=>{
 function checkSpell(){
   if(!SP || SP.answered) return;
   const w = SP.deck[SP.i];
-  const ok = normSpell($('sp-in').value) === normSpell(w.word);
-  if(!normSpell($('sp-in').value)){ toast('철자를 입력해 주세요'); return; }
+  const inp = $('sp-in').value;
+  const sIn = normSpell(inp), sAns = normSpell(w.word);
+  if(!sIn){ toast('철자를 입력해 주세요'); return; }
+  const exact = sIn === sAns;
+  const near = !exact && sAns.length >= 5 && levOps(sIn, sAns).dist === 1;   /* 오타 한 글자 관용 (5자 이상) */
+  const ok = exact || near;
+  const lid = w._lid || DB.activeListId;
   SP.answered = true;
-  revTouch(DB.activeListId, w.word);
+  revTouch(lid, w.word, ok);
   $('sp-in').disabled = true;
   const fb = $('sp-fb');
-  if(ok){ SP.right++; awardXp(15); fb.className='sp-fb ok';
-    fb.innerHTML = SP.listen ? '정답 ✓<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>' : '정답 ✓';
-    fxRight(); }
-  else{ fb.className='sp-fb no'; fb.innerHTML='아쉬워요 ✗<span class="ans">'+esc(w.word)+((SP.listen && w.meaning)?' — '+esc(w.meaning):'')+'</span>'; addWrong(w.word); fxWrong(); }
+  if(ok){
+    SP.right++;
+    let gain = exact ? 15 : 8;
+    if(wrongMapOf(lid)[w.word]){ removeWrong(w.word, lid); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
+    awardXp(gain);
+    fb.className='sp-fb ok';
+    fb.innerHTML = (exact ? '정답 ✓' : '아깝다! 오타 하나 — 정답 처리 ✓<div>'+spellDiffHTML(inp, w.word)+'</div>')
+      + ((SP.listen || near) ? '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>' : '');
+    fxRight();
+  }
+  else{
+    fb.className='sp-fb no';
+    fb.innerHTML='아쉬워요 ✗<div>'+spellDiffHTML(inp, w.word)+'</div><span class="ans">'+esc(w.word)+((SP.listen && w.meaning)?' — '+esc(w.meaning):'')+'</span><span class="myans">내 답: '+esc(inp)+'</span>';
+    addWrong(w.word, lid); fxWrong();
+  }
   $('btn-sp-check').style.display='none';
   const nb = $('btn-sp-next');
   nb.style.display='block';
@@ -2257,10 +2526,13 @@ function endSpell(){
   const wn = wrongWords().length;
   const box = $('sp-done');
   box.style.display='block';
-  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars('spell', SP.right, SP.deck.length))+'<div class="sc"><em>'+SP.right+'</em> / '+SP.deck.length+'</div><p>'+(SP.right===SP.deck.length?'철자까지 완벽해요!':'틀린 단어는 오답 목록에 저장했어요.')+'</p>'+xpLineHTML()+revNextLine()+'</div>'
+  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars(SP.listen?'listen':'spell', SP.right, SP.deck.length))+'<div class="sc"><em>'+SP.right+'</em> / '+SP.deck.length+'</div><p>'+(SP.right===SP.deck.length?'철자까지 완벽해요!':'틀린 단어는 오답 목록에 저장했어요.')+'</p>'+xpLineHTML()+revNextLine()+'</div>'
     +'<div class="row"><button class="btn ghost" id="sp-again">다시</button><button class="btn primary" id="sp-home">홈으로</button></div>'
     +(wn?'<button class="btn soft block" id="sp-gowrong" style="margin-top:10px">오답 복습 하러 가기</button>':'');
-  $('sp-again').addEventListener('click', ()=>startSpell(activeList().words));
+  $('sp-again').addEventListener('click', ()=>{
+    if(SP.fromWrong){ const ws = (wrScope==='all'?wrongWordsAll():wrongWords()).map(x=>x.w); if(ws.length){ startSpell(ws, SP.listen, true); return; } }
+    startSpell(activeList().words, SP.listen);
+  });
   $('sp-home').addEventListener('click', ()=>go('scr-home'));
   const g = $('sp-gowrong');
   if(g) g.addEventListener('click', ()=>{ renderWrong(); go('scr-wrong'); });
@@ -2278,24 +2550,39 @@ function logSession(mode, total, right){
 }
 
 /* ════════ 오답 복습 ════════ */
+let wrScope = 'cur';   /* 'cur' 이 단어장 | 'all' 전체 단어장 */
 function renderWrong(){
-  const items = wrongWords();
+  const curItems = wrongWords();
+  const allItems = wrongWordsAll();
+  if(wrScope==='cur' && !curItems.length && allItems.length) wrScope = 'all';
+  const items = wrScope==='all' ? allItems : curItems;
   const box = $('wr-body');
+  const bindScope = ()=>{ box.querySelectorAll('[data-wrsc]').forEach(b=>b.addEventListener('click', ()=>{ wrScope = b.dataset.wrsc; renderWrong(); })); };
+  const tabs = '<div class="lg-tabs" style="margin-top:0"><button type="button" class="lgt'+(wrScope==='cur'?' on':'')+'" data-wrsc="cur">이 단어장 ('+curItems.length+')</button><button type="button" class="lgt'+(wrScope==='all'?' on':'')+'" data-wrsc="all">전체 단어장 ('+allItems.length+')</button></div>';
   if(!items.length){
-    box.innerHTML = '<div class="note">지금은 오답 단어가 없어요. 퀴즈·스펠링에서 틀리거나 플래시카드에서 "몰라요"를 누른 단어가 여기에 모여요.</div>';
+    box.innerHTML = tabs + '<div class="note">지금은 오답 단어가 없어요. 퀴즈·스펠링에서 틀리거나 플래시카드에서 "몰라요"를 누른 단어가 여기에 모여요.</div>';
+    bindScope();
     return;
   }
-  box.innerHTML = '<div class="note" style="margin-bottom:12px">틀린 횟수가 많은 단어부터 보여드려요. 카드 복습에서 "이제 안다 ✓"를 누르면 목록에서 빠지고 +20 XP!</div>'
-    + items.slice().sort((a,b)=>b.cnt-a.cnt).map(x=>'<div class="wrong-item"><span class="wi-w">'+esc(x.w.word)+'</span><span class="wi-m">'+esc(x.w.meaning)+'</span><span class="cnt">'+x.cnt+'회</span><button class="spk sm" data-say="'+esc(x.w.word)+'">🔊</button></div>').join('')
-    + '<div class="row" style="margin-top:14px"><button class="btn primary" id="wr-flash">카드로 복습</button><button class="btn ghost" id="wr-spell">스펠링 재도전</button></div>'
-    + '<button class="btn ghost block" id="wr-clear" style="margin-top:10px;color:var(--red-deep)">오답 기록 전부 지우기</button>';
-  $('wr-flash').addEventListener('click', ()=>{ startFlash(wrongWords().map(x=>x.w), true); go('scr-flash'); });
-  $('wr-spell').addEventListener('click', ()=>{ startSpell(wrongWords().map(x=>x.w)); go('scr-spell'); });
+  box.innerHTML = tabs
+    + '<div class="note" style="margin-bottom:12px">틀린 횟수가 많은 단어부터 보여드려요. <b>퀴즈·스펠링에서 맞히면</b> 확실히 탈출하고 +20 XP, 카드의 "이제 안다"는 +10 XP예요.</div>'
+    + items.slice().sort((a,b)=>b.cnt-a.cnt).map(x=>'<div class="wrong-item"><span class="wi-w">'+esc(x.w.word)+'</span><span class="wi-m">'+esc(x.w.meaning)+(wrScope==='all' && x.w._lname?'<small class="wi-l">'+esc(x.w._lname)+'</small>':'')+'</span><span class="cnt">'+x.cnt+'회</span><button class="spk sm" data-say="'+esc(x.w.word)+'">🔊</button></div>').join('')
+    + '<div class="row" style="margin-top:14px"><button class="btn ghost" id="wr-flash">카드로 복습</button><button class="btn primary" id="wr-spell">스펠링으로 탈출</button></div>'
+    + '<button class="btn ghost block" id="wr-clear" style="margin-top:10px;color:var(--red-deep)">'+(wrScope==='all'?'모든 단어장 오답 전부 지우기':'이 단어장 오답 전부 지우기')+'</button>';
+  const srcWords = ()=> (wrScope==='all' ? wrongWordsAll() : wrongWords()).map(x=>x.w);
+  $('wr-flash').addEventListener('click', ()=>{ startFlash(srcWords(), true); go('scr-flash'); });
+  $('wr-spell').addEventListener('click', ()=>{ startSpell(srcWords(), false, true); go('scr-spell'); });
   $('wr-clear').addEventListener('click', ()=>{
-    if(!confirm('오답 기록을 전부 지울까?')) return;
-    DB.wrong[DB.activeListId] = {};
+    if(wrScope==='all'){
+      if(!confirm('모든 단어장의 오답 기록을 전부 지울까?')) return;
+      DB.wrong = {};
+    } else {
+      if(!confirm('이 단어장의 오답 기록을 전부 지울까?')) return;
+      DB.wrong[DB.activeListId] = {};
+    }
     scheduleSave(); renderWrong(); toast('오답 기록을 지웠어요');
   });
+  bindScope();
 }
 
 
@@ -2642,6 +2929,7 @@ async function fullSync(){
   await pullLists();
   await pullProgress();
   await pullUnread();
+  pullAssignments();   /* v2.2 — 과제. 서버 미설치·실패여도 앱 흐름을 막지 않는다 */
   await pushProgress();
   await flushPending();
   return okP;
@@ -3163,7 +3451,7 @@ async function keepAlive(){
 
 
 /* ════════ 내비게이션·탭 ════════ */
-const TITLES = {'scr-lists':'단어 리스트 배포 관리','scr-flash':'플래시카드','scr-quiz':'객관식 퀴즈','scr-spell':'스펠링 쓰기','scr-wrong':'오답 복습','scr-test':'단어 시험지 출력','scr-dash':'학생 학습 현황','scr-admin':'계정 관리'};
+const TITLES = {'scr-lists':'단어 리스트 배포 관리','scr-flash':'플래시카드','scr-quiz':'객관식 퀴즈','scr-spell':'스펠링 쓰기','scr-wrong':'오답 복습','scr-test':'단어 시험지 출력','scr-dash':'학생 학습 현황','scr-admin':'계정 관리','scr-assign':'과제 내기'};
 const MAIN_SCRS = ['scr-home','scr-browse','scr-stats','scr-msg','scr-profile'];
 let curScr = 'scr-home';
 function go(id){
@@ -3204,11 +3492,11 @@ function renderHome(){
   $('home-list-btn').disabled = !DB.lists.length;
   const L = activeList();
   const n = L ? L.words.length : 0;
-  const wn = wrongWords().length;
+  const wn = wrongWordsAll().length;   /* v2.2 — 오답 버튼은 전체 단어장 기준 */
   const g = ensureGame();
   $('home-greet').textContent = greetLine();
-  renderQuest(); renderReview(); ensureWeeklyReport(); maybeWhatsNew();
-  $('hd-streak').querySelector('span').textContent = (g.streak||0)+'일';
+  renderQuest(); renderReview(); renderHW(); ensureWeeklyReport(); maybeWhatsNew();
+  $('hd-streak').querySelector('span').textContent = g.streakGoal ? (g.streak||0)+'/'+g.streakGoal+'일' : (g.streak||0)+'일';
   $('hd-xp').querySelector('span').textContent = fmtXp(g.xp);
   const today = todayCount();
   const goal = g.goal || 40;
@@ -3236,6 +3524,29 @@ function renderHome(){
   if(DB.unreadCount > 0){ mb.textContent = DB.unreadCount; mb.style.display='inline-block'; }
   else mb.style.display='none';
 }
+/* ── 목표 설정 모달 — 하루 문항 목표 + 스트릭 목표 ── */
+function renderGoalModal(){
+  const g = ensureGame();
+  const cur = g.goal || 40;
+  $('gm-daily').innerHTML = [20,40,60,100].map(v=>'<button type="button" class="goalopt'+(v===cur?' on':'')+'" data-goal="'+v+'"><b>'+v+'</b><span>문항</span></button>').join('');
+  $('gm-streak').innerHTML = [7,14,30].map(v=>'<button type="button" class="goalopt'+(g.streakGoal===v?' on':'')+'" data-sgoal="'+v+'"><b>'+v+'</b><span>일 연속</span></button>').join('')
+    + '<button type="button" class="goalopt'+(!g.streakGoal?' on':'')+'" data-sgoal="0"><b>—</b><span>목표 없음</span></button>';
+}
+$('btn-goal').addEventListener('click', ()=>{ renderGoalModal(); $('goal-modal').classList.add('on'); });
+$('gm-close').addEventListener('click', ()=>{ $('goal-modal').classList.remove('on'); renderHome(); });
+$('goal-modal').addEventListener('click', e=>{
+  if(e.target === $('goal-modal')){ $('goal-modal').classList.remove('on'); renderHome(); return; }
+  const d = e.target.closest('[data-goal]');
+  if(d){ const g = ensureGame(); g.goal = parseInt(d.dataset.goal,10); scheduleSave(); renderGoalModal(); toast('하루 목표를 '+g.goal+'문항으로 바꿨어요'); return; }
+  const s = e.target.closest('[data-sgoal]');
+  if(s){
+    const g = ensureGame(); const v = parseInt(s.dataset.sgoal,10);
+    if(v && (g.streak||0) >= v){ toast('이미 '+g.streak+'일 연속이에요 — 더 큰 목표를 골라요!'); return; }
+    g.streakGoal = v || null;
+    scheduleSave(); renderGoalModal();
+    toast(g.streakGoal ? '스트릭 목표: '+g.streakGoal+'일 연속! 달성하면 +200 XP' : '스트릭 목표를 껐어요');
+  }
+});
 /* ── 단어장 고르기 모달: 묶음은 접힌 채로, 누르면 열림 ── */
 function renderListPick(){
   const cid = DB.activeListId;
@@ -3281,12 +3592,14 @@ $('m-quiz').addEventListener('click', ()=>{ openQuizSetup(); go('scr-quiz'); });
 $('m-spell').addEventListener('click', ()=>{ startSpell(activeList().words); go('scr-spell'); }); $('m-listen').addEventListener('click', ()=>{ startSpell(activeList().words, true); go('scr-spell'); }); $('m-maketest').addEventListener('click', ()=>{ if(!activeList()){ toast('단어장이 아직 없어요'); return; } openMakeTest(); }); $('m-explore').addEventListener('click', ()=>{ go('scr-browse'); const bx = $('explore-body'); bx.style.display = 'block'; renderExplore(); window.scrollTo({top:0}); });
 $('m-wrong').addEventListener('click', ()=>{ renderWrong(); go('scr-wrong'); });
 $('m-test').addEventListener('click', ()=>{ initTestForm(); go('scr-test'); });
+$('m-assign').addEventListener('click', ()=>{ go('scr-assign'); renderAssign(); });
 $('hero-cta').addEventListener('click', ()=>{ const L=activeList(); if(!L||!L.words.length) return; startFlash(L.words,false); go('scr-flash'); });
 
 /* ════════ 내 정보·설정 ════════ */
 function renderProfile(){
   const g = ensureGame();
   $('pf-avatar').textContent = g.avatar || '🙂';
+  $('pf-avatar').className = 'pfa' + (g.frame ? ' fr-'+g.frame : '');   /* 🛍️ 아바타 테두리 */
   $('pf-nick').textContent = g.nickname || (DB.profile ? DB.profile.name : '—');
   $('pf-name').textContent = DB.profile ? DB.profile.name + (DB.profile.class_name ? ' · '+DB.profile.class_name : '') : '';
   const rb = $('pf-role');
@@ -3294,8 +3607,79 @@ function renderProfile(){
   rb.className = 'rolebadge ' + (DB.profile ? DB.profile.role : 'student');
   $('theme-tog').classList.toggle('on', DB.theme==='dark');
   $('fx-tog').classList.toggle('on', fxOn());
+  renderInstallRow(); renderPushRow();   /* v2.2 — PWA */
   $('pf-ver').textContent = '앱 버전 '+APP_VERSION+' · 새 버전이 올라오면 자동으로 업데이트돼요';
 }
+/* ════════ PWA — 홈 화면 설치·서비스워커·복습 알림 (v2.2) ════════
+   sw.js·manifest.json이 index.html 옆에 함께 배포되어야 한다.
+   PUSH_CFG.vapid가 비어 있으면 알림 UI는 조용히 숨는다(서버 준비 전 상태). */
+const PUSH_CFG = {
+  vapid: 'BNyIoQozgbcFmxVir0lD0O8M5sF9iifH0XiPFI0NC0AJ3HUqzW0l8FOsFDD_GXO42dM06toNmHmvRjIp8CBfx_4'   /* 웹푸시 VAPID 공개키 — 배포가이드 4단계의 비밀키와 한 쌍 */
+};
+let deferredInstall = null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferredInstall = e; if(curScr==='scr-profile') renderInstallRow(); });
+window.addEventListener('appinstalled', ()=>{ deferredInstall = null; toast('설치 완료! 홈 화면에서 열어 보세요 📲'); if(curScr==='scr-profile') renderInstallRow(); });
+function isStandalone(){ return (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true; }
+function isIOS(){ return /iphone|ipad|ipod/i.test(navigator.userAgent||''); }
+function renderInstallRow(){
+  const row = $('row-install'); if(!row) return;
+  row.style.display = (!isStandalone() && (deferredInstall || isIOS())) ? 'flex' : 'none';
+}
+$('btn-install').addEventListener('click', async ()=>{
+  if(deferredInstall){ deferredInstall.prompt(); try{ await deferredInstall.userChoice; }catch(e){} deferredInstall = null; renderInstallRow(); return; }
+  if(isIOS()){ $('ios-install').classList.add('on'); return; }
+  toast('브라우저 메뉴의 "앱 설치 / 홈 화면에 추가"를 눌러 주세요');
+});
+$('ios-install-ok').addEventListener('click', ()=>$('ios-install').classList.remove('on'));
+$('ios-install').addEventListener('click', e=>{ if(e.target===$('ios-install')) $('ios-install').classList.remove('on'); });
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{ navigator.serviceWorker.register('./sw.js').catch(()=>{}); });
+}
+/* ── 복습 알림 (웹푸시) ── */
+function b64ToU8(b64){
+  const pad = '='.repeat((4 - b64.length % 4) % 4);
+  const s = (b64 + pad).replace(/-/g,'+').replace(/_/g,'/');
+  const raw = atob(s);
+  const out = new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+async function pushSubGet(){
+  try{
+    if(!navigator.serviceWorker.controller && !(await navigator.serviceWorker.getRegistration())) return null;
+    const reg = await navigator.serviceWorker.ready;
+    return await reg.pushManager.getSubscription();
+  }catch(e){ return null; }
+}
+function renderPushRow(){
+  const row = $('row-push'); if(!row) return;
+  const able = PUSH_CFG.vapid && ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+  if(!able || (isIOS() && !isStandalone())){ row.style.display='none'; return; }   /* iOS는 설치 후에만 푸시 가능 */
+  row.style.display='flex';
+  pushSubGet().then(s=>{ const t=$('push-tog'); if(t) t.classList.toggle('on', !!s && Notification.permission==='granted'); });
+}
+$('push-tog').addEventListener('click', async ()=>{
+  const cur = await pushSubGet();
+  if(cur){   /* 끄기 — 서버 등록 삭제 후 구독 해지 */
+    try{ await api('/rest/v1/push_subscriptions?endpoint=eq.'+encodeURIComponent(cur.endpoint), {method:'DELETE'}); }catch(e){}
+    try{ await cur.unsubscribe(); }catch(e){}
+    $('push-tog').classList.remove('on');
+    toast('복습 알림을 껐어요');
+    return;
+  }
+  if(Notification.permission==='denied'){ toast('브라우저 설정에서 알림 차단을 먼저 풀어야 해요'); return; }
+  const perm = await Notification.requestPermission();
+  if(perm!=='granted'){ toast('알림 권한이 없어 켜지 못했어요'); return; }
+  try{
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey: b64ToU8(PUSH_CFG.vapid)});
+    const j = sub.toJSON();
+    const r = await api('/rest/v1/push_subscriptions?on_conflict=endpoint', {method:'POST', headers:{Prefer:'resolution=merge-duplicates'}, body: JSON.stringify({endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth, ua:(navigator.userAgent||'').slice(0,180)})});
+    if(!r || !(r.ok || r.status===409)){ try{ await sub.unsubscribe(); }catch(e){} toast('서버에 알림 등록을 못했어요 — 잠시 후 다시'); return; }
+    $('push-tog').classList.add('on');
+    toast('🔔 복습 알림을 켰어요 — 저녁에 만나요!');
+  }catch(e){ toast('알림 등록에 실패했어요'); }
+});
 function applyTheme(){
   document.documentElement.setAttribute('data-theme', DB && DB.theme==='dark' ? 'dark' : 'light');
   const mt = document.querySelector('meta[name=theme-color]');
@@ -3367,6 +3751,15 @@ function mergeGame(a,b){
     if(g.rev2t) Object.keys(rv).forEach(lid=>{ if(g.rev2t[lid] !== undefined && !(g.rev2 && g.rev2[lid])) delete rv[lid]; });
     if(Object.keys(rv).length) g.review = rv; else delete g.review;
   }
+  /* v2.2 — 졸업 명부는 합집합, 상점 재화는 큰 값, 보유 아이템은 합집합 */
+  if(a.revDone || b.revDone){
+    const R = {}; const A = a.revDone||{}, B = b.revDone||{};
+    Object.keys(A).concat(Object.keys(B)).forEach(l=>{ R[l] = Object.assign({}, B[l]||{}, A[l]||{}); });
+    g.revDone = R;
+  }
+  g.spent = Math.max(a.spent||0, b.spent||0);
+  g.freezeExtra = Math.max(a.freezeExtra||0, b.freezeExtra||0);
+  if(a.items || b.items) g.items = Object.assign({}, b.items||{}, a.items||{});
   return g;
 }
 let STUDY = {mult: 1};
@@ -3412,7 +3805,11 @@ function gameOnSession(rec){
     else if(g.lastDay){
       const y2 = new Date(rec.t); y2.setDate(y2.getDate()-2);
       const wk = weekKeyOf(rec.t);
-      if(dayKeyOf(y2.getTime())===g.lastDay && g.freezeWeek!==wk){ g.freezeWeek=wk; g.streak=(g.streak||0)+1; setTimeout(()=>toast('🧊 스트릭 프리즈 사용 — 연속 기록이 지켜졌어요'), 500); }
+      if(dayKeyOf(y2.getTime())===g.lastDay){
+        if(g.freezeWeek!==wk){ g.freezeWeek=wk; g.streak=(g.streak||0)+1; setTimeout(()=>toast('🧊 스트릭 프리즈 사용 — 연속 기록이 지켜졌어요'), 500); }
+        else if((g.freezeExtra||0)>0){ g.freezeExtra--; g.streak=(g.streak||0)+1; setTimeout(()=>toast('🧊 구매한 프리즈 사용! 남은 프리즈 '+g.freezeExtra+'개'), 500); }
+        else g.streak = 1;
+      }
       else g.streak = 1;
     } else g.streak = 1;
     g.lastDay = dk;
@@ -3420,6 +3817,13 @@ function gameOnSession(rec){
       g.streakBonus = g.streak;
       g.xp += 100; g.weekXp += 100; g.dayXp += 100;
       setTimeout(()=>{ floatXp('+100 XP'); toast('🔥 '+g.streak+'일 연속 학습! 보너스 +100 XP'); }, 1200);
+    }
+    if(g.streakGoal && g.streak === g.streakGoal){
+      g.xp += 200; g.weekXp += 200; g.dayXp += 200;
+      const hitGoal = g.streakGoal;
+      const next = hitGoal >= 30 ? null : (hitGoal >= 14 ? 30 : 14);
+      g.streakGoal = next;
+      setTimeout(()=>{ floatXp('+200 XP'); toast('🏁 스트릭 목표 '+hitGoal+'일 달성! +200 XP'+(next?' — 다음 목표는 '+next+'일이에요':' — 완주!')); }, 1900);
     }
   }
   scheduleSave();
@@ -3496,17 +3900,85 @@ $('nk-confirm').addEventListener('click', async ()=>{
 
 /* ════════ 월간 리그 ════════ */
 async function pushLeague(){ /* 리그는 서버가 학습 기록으로 직접 집계한다 */ }
-async function fetchLeague(){
+let lgPeriod = 'm';   /* 'm' 이번 달 | 'w' 이번 주 (서버에 league_week가 있을 때만) */
+let lgWeekMissing = false;   /* 서버 미설치 감지 — 주간 탭을 조용히 접는다 */
+async function fetchLeague(period){
+  const p = period || 'm';
   const now = Date.now();
-  if(leagueCache && (now - leagueCache.t) < 5*60*1000) return leagueCache.rows;
-  const r = await api('/rest/v1/rpc/league_month', {method:'POST', body:'{}'});
-  if(!r || !r.ok) return null;
+  const c = leagueCache[p];
+  if(c && (now - c.t) < 5*60*1000) return c.rows;
+  const fn = p==='w' ? 'league_week' : 'league_month';
+  const r = await api('/rest/v1/rpc/'+fn, {method:'POST', body:'{}'});
+  if(!r) return null;
+  if(p==='w' && r.status===404){ lgWeekMissing = true; return null; }   /* 서버가 아직 주간 집계를 모른다 */
+  if(!r.ok) return null;
   const raw = await r.json();
   const rows = (raw||[]).map(x=>({nickname:x.nick, avatar:x.avatar, class_name:x.cls||'', mname:x.mname||'', week_xp:x.score, me:!!x.me}));
-  leagueCache = {t: now, rows};
+  leagueCache[p] = {t: now, rows};
   return rows;
 }
-let leagueCache = null;
+let leagueCache = {};
+
+/* ════════ XP 상점 (v2.2) — 재화는 '누적 XP − 사용'. 써도 레벨은 내려가지 않는다 ════════ */
+const SHOP = [
+  {k:'freeze',      e:'🧊', n:'스트릭 프리즈 +1',   d:'하루 빠져도 자동으로 연속 기록을 지켜요 · 최대 2개 보관', cost:300, type:'consume'},
+  {k:'frame_gold',  e:'🥇', n:'황금 테두리',        d:'프로필 아바타에 금빛 테두리', cost:500, type:'frame'},
+  {k:'frame_fire',  e:'🔥', n:'불꽃 테두리',        d:'프로필 아바타에 불꽃 테두리', cost:800, type:'frame'},
+  {k:'theme_night', e:'🌌', n:'카드 테마 — 밤하늘', d:'플래시카드 앞면이 밤하늘로 바뀌어요', cost:600, type:'theme'},
+  {k:'theme_mint',  e:'🍃', n:'카드 테마 — 민트',   d:'플래시카드 앞면이 민트빛으로 바뀌어요', cost:600, type:'theme'},
+  {k:'greet_hype',  e:'📣', n:'인사말 팩 — 응원 폭발', d:'홈 인사말 12종이 추가돼요', cost:400, type:'own'}
+];
+function wallet(){ const g = ensureGame(); return Math.max(0, (g.xp||0) - (g.spent||0)); }
+function shopRowHTML(it){
+  const g = ensureGame();
+  let right;
+  if(it.type==='consume'){
+    const have = g.freezeExtra||0;
+    right = have>=2 ? '<span class="shop-own">보유 2/2</span>'
+      : ((have?'<span class="shop-own">보유 '+have+'</span>':'')+'<button type="button" class="btn primary shop-buy" data-k="'+it.k+'">'+fmtXp(it.cost)+' P</button>');
+  } else if(g.items && g.items[it.k]){
+    if(it.type==='own') right = '<span class="shop-own">보유 중</span>';
+    else{
+      const eq = (it.type==='frame' && g.frame===it.k.slice(6)) || (it.type==='theme' && g.cardTheme===it.k.slice(6));
+      right = '<button type="button" class="btn '+(eq?'primary':'ghost')+' shop-eq" data-k="'+it.k+'">'+(eq?'장착 중':'장착')+'</button>';
+    }
+  } else {
+    right = '<button type="button" class="btn primary shop-buy" data-k="'+it.k+'">'+fmtXp(it.cost)+' P</button>';
+  }
+  return '<div class="shop-row"><span class="sh-e">'+it.e+'</span><div class="sh-i"><b>'+it.n+'</b><span>'+it.d+'</span></div>'+right+'</div>';
+}
+document.addEventListener('click', e=>{
+  const bb = e.target.closest('.shop-buy');
+  if(bb){
+    const it = SHOP.find(x=>x.k===bb.dataset.k); if(!it) return;
+    const g = ensureGame();
+    if(it.type==='consume' && (g.freezeExtra||0)>=2){ toast('프리즈는 2개까지만 보관돼요'); return; }
+    if(wallet() < it.cost){ toast('포인트가 부족해요 — '+fmtXp(it.cost - wallet())+' P 더 모으면 살 수 있어요!'); return; }
+    if(!confirm('"'+it.n+'"을(를) '+fmtXp(it.cost)+' P로 살까요?')) return;
+    g.spent = (g.spent||0) + it.cost;
+    if(it.type==='consume') g.freezeExtra = (g.freezeExtra||0) + 1;
+    else{
+      if(!g.items) g.items = {};
+      g.items[it.k] = 1;
+      if(it.type==='frame') g.frame = it.k.slice(6);
+      if(it.type==='theme') g.cardTheme = it.k.slice(6);
+    }
+    scheduleSave(); fxRight();
+    toast('구매 완료! 🛍️');
+    if(curScr==='scr-stats') renderStats();
+    return;
+  }
+  const be = e.target.closest('.shop-eq');
+  if(be){
+    const it = SHOP.find(x=>x.k===be.dataset.k); if(!it) return;
+    const g = ensureGame(); const key = it.k.slice(6);
+    if(it.type==='frame') g.frame = (g.frame===key ? null : key);
+    if(it.type==='theme') g.cardTheme = (g.cardTheme===key ? null : key);
+    scheduleSave();
+    if(curScr==='scr-stats') renderStats();
+    toast('적용했어요');
+  }
+});
 
 /* ════════ 아레나 화면 ════════ */
 function renderStats(){
@@ -3536,15 +4008,18 @@ function renderStats(){
     +'<div class="tchip"><b style="color:var(--gold)">'+starSum+'</b><span>★ 모은 별</span></div>'
     +'<div class="tchip"><b style="color:var(--teal-deep)">'+(acc==null?'—':acc+'%')+'</b><span>누적 정답률</span></div>'
     +'</div>';
-  h += '<div class="stat-h">월간 리그<span class="sub">매달 1일 리셋 · 개인은 닉네임으로 표시</span></div>'
+  h += '<div class="stat-h">🛍️ XP 상점<span class="sub">보유 '+fmtXp(wallet())+' P · 써도 레벨은 안 내려가요</span></div>'
+    +'<div class="shop" id="shop-body">'+SHOP.map(shopRowHTML).join('')+'</div>';
+  h += '<div class="stat-h">리그<span class="sub">'+(lgView==='p' && lgPeriod==='w' ? '월요일 리셋 · 닉네임으로 표시' : '매달 1일 리셋 · 개인은 닉네임으로 표시')+'</span></div>'
     +'<div class="lg-tabs"><button type="button" class="lgt'+(lgView==='p'?' on':'')+'" id="lg-tab-p">👤 개인전</button><button type="button" class="lgt'+(lgView==='c'?' on':'')+'" id="lg-tab-c">🏫 반 대항전</button></div>'
+    +(lgView==='p' && !lgWeekMissing ? '<div class="lg-tabs lg-per"><button type="button" class="lgt'+(lgPeriod==='m'?' on':'')+'" id="lg-per-m">이번 달</button><button type="button" class="lgt'+(lgPeriod==='w'?' on':'')+'" id="lg-per-w">이번 주</button></div>' : '')
     +'<div class="lg-card" id="lg-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div>';
   h += '<div class="stat-h">명예의 전당<span class="sub">달이 끝나면 그달 TOP 10이 새겨져요</span></div><div class="lg-card" id="hall-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div>';
   h += '<div class="stat-h">최근 7일 학습량<span class="sub">푼 문항 수</span></div><div class="bars">'
     +days.map(d=>'<div class="bar'+(d.n?'':' zero')+'"><i style="height:'+Math.max(2,Math.round(d.n/max*72))+'px"></i><span>'+d.label+'</span></div>').join('')+'</div>';
   const slh = DB.lists.map(l=>{
     const st = g.stars[l.id]; if(!st) return '';
-    const best = Math.max(st.quiz||0, st.spell||0);
+    const best = Math.max(st.quiz||0, st.spell||0, st.listen||0);
     let stars=''; for(let i=1;i<=3;i++) stars+='<span class="'+(i<=best?'onn':'off')+'">★</span>';
     return '<div class="sl"><div class="nm">'+esc(l.name)+'</div><div class="st">'+stars+'</div></div>';
   }).join('');
@@ -3569,32 +4044,35 @@ let classLgCache = null;
 async function renderLeaguePersonal(){
   const el = document.getElementById('lg-body'); if(!el) return;
   const g = ensureGame();
+  const frCls = g.frame ? ' fr-'+g.frame : '';
   const cls = (DB.profile && DB.profile.class_name) || '';
   const ghost = !!(DB.profile && DB.profile.hidden);
   const ghostNote = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">\uD83D\uDD4A\uFE0F 이 계정은 순위표에 오르지 않아요. 순위 걱정 없이 편하게 공부해요!</span></span></div>';
-  const meRow = '<div class="lg-row me"><span class="rank">—</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'닉네임 미정')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+cls)+'</span></span><span class="wxp">'+fmtXp(0)+' XP</span></div>';
-  const rows = await fetchLeague();
+  const meRow = '<div class="lg-row me"><span class="rank">—</span><span class="avt'+frCls+'">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'닉네임 미정')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+cls)+'</span></span><span class="wxp">'+fmtXp(0)+' XP</span></div>';
+  const per = lgPeriod;
+  const rows = await fetchLeague(per);
+  if(per==='w' && lgWeekMissing){ lgPeriod = 'm'; if(curScr==='scr-stats') renderStats(); return; }   /* 서버 미설치 — 조용히 월간으로 */
   if(!rows || !rows.length){
-    el.innerHTML = (ghost ? ghostNote : meRow) + '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">이번 달 랭킹이 아직 비어 있어요. 학습하면 순위가 생겨요!</span></span></div>';
+    el.innerHTML = (ghost ? ghostNote : meRow) + '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">'+(per==='w'?'이번 주':'이번 달')+' 랭킹이 아직 비어 있어요. 학습하면 순위가 생겨요!</span></span></div>';
     return;
   }
   let mine=false;
   const html = rows.slice(0,10).map((r,i)=>{
     const me = !!r.me;
     if(me) mine=true;
-    return '<div class="lg-row r'+(i+1)+(me?' me':'')+'"><span class="rank">'+(i+1)+'</span><span class="avt">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.class_name||''))+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
+    return '<div class="lg-row r'+(i+1)+(me?' me':'')+'"><span class="rank">'+(i+1)+'</span><span class="avt'+(me?frCls:'')+'">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.class_name||''))+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
   }).join('');
   let tail = '';
   if(!mine && !ghost){
     const idx = rows.findIndex(r=>r.me);
     tail = (idx >= 0)
-      ? '<div class="lg-row me"><span class="rank">'+(idx+1)+'</span><span class="avt">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+((DB.profile && DB.profile.class_name)||''))+'</span></span><span class="wxp">'+fmtXp(rows[idx].week_xp)+' XP</span></div>'
+      ? '<div class="lg-row me"><span class="rank">'+(idx+1)+'</span><span class="avt'+frCls+'">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+((DB.profile && DB.profile.class_name)||''))+'</span></span><span class="wxp">'+fmtXp(rows[idx].week_xp)+' XP</span></div>'
       : meRow;
   }
   el.innerHTML = html + (ghost ? ghostNote : tail);
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.2.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -3652,6 +4130,8 @@ const SCHOOLS = ['강동고','경명여고','경북고','경북여고','경북�
   if(su) su.innerHTML = '<option value="">학교 선택</option>' + base;
   const lf = document.getElementById('lf-school');
   if(lf) lf.innerHTML = '<option value="">학교 선택</option><option value="__ALL">🏫 전체학교</option>' + base;
+  const asS = document.getElementById('as-school');
+  if(asS) asS.innerHTML = '<option value="">학교 선택</option><option value="__ALL">🏫 전체학교</option>' + base;
 })();
 function renderTargetChips(){
   const box = document.getElementById('lf-target-chips');
@@ -3819,7 +4299,10 @@ const REV_GAPS = [1, 3, 7, 14, 30];
 function revDayNum(t){ const d = new Date(t); d.setHours(0,0,0,0); return Math.round(d.getTime()/864e5); }
 let revDoneCnt = 0, revDoneTimer = null;
 function revStamp(g, lid){ if(!g.rev2t) g.rev2t = {}; g.rev2t[lid] = Date.now(); }
-function revTouch(lid, word){
+function revTouch(lid, word, ok){
+  /* v2.2 — 단계 진급은 '정답 인출'에만 허용한다. 노출만으로는 잠기지 않는다.
+     ok === false : 인출 실패 — 단계 유지. 만기 단어는 오늘 큐에 그대로 남아 다시 물어본다.
+     첫 노출은 정오답과 무관하게 '등록'만 한다(내일 1일차 예약). */
   if(!lid || !word) return;
   const g = ensureGame();
   if(!g.rev2) g.rev2 = {};
@@ -3828,15 +4311,19 @@ function revTouch(lid, word){
   const today = revDayNum(Date.now());
   const v = m[word];
   if(v === undefined){ m[word] = today + REV_GAPS[0]; revStamp(g, lid); return; }
+  if(ok === false) return;
   const st = Math.floor(v/100000), due = v%100000;
   if(today >= due){
     const ns = st + 1;
     if(ns >= REV_GAPS.length){
       delete m[word];
+      if(!g.revDone) g.revDone = {};
+      if(!g.revDone[lid]) g.revDone[lid] = {};
+      g.revDone[lid][word] = 1;   /* 졸업 명부 — 단어장 화면 마스터리 게이지에 쓴다 */
       revStamp(g, lid);
       revDoneCnt++;
       clearTimeout(revDoneTimer);
-      revDoneTimer = setTimeout(()=>{ toast('🔒 '+revDoneCnt+'개 단어, 30일차까지 완주! 이제 오래 남는 기억이에요'); revDoneCnt = 0; }, 1500);
+      revDoneTimer = setTimeout(()=>{ toast('🔓 '+revDoneCnt+'개 단어, 5회 인출 성공으로 졸업! 오래 남는 기억이 됐어요'); revDoneCnt = 0; }, 1500);
       return;
     }
     m[word] = ns*100000 + (today + REV_GAPS[ns]);
@@ -3895,6 +4382,28 @@ function revDueWords(lid){
   if(!L) return [];
   return L.words.filter(w=>{ const v = m[w.word]; return v !== undefined && v%100000 <= today; });
 }
+function startReviewSession(lid){
+  /* v2.2 — 복습은 재인(카드)이 아니라 인출(퀴즈)로 한다. 맞힌 단어만 다음 단계로 잠기고,
+     틀린 단어는 오늘 큐에 남아 다시 물어본다. 선택지를 만들 수 없는 작은 리스트만 카드로 폴백. */
+  DB.activeListId = lid; scheduleSave();
+  const ws = revDueWords(lid);
+  const L = activeList();
+  if(!ws.length){ startFlash(L ? L.words : [], false); go('scr-flash'); return; }
+  const qs = buildQuestions(['mean','word'], ws.length, ws);
+  if(qs.length >= Math.min(3, ws.length)){
+    { const aL = activeList(); STUDY.mult = (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; }
+    QZ = {qs: shuffleArr(qs), i:0, right:0, wrongL:[], combo:0, review:{lid, n:ws.length}};
+    resetSessXp();
+    $('qz-setup').style.display='none';
+    $('qz-done').style.display='none';
+    $('qz-play').style.display='block';
+    go('scr-quiz');
+    renderQ();
+  } else {
+    startFlash(ws, false, true);
+    go('scr-flash');
+  }
+}
 function renderReview(){
   const el = $('rev-card'); if(!el) return;
   const g = ensureGame();
@@ -3932,7 +4441,7 @@ function renderReview(){
       + (revExpand ? up.map(x=>'<div class="rv-up-row"><span class="sp">'+(TIERS[x.L.tier||1]||TIERS[1]).e+' <b>'+esc(x.L.name)+'</b> — '+revDayLabel(x.nextDue, today)+' · '+x.day+'일차 '+x.nextN+'단어</span><button class="rv-del" data-del="'+esc(x.lid)+'" aria-label="메모리 락에서 빼기">✕</button></div>').join('') : '')
     : '';
   if(!due.length){ el.innerHTML = '<div class="rv-nwrap">' + nextLine + '<button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'; return; }
-  el.innerHTML = '<div class="rv-h">🔒 오늘의 메모리 락<span>1·3·7·14·30일차에 다시 봐야 오래 남아요</span><button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'
+  el.innerHTML = '<div class="rv-h">🔒 오늘의 메모리 락<span>1·3·7·14·30일차 — 정답으로 꺼내야 다음 단계로 잠겨요</span><button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'
     + due.map(x=>{
         const late = today - x.minDue;
         return '<div class="rv-row"><div class="rv-info"><b>'+esc(x.L.name)+'</b><span>'
@@ -3956,6 +4465,7 @@ $('rev-card').addEventListener('click', e=>{
     const g = ensureGame();
     if(g.rev2) delete g.rev2[lid];
     if(g.review) delete g.review[lid];
+    if(g.revDone) delete g.revDone[lid];
     revStamp(g, lid); /* 삭제 묘비 — 다른 기기와 합쳐질 때 삭제가 이긴다 */
     scheduleSave();
     renderReview();
@@ -3964,11 +4474,7 @@ $('rev-card').addEventListener('click', e=>{
   }
   if(e.target.closest('[data-act="rv-toggle"]')){ revExpand = !revExpand; renderReview(); return; }
   const b = e.target.closest('.rv-go'); if(!b) return;
-  DB.activeListId = b.dataset.id; scheduleSave();
-  const ws = revDueWords(b.dataset.id);
-  const L = activeList();
-  startFlash(ws.length ? ws : (L ? L.words : []), false, ws.length > 0);
-  go('scr-flash');
+  startReviewSession(b.dataset.id);
 });
 /* ════════ 일일 퀘스트 ════════ */
 const QUESTS = [
@@ -4045,11 +4551,200 @@ async function renderLeagueClass(){
   +'<div class="note" style="margin-top:8px">반 점수 = 반 전체 점수 ÷ 반 인원 전원.'+((DB.profile && DB.profile.hidden)?'':' 내가 안 하면 우리 반 평균이 내려간다!')+'</div>';
 }
 document.addEventListener('click', e=>{
+  const pm = e.target.closest('#lg-per-m'), pw = e.target.closest('#lg-per-w');
+  if(pm || pw){
+    lgPeriod = pm ? 'm' : 'w';
+    if(curScr==='scr-stats') renderStats();
+    return;
+  }
   const p = e.target.closest('#lg-tab-p'), c = e.target.closest('#lg-tab-c');
   if(!p && !c) return;
   lgView = p ? 'p' : 'c';
+  if(curScr==='scr-stats'){ renderStats(); return; }
   document.querySelectorAll('.lgt').forEach(x=>x.classList.toggle('on', x.id === (p ? 'lg-tab-p' : 'lg-tab-c')));
   renderLeague();
+});
+/* ════════ 과제 시스템 (v2.2) ════════
+   서버 assignments 테이블이 없으면(404) 기능이 조용히 접힌다 — 앱은 평소처럼 돈다. */
+let noAssignFlag = false;   /* 이번 세션에서 서버 미설치 확인 여부 (저장 안 함) */
+const MODE_KO_HW = {any:'아무 모드', quiz:'퀴즈', spell:'스펠링', listen:'듣기', flash:'플래시카드'};
+async function pullAssignments(){
+  if(noAssignFlag || !DB.auth) return;
+  const r = await api('/rest/v1/assignments?select=*&order=due_at.asc');
+  if(!r) return;
+  if(r.status===404){ noAssignFlag = true; return; }
+  if(!r.ok) return;
+  try{ DB.assigns = await r.json(); }catch(e){ return; }
+  scheduleSave();
+  if(curScr==='scr-home') renderHW();
+  if(curScr==='scr-assign') renderAssignList();
+}
+function assignDone(a){
+  /* 완료 판정은 학생 기기의 학습 기록(DB.log)으로 즉시 계산 — 서버 왕복 없이 표시 */
+  const from = Date.parse(a.created_at)||0;
+  const to = Date.parse(a.due_at)||Infinity;
+  const need = a.min_count||1;
+  let c = 0;
+  (DB.log||[]).forEach(s=>{
+    if(s.lid !== a.list_id) return;
+    if(a.mode && a.mode!=='any' && s.mode !== a.mode) return;
+    if(s.t < from || s.t > to) return;
+    if(a.min_acc != null && a.min_acc > 0){
+      if(s.right == null || !s.total) return;
+      if(Math.round(s.right/s.total*100) < a.min_acc) return;
+    }
+    c++;
+  });
+  return c >= need;
+}
+function hwCond(a){
+  return MODE_KO_HW[a.mode||'any'] + (a.min_acc?' · 정답률 '+a.min_acc+'%↑':'') + ((a.min_count||1)>1?' · '+a.min_count+'회':'');
+}
+function renderHW(){
+  const el = $('hw-card'); if(!el) return;
+  if(!DB.profile || DB.profile.role!=='student' || !DB.assigns || !DB.assigns.length){ el.style.display='none'; el.innerHTML=''; return; }
+  const now = Date.now();
+  const rows = DB.assigns
+    .map(a=>({a, done: assignDone(a), due: Date.parse(a.due_at)||0}))
+    .filter(x=> x.due > now - 3*86400000)   /* 마감 3일 지난 과제는 접는다 */
+    .sort((x,y)=> (x.done - y.done) || (x.due - y.due))
+    .slice(0, 4);
+  if(!rows.length){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='block';
+  const leftN = rows.filter(x=>!x.done).length;
+  el.className = 'hw-card';
+  el.innerHTML = '<div class="hw-h">📌 과제<span>'+(leftN? leftN+'개 남음':'전부 완료 🎉')+'</span></div>'
+    + rows.map(x=>{
+        const a = x.a; const L = DB.lists.find(l=>l.id===a.list_id);
+        let ddTxt;
+        if(x.done) ddTxt = '완료 ✓';
+        else if(x.due < now) ddTxt = '마감 지남';
+        else { const days = Math.floor((x.due - now)/86400000); ddTxt = days===0 ? '오늘 마감' : 'D-'+days; }
+        return '<div class="hw-row"><div class="hw-i"><b>'+esc(a.title||a.list_name)+'</b><span>'+esc(L?L.name:a.list_name)+' · '+hwCond(a)+'</span></div><span class="hw-dday'+(x.done?' ok':'')+'">'+ddTxt+'</span>'+(x.done?'':'<button type="button" class="hw-go" data-aid="'+esc(a.id)+'">지금 하기</button>')+'</div>';
+      }).join('');
+}
+$('hw-card').addEventListener('click', e=>{
+  const b = e.target.closest('.hw-go'); if(!b) return;
+  const a = (DB.assigns||[]).find(x=>x.id===b.dataset.aid); if(!a) return;
+  const L = DB.lists.find(l=>l.id===a.list_id);
+  if(!L){ toast('이 단어장이 아직 내 목록에 없어요 — 선생님께 문의해 주세요'); return; }
+  DB.activeListId = L.id; scheduleSave();
+  const m = a.mode||'any';
+  if(m==='flash'){ startFlash(L.words, false); go('scr-flash'); }
+  else if(m==='spell'){ startSpell(L.words, false); go('scr-spell'); }
+  else if(m==='listen'){ startSpell(L.words, true); go('scr-spell'); }
+  else { openQuizSetup(); }
+});
+/* ── 교사: 과제 내기 화면 ── */
+const asStatusCache = {};
+function renderAsTargetChips(){
+  const box = document.getElementById('as-target-chips'); if(!box) return;
+  const cur = (document.getElementById('as-target').value||'').split(',').map(x=>x.trim()).filter(Boolean);
+  box.innerHTML = cur.map(c=>'<button type="button" class="tchip" data-c="'+esc(c)+'">'+esc(c)+'</button>').join('')
+    + '<span class="hint">'+(cur.length ? '위 반에만 나간다. 태그를 누르면 뺀다.' : '담긴 반 없음 — 전체 학생에게 나간다.')+'</span>';
+}
+document.getElementById('as-add').addEventListener('click', ()=>{
+  const sc = document.getElementById('as-school').value, g = document.getElementById('as-grade').value;
+  if(!sc || !g){ toast('학교와 학년을 먼저 골라 주세요'); return; }
+  const t = document.getElementById('as-target');
+  let cur = (t.value||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const c = (sc === '__ALL') ? (g + '학년전체') : (sc + g);
+  if(!cur.includes(c)) cur.push(c);
+  t.value = cur.join(', ');
+  renderAsTargetChips();
+});
+document.getElementById('as-target-chips').addEventListener('click', e=>{
+  const ch = e.target.closest('.tchip'); if(!ch) return;
+  const t = document.getElementById('as-target');
+  const cur = (t.value||'').split(',').map(x=>x.trim()).filter(Boolean).filter(x=>x!==ch.dataset.c);
+  t.value = cur.join(', ');
+  renderAsTargetChips();
+});
+function renderAssign(){
+  const sel = $('as-list');
+  sel.innerHTML = DB.lists.length
+    ? DB.lists.map(l=>'<option value="'+esc(l.id)+'">'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+'</option>').join('')
+    : '<option value="">단어장이 없어요</option>';
+  if(DB.activeListId && DB.lists.some(l=>l.id===DB.activeListId)) sel.value = DB.activeListId;
+  if(!$('as-due').value){
+    const d = new Date(Date.now()+3*86400000); d.setHours(22,0,0,0);
+    const pad = n=>String(n).padStart(2,'0');
+    $('as-due').value = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+  }
+  renderAsTargetChips();
+  renderAssignList();
+  pullAssignments();
+}
+function renderAssignList(){
+  const box = $('as-list-body'); if(!box) return;
+  if(noAssignFlag){
+    box.innerHTML = '<div class="note">서버에 과제 테이블이 아직 없어요. 배포 가이드의 <b>supabase_setup.sql</b>을 실행하면 이 기능이 열려요.</div>';
+    return;
+  }
+  const as = DB.assigns||[];
+  if(!as.length){ box.innerHTML = '<div class="note">아직 낸 과제가 없어요. 위에서 첫 과제를 내 보세요.</div>'; return; }
+  const pad = n=>String(n).padStart(2,'0');
+  box.innerHTML = as.slice().sort((a,b)=>(Date.parse(b.due_at)||0)-(Date.parse(a.due_at)||0)).map(a=>{
+    const due = new Date(a.due_at);
+    const tgt = (a.target_classes && a.target_classes.length) ? a.target_classes.join(', ') : '전체';
+    const past = (Date.parse(a.due_at)||0) < Date.now();
+    return '<div class="as-item hw-card" style="margin-top:10px"><div class="hw-row" style="border-top:0;padding-top:0"><div class="hw-i"><b>'+esc(a.title||a.list_name)+'</b><span>'+esc(a.list_name)+' · '+hwCond(a)+'</span><span>~'+(due.getMonth()+1)+'/'+due.getDate()+' '+pad(due.getHours())+':'+pad(due.getMinutes())+(past?' · <b style="color:var(--red-deep)">마감됨</b>':'')+' · 대상: '+esc(tgt)+'</span></div><button type="button" class="grp-back as-del" data-aid="'+esc(a.id)+'">삭제</button></div><div class="as-status" data-aid="'+esc(a.id)+'">완료 현황 불러오는 중…</div></div>';
+  }).join('');
+  as.forEach(a=>loadAssignStatus(a.id));
+}
+async function loadAssignStatus(aid){
+  const el = document.querySelector('.as-status[data-aid="'+aid+'"]'); if(!el) return;
+  if(asStatusCache[aid]){ el.innerHTML = asStatusCache[aid]; return; }
+  const r = await api('/rest/v1/rpc/assign_status', {method:'POST', body: JSON.stringify({aid})});
+  const el2 = document.querySelector('.as-status[data-aid="'+aid+'"]'); if(!el2) return;
+  if(!r){ el2.textContent = '완료 현황을 불러오지 못했어요'; return; }
+  if(r.status===404){ el2.innerHTML = '완료 현황 집계는 서버 함수(assign_status) 설치 후 보여요'; return; }
+  if(!r.ok){ el2.textContent = '완료 현황을 불러오지 못했어요'; return; }
+  let rows; try{ rows = await r.json(); }catch(e){ return; }
+  const done = (rows||[]).filter(x=>x.done), not = (rows||[]).filter(x=>!x.done);
+  const h = '<b>'+done.length+'</b> / '+(rows||[]).length+'명 완료'
+    + (not.length ? ' · 미완료: '+not.slice(0,12).map(x=>esc(x.name||'')).join(', ')+(not.length>12?' 외 '+(not.length-12)+'명':'') : ' 🎉');
+  asStatusCache[aid] = h; el2.innerHTML = h;
+}
+$('as-create').addEventListener('click', async ()=>{
+  if(!isStaff()) return;
+  const lid = $('as-list').value; const L = DB.lists.find(l=>l.id===lid);
+  if(!L){ toast('단어장을 골라 주세요'); return; }
+  const mode = $('as-mode').value;
+  const acc = parseInt($('as-acc').value, 10);
+  if(mode==='flash' && acc>0){ toast('플래시카드는 정답률을 잴 수 없어요 — 기준을 비우거나 모드를 바꿔요'); return; }
+  const dueRaw = $('as-due').value;
+  if(!dueRaw){ toast('마감을 정해 주세요'); return; }
+  const due = new Date(dueRaw);
+  if(!(due.getTime() > Date.now())){ toast('마감은 지금보다 뒤여야 해요'); return; }
+  const targets = ($('as-target').value||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const body = {
+    title: $('as-title').value.trim() || (L.name+' 과제'),
+    list_id: lid, list_name: L.name, mode,
+    min_acc: (acc>0 ? Math.min(100, acc) : null),
+    min_count: parseInt($('as-count').value, 10)||1,
+    due_at: due.toISOString(),
+    target_classes: targets.length ? targets : null,
+    created_name: (DB.profile && DB.profile.name) || null
+  };
+  const r = await api('/rest/v1/assignments', {method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body)});
+  if(!r){ toast('네트워크가 불안정해요 — 잠시 후 다시'); return; }
+  if(r.status===404){ noAssignFlag = true; renderAssignList(); return; }
+  if(!r.ok){ toast('과제 등록 실패 ('+r.status+') — 서버 설정을 확인해 주세요'); return; }
+  toast('과제를 냈어요 📌');
+  $('as-title').value = '';
+  noAssignFlag = false;
+  await pullAssignments();
+  renderAssignList();
+});
+$('as-list-body').addEventListener('click', async e=>{
+  const b = e.target.closest('.as-del'); if(!b) return;
+  if(!confirm('이 과제를 삭제할까요? 학생 홈에서도 사라져요.')) return;
+  const r = await api('/rest/v1/assignments?id=eq.'+encodeURIComponent(b.dataset.aid), {method:'DELETE'});
+  if(!r || !r.ok){ toast('삭제하지 못했어요'); return; }
+  DB.assigns = (DB.assigns||[]).filter(a=>a.id!==b.dataset.aid);
+  delete asStatusCache[b.dataset.aid];
+  scheduleSave(); renderAssignList(); toast('삭제했어요');
 });
 /* ════════ 주간 리포트 ════════ */
 function weeklyReportCard(){
@@ -4106,37 +4801,31 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-31';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-31'; });
+const APP_VER = '2026.07.25-40';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.25-40'; });
 const WN_ITEMS = [
- ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
- ['📚','단어장 고르기','홈 위쪽 카드를 누르면 단어장 목록이 떠요. 묶음은 접혀 있고, 누르면 안의 단어장이 열려요'],
- ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
- ['🏅','티어 보너스','어려운 단어장일수록 경험치가 최대 2배!'],
- ['🎖️','레벨 40단계','최고 칭호 "어휘의 신" — 아레나의 레벨 안내에서 확인'],
- ['🖨️','시험지 만들기','단어장에서 시험지를 뽑아 집에서 미리 시험 보기'],
- ['▶️','카드 이어하기','하다 만 카드 학습, 나갔다 와도 그 자리부터'],
- ['🔒','메모리 락','공부한 단어가 1·3·7·14·30일차마다 돌아와요 — 홈 카드의 ? 를 누르면 왜 그런지 알려줘요'],
- ['🎯','일일 퀘스트','세 가지 미션 채우면 매일 +150 XP 보너스'],
- ['🏫','반 대항전','아레나에서 우리 반 평균 점수로 겨뤄요'],
- ['🎧','듣기 모드','발음을 듣고 철자 쓰기 — 듣기 시험 대비까지'],
- ['📊','주간 리포트','매주 월요일, 지난주 성적표가 쪽지함에 도착']
+ ['🔓','메모리 락이 똑똑해졌어요','이제 복습 날에 퀴즈로 물어보고, 정답으로 꺼낸 단어만 다음 단계로 잠겨요. 5번 성공하면 졸업!'],
+ ['🧹','오답 탈출 보너스','퀴즈·스펠링에서 오답 단어를 맞히면 확실히 탈출 +20 XP. 오답 화면에 "전체 단어장" 탭도 생겼어요'],
+ ['🔤','스펠링 오타 판독','어디가 틀렸는지 글자별로 색으로 보여줘요. 5자 이상 단어는 오타 한 글자면 "아깝다!" 정답 처리'],
+ ['🧬','어원 조각·어근 찾기','퀴즈에 새 유형 2개 — 어근·접사의 뜻을 맞히고, 같은 어근 단어를 찾아요'],
+ ['🔒','단어별 잠금 게이지','단어장 보기에서 단어마다 메모리 락 진행(5칸)과 졸업 🔓이 보여요'],
+ ['🎯','목표 설정','홈의 ✎ 목표 버튼 — 하루 목표(20~100문항)와 스트릭 목표(7·14·30일, 달성 +200 XP)를 정해요'],
+ ['🛍️','XP 상점','아레나에서 스트릭 프리즈·아바타 테두리·카드 테마·인사말 팩을 사요. 사도 레벨은 안 내려가요'],
+ ['📌','과제','선생님이 낸 과제가 홈에 D-day와 함께 떠요. "지금 하기"로 바로 시작'],
+ ['🏆','주간 리그','아레나 개인전에 "이번 주" 탭 — 월요일마다 새 출발 (서버 준비되면 열려요)'],
+ ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
- ['🧩','유닛별 나눠 올리기','새 리스트 만들기에서 단어장 전체를 한 번에 붙여넣으면 Day·Unit마다 리스트를 나눠 만들어요'],
- ['🗂️','배포 관리 정리','단어장 이름 검색 + 같은 시리즈 묶어 보기 — Day별 리스트가 한 줄로 접혀요'],
- ['🏅','단어장 티어','리스트마다 난이도 티어를 달 수 있어요. 높을수록 학생 경험치 최대 2배'],
- ['⠿','드래그 순서 변경','리스트 관리에서 왼쪽 손잡이를 끌어 순서를 바꿔요'],
- ['🔑','비번 재설정','계정 관리에서 학생 비밀번호를 새로 정해줄 수 있어요 — 잊어버려도 그 자리에서 해결'],
- ['📚','홈 화면 정리','단어장 고르는 칸이 카드로 커지고, 남의 단어장은 아래 옵션 줄로 옮겼어요'],
- ['🔎','남의 단어장','학생이 배정 안 된 단어장도 골라서 공부할 수 있어요'],
- ['🖨️','시험지 만들기','학생·선생님 모두 A·B형 시험지를 뽑을 수 있어요 (정답지 포함)'],
- ['🔒','메모리 락 (자동 복습)','학생이 공부한 단어가 1·3·7·14·30일차마다 복습으로 돌아와요. 카드의 ? 버튼에 학생용 안내를 담았어요'],
- ['🎯','일일 퀘스트','학생이 매일 세 미션을 채우면 +150 XP 보너스'],
- ['🏫','반 대항전','아레나에서 반 평균 점수로 겨뤄요. 반 전원이 분모예요'],
- ['🎧','듣기 모드','발음을 듣고 철자를 쓰는 학습이 추가됐어요'],
- ['📊','주간 리포트','매주 월요일, 학생 쪽지함에 지난주 성적표가 도착해요'],
- ['🎖️','레벨 40단계','최고 칭호 "어휘의 신"까지 — 반년치 성장 곡선이에요']
+ ['📌','과제 내기','선생님 도구에 새 메뉴 — 단어장·모드·정답률·마감·대상 반을 정해 과제를 내고, 반별 완료 현황을 봐요'],
+ ['🔓','메모리 락 개편','복습이 퀴즈(인출)로 바뀌고, 정답을 맞힌 단어만 단계가 올라가요. 학습과학의 successive relearning 방식이에요'],
+ ['🧹','오답 검증 소거','오답 목록은 퀴즈·스펠링 정답으로만 확실히 지워져요(+20 XP). 카드 자기확인은 +10으로 낮췄어요'],
+ ['🔤','스펠링 오타 판독','학생이 어느 글자를 틀렸는지 색으로 보여주고, 5자 이상 단어의 오타 1글자는 관용 처리해요'],
+ ['🧬','어원 퀴즈 2종','어원(조각 뜻)·그룹(같은 어근 찾기) 데이터가 퀴즈 유형으로 살아나요 — 어원 열을 채울수록 문제가 풍부해져요'],
+ ['🎯','학생 목표 설정','학생이 하루 목표·스트릭 목표를 직접 정해요. 목표 달성 보너스로 꾸준함을 만듭니다'],
+ ['🛍️','XP 상점','모은 XP로 프리즈·테두리·카드 테마를 사요. 레벨은 누적 XP 기준이라 내려가지 않아요'],
+ ['🏆','주간 리그(서버 옵션)','SQL 한 번 실행하면 개인전에 "이번 주" 탭이 열려요 — 매주 월요일 리셋'],
+ ['📲','PWA 설치·알림','홈 화면 설치를 지원해요. 웹푸시 서버를 붙이면 저녁 복습 알림도 보낼 수 있어요(배포 가이드 참고)'],
+ ['🗂️','기존 기능','유닛별 나눠 올리기·티어·드래그 순서·비번 재설정 등은 그대로예요']
 ];
 function openWhatsNew(){
   const items = (DB.profile && DB.profile.role !== 'student') ? WN_STAFF : WN_ITEMS;
