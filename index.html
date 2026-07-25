@@ -2578,14 +2578,33 @@ async function pullProgress(){
   scheduleSave();
   return true;
 }
-let pushTimer = null;
-function schedulePush(){ clearTimeout(pushTimer); pushTimer = setTimeout(pushProgress, 2500); }
-async function pushProgress(){
+let pushTimer = null, pushDirty = false;
+function schedulePush(){ pushDirty = true; clearTimeout(pushTimer); pushTimer = setTimeout(pushProgress, 2500); }
+async function pushProgress(urgent){
   if(!DB || !DB.auth) return;
-  await api('/rest/v1/progress?user_id=eq.'+DB.auth.uid, {method:'PATCH',
-    headers:{'Prefer':'return=minimal'},
-    body: JSON.stringify({data:{wrong:DB.wrong||{}, log:DB.log||[], fx:DB.fx, qzExKo:DB.qzExKo, game:DB.game||null, theme:DB.theme}})});
+  pushDirty = false;
+  const body = JSON.stringify({data:{wrong:DB.wrong||{}, log:DB.log||[], fx:DB.fx, qzExKo:DB.qzExKo, game:DB.game||null, theme:DB.theme}});
+  const opts = {method:'PATCH', headers:{'Prefer':'return=minimal'}, body};
+  if(urgent === true && body.length < 60000) opts.keepalive = true; /* 화면을 떠나는 순간에도 전송이 끊기지 않게 */
+  await api('/rest/v1/progress?user_id=eq.'+DB.auth.uid, opts);
 }
+/* 화면을 벗어나면(새로고침·탭 전환·앱 닫기) 대기 중인 저장·전송을 그 자리에서 흘려보낸다 */
+function flushNow(){
+  try{ clearTimeout(saveTimer); storageSave(); }catch(e){}
+  if(pushDirty && DB && DB.auth){ clearTimeout(pushTimer); pushProgress(true); }
+}
+window.addEventListener('pagehide', flushNow);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') flushNow(); });
+/* 탭으로 돌아오면 서버 진행을 당겨와, 다른 기기에서 한 변경(삭제 포함)을 이 화면에도 반영한다 */
+let lastPullT = 0;
+document.addEventListener('visibilitychange', async ()=>{
+  if(document.visibilityState !== 'visible') return;
+  if(!DB || !DB.auth) return;
+  if(Date.now() - lastPullT < 60000) return;
+  lastPullT = Date.now();
+  const ok = await pullProgress();
+  if(ok && curScr === 'scr-home') renderHome();
+});
 async function pushSession(rec){
   if(!DB.auth) return;
   const L = DB.lists.find(l=>l.id===rec.lid);
@@ -3319,18 +3338,35 @@ function mergeGame(a,b){
   g.nickname = a.nickname || b.nickname;
   g.avatar = a.avatar || b.avatar;
   g.stars = Object.assign({}, b.stars||{}, a.stars||{});
-  if(a.rev2 || b.rev2){
-    const A = a.rev2 || {}, B = b.rev2 || {}, R = {};
-    Object.keys(A).concat(Object.keys(B)).forEach(lid=>{
-      if(R[lid]) return;
-      const x = A[lid] || {}, y = B[lid] || {};
-      const m = Object.assign({}, y, x);
-      Object.keys(y).forEach(w=>{ if(x[w] !== undefined && y[w] !== undefined) m[w] = Math.max(x[w], y[w]); });
-      R[lid] = m;
+  /* 메모리 락 병합 — 리스트 단위로 '마지막에 손댄 쪽'이 이긴다(rev2t에 변경 시각 기록).
+     시각 기록이 양쪽 다 없으면(구버전 데이터) 종전처럼 합집합. 삭제는 데이터 없이
+     rev2t만 남는 묘비 형태로 전파되어, 다른 기기의 옛 기록이 되살아나지 못한다 */
+  if(a.rev2 || b.rev2 || a.rev2t || b.rev2t){
+    const A = a.rev2 || {}, B = b.rev2 || {}, TA = a.rev2t || {}, TB = b.rev2t || {};
+    const R = {}, T = {}, now = Date.now(), KEEP = 1000*60*60*24*90;
+    const lids = {};
+    Object.keys(A).concat(Object.keys(B), Object.keys(TA), Object.keys(TB)).forEach(l=>{ lids[l]=1; });
+    Object.keys(lids).forEach(lid=>{
+      const ta = TA[lid] || 0, tb = TB[lid] || 0;
+      if(!ta && !tb){
+        const x = A[lid] || {}, y = B[lid] || {};
+        const m = Object.assign({}, y, x);
+        Object.keys(y).forEach(w=>{ if(x[w] !== undefined && y[w] !== undefined) m[w] = Math.max(x[w], y[w]); });
+        if(Object.keys(m).length) R[lid] = m;
+        return;
+      }
+      const win = ta >= tb ? A[lid] : B[lid];
+      const ts = Math.max(ta, tb);
+      if(win && Object.keys(win).length){ R[lid] = win; T[lid] = ts; }
+      else if(now - ts < KEEP) T[lid] = ts; /* 삭제 묘비 유지 — 90일 뒤 자동 소멸 */
     });
-    g.rev2 = R;
+    g.rev2 = R; g.rev2t = T;
   }
-  if(a.review || b.review) g.review = Object.assign({}, b.review||{}, a.review||{});
+  if(a.review || b.review){
+    const rv = Object.assign({}, b.review||{}, a.review||{});
+    if(g.rev2t) Object.keys(rv).forEach(lid=>{ if(g.rev2t[lid] !== undefined && !(g.rev2 && g.rev2[lid])) delete rv[lid]; });
+    if(Object.keys(rv).length) g.review = rv; else delete g.review;
+  }
   return g;
 }
 let STUDY = {mult: 1};
@@ -3782,6 +3818,7 @@ function openMakeTest(){
 const REV_GAPS = [1, 3, 7, 14, 30];
 function revDayNum(t){ const d = new Date(t); d.setHours(0,0,0,0); return Math.round(d.getTime()/864e5); }
 let revDoneCnt = 0, revDoneTimer = null;
+function revStamp(g, lid){ if(!g.rev2t) g.rev2t = {}; g.rev2t[lid] = Date.now(); }
 function revTouch(lid, word){
   if(!lid || !word) return;
   const g = ensureGame();
@@ -3790,18 +3827,20 @@ function revTouch(lid, word){
   const m = g.rev2[lid];
   const today = revDayNum(Date.now());
   const v = m[word];
-  if(v === undefined){ m[word] = today + REV_GAPS[0]; return; }
+  if(v === undefined){ m[word] = today + REV_GAPS[0]; revStamp(g, lid); return; }
   const st = Math.floor(v/100000), due = v%100000;
   if(today >= due){
     const ns = st + 1;
     if(ns >= REV_GAPS.length){
       delete m[word];
+      revStamp(g, lid);
       revDoneCnt++;
       clearTimeout(revDoneTimer);
       revDoneTimer = setTimeout(()=>{ toast('🔒 '+revDoneCnt+'개 단어, 30일차까지 완주! 이제 오래 남는 기억이에요'); revDoneCnt = 0; }, 1500);
       return;
     }
     m[word] = ns*100000 + (today + REV_GAPS[ns]);
+    revStamp(g, lid);
   }
 }
 function revMigrate(){
@@ -3813,6 +3852,7 @@ function revMigrate(){
   Object.keys(g.review).forEach(lid=>{
     const rv = g.review[lid];
     if(!rv){ delete g.review[lid]; moved = true; return; }
+    if(g.rev2t && g.rev2t[lid] !== undefined && !(g.rev2 && g.rev2[lid])){ delete g.review[lid]; moved = true; return; } /* 삭제 묘비가 있으면 옛 기록을 살리지 않는다 */
     const L = DB.lists.find(l=>l.id===lid);
     if(!L || !Array.isArray(L.words)){
       if(today - revDayNum(rv.due || 0) > 60){ delete g.review[lid]; moved = true; }
@@ -3915,6 +3955,8 @@ $('rev-card').addEventListener('click', e=>{
     if(!confirm('"'+nm+'" 메모리 락 기록을 지울까요?\n쌓아 온 일차 기록이 사라지고, 다시 공부하면 1일차부터 시작돼요.')) return;
     const g = ensureGame();
     if(g.rev2) delete g.rev2[lid];
+    if(g.review) delete g.review[lid];
+    revStamp(g, lid); /* 삭제 묘비 — 다른 기기와 합쳐질 때 삭제가 이긴다 */
     scheduleSave();
     renderReview();
     toast('메모리 락에서 뺐어요');
@@ -4064,8 +4106,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-30';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-30'; });
+const APP_VER = '2026.07.21-31';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-31'; });
 const WN_ITEMS = [
  ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
  ['📚','단어장 고르기','홈 위쪽 카드를 누르면 단어장 목록이 떠요. 묶음은 접혀 있고, 누르면 안의 단어장이 열려요'],
