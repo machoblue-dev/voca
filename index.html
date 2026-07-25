@@ -206,6 +206,18 @@ html[data-theme=dark] .hero .h-cta{box-shadow:var(--glow-red)}
 .pk-hint{font-size:11.5px;font-weight:700;color:var(--ink2);opacity:.7}
 .pickcard .listrow{margin-top:9px}
 .pickcard .listrow select{padding:14px 15px;font-size:15.5px;font-weight:900;border-radius:14px}
+.listrow .pick-btn{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding:14px 15px;border:2px solid var(--line);border-radius:14px;background:var(--card);font-weight:900;font-size:15.5px;text-align:left}
+.listrow .pick-btn .pb-t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.listrow .pick-btn .pb-chev{font-style:normal;color:var(--ink2);flex:0 0 auto;font-size:12px}
+.listrow .pick-btn:disabled{opacity:.6}
+.pick-modal{text-align:left;padding:22px 16px 16px;max-height:82vh;display:flex;flex-direction:column}
+.pick-modal h3,.pick-modal .desc{padding:0 4px}
+.lp-body{overflow-y:auto;margin:12px 0 14px;flex:1;min-height:0;-webkit-overflow-scrolling:touch}
+.lp-row{display:flex;align-items:center;gap:9px;width:100%;padding:12px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);font-weight:800;font-size:14px;text-align:left;margin-bottom:8px}
+.lp-row .lt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-row .lc{flex:0 0 auto;font-size:11.5px;font-weight:700;color:var(--ink2)}
+.lp-row.on{border-color:var(--red);background:var(--red-soft)}
+.lp-row.on .lc{color:var(--red-deep)}
 .opt-row{display:flex;align-items:center;gap:9px;width:100%;margin-top:10px;padding:12px 15px;border-radius:16px;background:transparent;border:1.5px dashed var(--line2);color:var(--ink2)}
 .opt-row .ot{font-weight:800;font-size:13.5px;white-space:nowrap}
 .opt-row .od{flex:1;text-align:left;font-size:12px;font-weight:600;opacity:.72;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -952,7 +964,7 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
     <div class="pickcard">
       <div class="pk-top"><span class="pk-label">📚 지금 공부하는 단어장</span><span class="pk-hint">눌러서 바꿔요</span></div>
       <div class="listrow">
-        <select id="home-list"></select>
+        <button type="button" class="pick-btn" id="home-list-btn"><span class="pb-t" id="home-list-cur">배포된 리스트 대기 중</span><i class="pb-chev">▾</i></button>
         <button class="mng" id="btn-lists" style="display:none">배포 관리</button>
       </div>
     </div>
@@ -1269,6 +1281,14 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
     <div class="desc">이번 업데이트로 생긴 새 기능들이에요.<br>하나씩 눌러 보면서 익혀 보세요!</div>
     <div id="wn-body" style="margin:12px 0;max-height:46vh;overflow:auto"></div>
     <button class="btn primary" id="wn-close" style="width:100%">좋아, 시작하자!</button>
+  </div>
+</div>
+<div class="ovl" id="list-pick">
+  <div class="card pick-modal">
+    <h3>📚 단어장 고르기</h3>
+    <div class="desc">묶음을 누르면 안에 있는 단어장이 열려요</div>
+    <div class="lp-body" id="lp-body"></div>
+    <button class="btn block" id="lp-close" style="flex:0 0 auto">닫기</button>
   </div>
 </div>
 <div class="ovl" id="ml-guide">
@@ -3159,10 +3179,10 @@ function todayCount(){
   return (DB.log||[]).filter(s=>dayKeyOf(s.t)===k).reduce((a,s)=>a+(s.total||0),0);
 }
 function renderHome(){
-  const sel = $('home-list');
-  const homeOpt = l=>'<option value="'+esc(l.id)+'"'+(l.id===DB.activeListId?' selected':'')+'>'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+' ('+l.words.length+')</option>';
-  sel.innerHTML = groupLists(DB.lists).map(it=> it.one ? homeOpt(it.one) : '<optgroup label="'+esc(it.grp)+'">'+it.lists.map(homeOpt).join('')+'</optgroup>').join('');
-  if(!DB.lists.length) sel.innerHTML = '<option value="">배포된 리스트 대기 중</option>';
+  const curL = DB.lists.find(l=>l.id===DB.activeListId);
+  $('home-list-cur').textContent = curL ? ((TIERS[curL.tier||1]||TIERS[1]).e+' '+curL.name+' ('+(curL.words||[]).length+')')
+    : (DB.lists.length ? '단어장을 골라 주세요' : '배포된 리스트 대기 중');
+  $('home-list-btn').disabled = !DB.lists.length;
   const L = activeList();
   const n = L ? L.words.length : 0;
   const wn = wrongWords().length;
@@ -3197,7 +3217,37 @@ function renderHome(){
   if(DB.unreadCount > 0){ mb.textContent = DB.unreadCount; mb.style.display='inline-block'; }
   else mb.style.display='none';
 }
-$('home-list').addEventListener('change', e=>{ DB.activeListId = e.target.value; scheduleSave(); renderHome(); });
+/* ── 단어장 고르기 모달: 묶음은 접힌 채로, 누르면 열림 ── */
+function renderListPick(){
+  const cid = DB.activeListId;
+  const row = l=>'<button type="button" class="lp-row'+(l.id===cid?' on':'')+'" data-pick="'+esc(l.id)+'">'
+    +'<span class="lt">'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+'</span>'
+    +'<span class="lc">'+(l.words||[]).length+'개'+(l.id===cid?' · 사용 중':'')+'</span></button>';
+  const html = groupLists(DB.lists).map(it=>{
+    if(it.one) return row(it.one);
+    const open = it.lists.some(l=>l.id===cid);
+    return '<div class="li-grp'+(open?' open':'')+'">'
+      +'<button type="button" class="li-grp-h"><span class="gname">🗂️ '+esc(it.grp)+'</span>'
+      +'<span class="gmeta">'+it.lists.length+'개<i class="chev">▾</i></span></button>'
+      +'<div class="li-grp-body">'+it.lists.map(row).join('')+'</div></div>';
+  }).join('');
+  $('lp-body').innerHTML = html || '<div class="note">아직 받은 단어장이 없어요. 새 단어장이 올라오면 여기 나타나요.</div>';
+}
+$('home-list-btn').addEventListener('click', ()=>{ renderListPick(); $('list-pick').classList.add('on'); });
+$('lp-close').addEventListener('click', ()=>$('list-pick').classList.remove('on'));
+$('list-pick').addEventListener('click', e=>{
+  if(e.target === $('list-pick')){ $('list-pick').classList.remove('on'); return; }
+  const gh = e.target.closest('.li-grp-h');
+  if(gh){ gh.closest('.li-grp').classList.toggle('open'); return; }
+  const r = e.target.closest('.lp-row');
+  if(r){
+    const L = DB.lists.find(l=>l.id===r.dataset.pick); if(!L) return;
+    DB.activeListId = L.id; scheduleSave();
+    $('list-pick').classList.remove('on');
+    renderHome();
+    toast('"'+L.name+'" 단어장으로 바꿨어요');
+  }
+});
 $('btn-lists').addEventListener('click', ()=>{ renderLists(); go('scr-lists'); loadClassSuggest(); });
 async function loadClassSuggest(){
   const r = await api('/rest/v1/profiles?select=class_name');
@@ -4014,11 +4064,11 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-29';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-29'; });
+const APP_VER = '2026.07.21-30';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-30'; });
 const WN_ITEMS = [
  ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
- ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
+ ['📚','단어장 고르기','홈 위쪽 카드를 누르면 단어장 목록이 떠요. 묶음은 접혀 있고, 누르면 안의 단어장이 열려요'],
  ['🔎','남의 단어장','배정 안 된 단어장도 골라서 공부 — 홈 아래쪽 줄에 있어요'],
  ['🏅','티어 보너스','어려운 단어장일수록 경험치가 최대 2배!'],
  ['🎖️','레벨 40단계','최고 칭호 "어휘의 신" — 아레나의 레벨 안내에서 확인'],
