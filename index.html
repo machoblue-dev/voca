@@ -106,7 +106,7 @@
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#FF4B3E">
-<title>VOCA꾹</title>
+<title>학문당 VOCA꾹</title>
 <style>
 :root{
   --bg:#FFFDF6; --card:#FFFFFF; --card2:#F7F4EC; --line:#F2EDE2; --line2:#F0EDE4; --edge:#F0E9DA;
@@ -537,6 +537,7 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
 .brand{padding:34px 4px 20px;text-align:center}
 .brand .logo{font-family:Paperlogy,sans-serif;font-size:36px;font-weight:800;letter-spacing:-.03em;animation:pop .5s ease}
 .brand .logo em{font-style:normal;color:var(--red)}
+.logo .pre{color:var(--red);margin-right:.02em}
 .brand .sub{margin-top:5px;color:var(--ink2);font-size:13px;letter-spacing:.1em;font-weight:700}
 .auth-wrap{max-width:420px;margin:0 auto;padding:8px 4px}
 .auth-tabs{display:flex;gap:8px;margin-bottom:16px}
@@ -727,7 +728,7 @@ html[data-theme=dark] .bars .bar i{background:var(--red)}
 .ovl .card{border-radius:28px;animation:springIn .45s cubic-bezier(.2,.9,.3,1.15)}
 .sw.on{background:linear-gradient(180deg,var(--teal),var(--teal-deep));box-shadow:0 0 12px color-mix(in oklab,var(--teal) 40%,transparent)}
 .brand{padding:48px 4px 26px}
-.brand .logo{font-size:50px}
+.brand .logo{font-size:clamp(34px,13.5vw,50px);white-space:nowrap}
 .brand .logo em{display:inline-block;animation:floaty 3.2s ease-in-out .4s infinite}
 .brand .sub{margin-top:10px;display:inline-block;background:var(--red-soft);color:var(--red-deep);border:1.5px solid var(--red-line);border-radius:99px;padding:5px 15px;letter-spacing:.14em;font-size:12.5px;font-weight:800}
 .brand .sub::after{content:' · UI v4';letter-spacing:0;font-weight:900}
@@ -790,7 +791,7 @@ html[data-theme=dark] .lvhero{box-shadow:none}
   <!-- ═══ 로그인 / 가입 ═══ -->
   <section class="scr on" id="scr-auth" data-screen-label="로그인">
     <div class="brand">
-      <div class="logo">VOCA<em>꾹</em></div>
+      <div class="logo"><span class="pre">학문당</span>VOCA<em>꾹</em></div>
       <div class="sub">학문당 조은희시스템영어</div>
     </div>
     <div class="auth-wrap">
@@ -827,7 +828,7 @@ html[data-theme=dark] .lvhero{box-shadow:none}
   <section class="scr" id="scr-home" data-screen-label="홈">
     <div id="noticebar" style="display:none"></div>
     <div class="hd">
-      <div class="logo">VOCA<em>꾹</em></div>
+      <div class="logo"><span class="pre">학문당</span>VOCA<em>꾹</em></div>
       <div class="hd-chips">
         <div class="pillchip streak" id="hd-streak"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2c1.5 4-4.5 5.5-4.5 10.5a4.5 4.5 0 0 0 9 0c0-2.2-1.2-3.8-1.8-5C14 9.5 12 8 12 2Z"></path></svg><span>0</span></div>
         <div class="pillchip xp" id="hd-xp"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="m13 2-8 12h6l-2 8 8-12h-6l2-8Z"></path></svg><span>0</span></div>
@@ -931,6 +932,14 @@ html[data-theme=dark] .lvhero{box-shadow:none}
         <div class="tchips" id="lf-target-chips"></div>
         <input type="hidden" id="lf-target">
         <datalist id="class-suggest"></datalist>
+      </div>
+      <div class="fld" id="lf-bulk-row">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0"><input type="checkbox" id="lf-bulk" style="width:18px;height:18px;accent-color:var(--brand);flex:0 0 auto">🧩 유닛별로 나눠 올리기 — 단어장 전체를 한 번에</label>
+        <div class="fmt-help" id="bulk-help">
+          <div class="note">단어장 전체를 한 번에 붙여넣으면, 유닛마다 리스트를 따로 만들어 드려요. 리스트 이름은 <b>리스트 이름 + 유닛 이름</b>으로 지어져요. 예) 리스트 이름 "워드마스터", 유닛 "Day 1" → <b>워드마스터 Day 1</b></div>
+          <div class="note" style="margin-top:6px"><b>방법 1 · 유닛 열</b> — 엑셀 첫 줄 항목 이름에 <b>유닛</b>(단원·Day·Unit도 돼요) 열을 넣고, 각 줄에 유닛 이름을 적어요. 빈칸은 바로 위 유닛을 그대로 따라가요.</div>
+          <div class="note" style="margin-top:6px"><b>방법 2 · 유닛 제목 줄</b> — 유닛이 시작되는 줄에 유닛 이름 <b>한 칸만</b> 적어요. (예: "Day 1"만 있는 줄) 그 아래 단어들이 그 유닛으로 들어가요.</div>
+        </div>
       </div>
       <div class="fld"><label>단어 데이터 (엑셀에서 복사해 붙여넣기)</label><textarea id="lf-data" placeholder="첫 줄: 항목 이름 (그룹, 어휘, 의미 …)&#10;둘째 줄부터: 단어 한 줄씩"></textarea></div>
       <div class="row" style="margin-bottom:10px">
@@ -1152,7 +1161,7 @@ html[data-theme=dark] .lvhero{box-shadow:none}
 <!-- 닉네임 뽑기 -->
 <div class="ovl" id="whatsnew">
   <div class="card">
-    <h3>🎉 VOCA꾹이 새로워졌어요!</h3>
+    <h3>🎉 학문당 VOCA꾹이 새로워졌어요!</h3>
     <div class="desc">이번 업데이트로 생긴 새 기능들이에요.<br>하나씩 눌러 보면서 익혀 보세요!</div>
     <div id="wn-body" style="margin:12px 0;max-height:46vh;overflow:auto"></div>
     <button class="btn primary" id="wn-close" style="width:100%">좋아, 시작하자!</button>
@@ -1378,6 +1387,41 @@ function parseWords(text){
   }
   return words;
 }
+const UNITHEAD = {'유닛':1,'유닛명':1,'단원':1,'단원명':1,'데이':1,'챕터':1,'회차':1,'차시':1,'주차':1,'강':1,'과':1,'레슨':1,'파트':1,'세트':1,'스텝':1,'레벨':1,'day':1,'unit':1,'chapter':1,'lesson':1,'part':1,'week':1,'set':1,'step':1,'stage':1,'level':1,'list':1,'no':1};
+function parseWordsUnits(text){
+  const lines = String(text||'').replace(/\r/g,'').split('\n').map(l=>l.replace(/\s+$/,'')).filter(l=>l.trim());
+  if(!lines.length) return {units:[], noUnit:0};
+  let map = null, start = 0, unitCol = -1;
+  const first = lines[0].split('\t').map(s=>s.trim());
+  const matched = first.map(h=>HEADMAP[h]||null);
+  if(matched.filter(Boolean).length>=2 && matched.includes('word')){
+    map = matched; start = 1;
+    unitCol = first.findIndex(h=>UNITHEAD[String(h).toLowerCase()]);
+  }
+  const units = [], byKey = {};
+  let cur = null, noUnit = 0;
+  for(let i=start;i<lines.length;i++){
+    const cols = lines[i].split('\t').map(s=>s.trim());
+    if(!cols.some(Boolean)) continue;
+    if(unitCol < 0){
+      const filled = cols.filter(Boolean);
+      if(filled.length === 1){ cur = filled[0]; continue; }   /* 유닛 제목 줄 */
+    } else if(cols[unitCol]){ cur = cols[unitCol]; }          /* 유닛 열 (빈칸은 위 값 유지) */
+    const w = {group:'',word:'',pron:'',meaning:'',etym:'',deriv:'',syn:'',ant:'',conf:'',ex:'',exKo:''};
+    if(map){ map.forEach((f,idx)=>{ if(f && cols[idx]) w[f]=cols[idx]; }); }
+    else if(cols.length===1){ w.word=cols[0]; }
+    else if(cols.length===2){ w.word=cols[0]; w.meaning=cols[1]; }
+    else if(cols.length===3){ w.word=cols[0]; w.meaning=cols[1]; w.ex=cols[2]; }
+    else if(cols.length===4){ w.word=cols[0]; w.meaning=cols[1]; w.ex=cols[2]; w.exKo=cols[3]; }
+    else { FIELDS.forEach((f,idx)=>{ if(cols[idx]) w[f]=cols[idx]; }); }
+    FIELDS.forEach(f=>{ if(w[f]==='—'||w[f]==='-'||w[f]==='–'||w[f]==='ㅡ') w[f]=''; });
+    if(!w.word) continue;
+    if(cur === null){ noUnit++; continue; }
+    if(!byKey[cur]){ byKey[cur] = {label:cur, words:[]}; units.push(byKey[cur]); }
+    byKey[cur].words.push(w);
+  }
+  return {units, noUnit};
+}
 function wordsToTSV(words){
   const head = FIELDS.map(f=>FIELD_KO[f]).join('\t');
   const rows = words.map(w=>FIELDS.map(f=>String(w[f]||'').replace(/\t/g,' ')).join('\t'));
@@ -1477,6 +1521,7 @@ $('list-cards').addEventListener('click', async e=>{
     $('lf-name').value = L.name; $('lf-tier').value = String(L.tier || 1);
     $('lf-data').value = wordsToTSV(L.words||[]);
     $('lf-target').value = (L.target_classes||[]).join(', '); renderTargetChips();
+    $('lf-bulk').checked = false; $('bulk-help').classList.remove('on'); $('lf-bulk-row').style.display = 'none';
     $('list-form').style.display='block';
     window.scrollTo({top:0, behavior:'smooth'});
   }
@@ -1499,14 +1544,58 @@ $('list-q').addEventListener('input', ()=>renderLists());
 $('btn-new-list').addEventListener('click', ()=>{
   editListId = null;
   $('lf-name').value=''; $('lf-data').value=''; $('lf-target').value=''; renderTargetChips();
+  $('lf-bulk').checked = false; $('bulk-help').classList.remove('on'); $('lf-bulk-row').style.display = '';
   $('list-form').style.display='block';
   $('lf-name').focus();
 });
 $('btn-lf-cancel').addEventListener('click', ()=>{ $('list-form').style.display='none'; $('fmt-help').classList.remove('on'); });
+async function bulkSaveLists(base){
+  const parsed = parseWordsUnits($('lf-data').value);
+  if(parsed.noUnit){ toast('유닛 이름이 없는 단어가 '+parsed.noUnit+'개 있어요 — 첫 단어부터 유닛을 적어 주세요'); return; }
+  const units = parsed.units.filter(u=>u.words.length);
+  if(!units.length){ toast('읽을 수 있는 단어가 없어요. 형식을 확인해 주세요'); return; }
+  if(units.length < 2){ toast('유닛이 1개만 읽혔어요 — 유닛 열이나 유닛 제목 줄을 확인해 주세요. 하나만 올릴 땐 나눠 올리기를 꺼 주세요'); return; }
+  const targets = $('lf-target').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const tier = parseInt($('lf-tier').value, 10) || 1;
+  const names = units.map(u=>(base+' '+u.label).replace(/\s+/g,' ').trim());
+  const total = units.reduce((a,u)=>a+u.words.length, 0);
+  const exist = new Set((DB.lists||[]).map(l=>String(l.name||'')));
+  const dup = names.filter(n=>exist.has(n)).length;
+  const head = units.slice(0,5).map((u,i)=>'· '+names[i]+' — '+u.words.length+'단어').join('\n');
+  const tail = units.length>5 ? '\n  … 외 '+(units.length-5)+'개 (마지막: '+names[names.length-1]+')' : '';
+  if(!confirm('유닛별로 나눠 올려요 — 총 '+units.length+'개 리스트, 단어 '+total+'개\n\n'+head+tail
+    +(dup?'\n\n⚠ 같은 이름의 리스트가 이미 '+dup+'개 있어요 (그대로 올리면 이름이 겹쳐요)':'')+'\n\n올릴까요?')) return;
+  const btn = $('btn-lf-save'); btn.disabled = true;
+  let maxSO = 0; (DB.lists||[]).forEach(l=>{ if(typeof l.sort_order==='number' && l.sort_order>maxSO) maxSO = l.sort_order; });
+  const rows = units.map((u,i)=>{
+    const p = {name:names[i], words:u.words, target_classes: targets.length?targets:null, tier, sort_order: maxSO+(i+1)*10};
+    if(DB.profile) p.created_name = DB.profile.name;
+    return p;
+  });
+  let done = 0, fail = null;
+  for(let i=0;i<rows.length;i+=10){
+    const part = rows.slice(i, i+10);
+    const r = await api('/rest/v1/word_lists', {method:'POST', headers:{'Prefer':'return=minimal'}, body: JSON.stringify(part)});
+    if(!r || !r.ok){ fail = r ? r.status : '연결'; break; }
+    done += part.length;
+  }
+  btn.disabled = false;
+  await pullLists();
+  renderLists();
+  if(fail !== null){
+    toast(done ? done+'개까지만 올라갔어요 (오류 '+fail+') — 목록을 확인하고 남은 유닛만 다시 올려 주세요'
+               : '저장 실패 ('+fail+') — 교사 권한·연결 확인');
+    return;
+  }
+  $('list-form').style.display='none'; $('fmt-help').classList.remove('on');
+  toast('"'+base+'" '+units.length+'개 리스트 배포 완료 — '+(targets.length?targets.join(', ')+' 학생':'전 학생')+' 앱에 자동 반영 (단어 '+total+'개)');
+}
+$('lf-bulk').addEventListener('change', ()=>{ $('bulk-help').classList.toggle('on', $('lf-bulk').checked); });
 $('btn-lf-save').addEventListener('click', async ()=>{
   const name = $('lf-name').value.trim();
-  const words = parseWords($('lf-data').value);
   if(!name){ toast('리스트 이름을 넣어 주세요'); return; }
+  if(!editListId && $('lf-bulk').checked){ await bulkSaveLists(name); return; }
+  const words = parseWords($('lf-data').value);
   if(!words.length){ toast('읽을 수 있는 단어가 없어요. 형식을 확인해 주세요'); return; }
   const btn = $('btn-lf-save'); btn.disabled = true;
   const targets = $('lf-target').value.split(',').map(s=>s.trim()).filter(Boolean);
@@ -2810,7 +2899,7 @@ $('btn-backup').addEventListener('click', async ()=>{
     if(!rp || !rp.ok) throw 0;
     const profs = await rp.json();
     const nameOf = {}; profs.forEach(p=>{ nameOf[p.id] = p; });
-    dlFile('VOCA꾹_학생명단_'+day+'.csv',
+    dlFile('학문당VOCA꾹_학생명단_'+day+'.csv',
       '이름,아이디,역할,반,상태\n' + profs.map(p=>[p.name, p.email||'', roleKo(p.role), p.class_name||'', p.blocked?'차단':''].map(csvCell).join(',')).join('\n'));
     const since = new Date(Date.now() - 90*864e5).toISOString();
     let all = [], off = 0;
@@ -2822,7 +2911,7 @@ $('btn-backup').addEventListener('click', async ()=>{
       if(rows.length < 1000) break;
     }
     const MODE_KO2 = {quiz:'퀴즈', spell:'스펠링', flash:'카드', listen:'듣기'};
-    dlFile('VOCA꾹_학습기록_최근90일_'+day+'.csv',
+    dlFile('학문당VOCA꾹_학습기록_최근90일_'+day+'.csv',
       '날짜,이름,반,리스트,방법,문항,정답\n' + all.map(x=>{
         const p = nameOf[x.user_id] || {};
         const d = new Date(x.created_at);
@@ -2830,7 +2919,7 @@ $('btn-backup').addEventListener('click', async ()=>{
           p.name||'', p.class_name||'', x.list_name||'', MODE_KO2[x.mode]||x.mode, x.total, x.correct_count==null?'':x.correct_count].map(csvCell).join(',');
       }).join('\n'));
     const rl = await api('/rest/v1/word_lists?select=name,target_classes,published,updated_at,words&order=name.asc');
-    if(rl && rl.ok) dlFile('VOCA꾹_리스트전체_'+day+'.json', JSON.stringify(await rl.json(), null, 1), 'application/json;charset=utf-8');
+    if(rl && rl.ok) dlFile('학문당VOCA꾹_리스트전체_'+day+'.json', JSON.stringify(await rl.json(), null, 1), 'application/json;charset=utf-8');
     toast('백업 3개 파일을 내려받았어요 (명단·기록·리스트)');
   } catch(e){ toast('백업 실패 — 연결을 확인해 주세요'); }
   btn.disabled = false;
@@ -3790,8 +3879,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-24';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-24'; });
+const APP_VER = '2026.07.21-26';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-26'; });
 const WN_ITEMS = [
  ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
@@ -3807,6 +3896,7 @@ const WN_ITEMS = [
  ['📊','주간 리포트','매주 월요일, 지난주 성적표가 쪽지함에 도착']
 ];
 const WN_STAFF = [
+ ['🧩','유닛별 나눠 올리기','새 리스트 만들기에서 단어장 전체를 한 번에 붙여넣으면 Day·Unit마다 리스트를 나눠 만들어요'],
  ['🗂️','배포 관리 정리','단어장 이름 검색 + 같은 시리즈 묶어 보기 — Day별 리스트가 한 줄로 접혀요'],
  ['🏅','단어장 티어','리스트마다 난이도 티어를 달 수 있어요. 높을수록 학생 경험치 최대 2배'],
  ['⠿','드래그 순서 변경','리스트 관리에서 왼쪽 손잡이를 끌어 순서를 바꿔요'],
