@@ -1557,6 +1557,16 @@ let editListId = null;
 /* ── 단어장 시리즈 묶기 (Day 1·2·3 → 한 묶음) ── */
 function grpBaseOf(name){
   const s = String(name||'').trim();
+  /* ① 단원 표식을 이름 어디서든 찾는다(맨 앞의 것): [구분자]+키워드 번호[~번호][단위] 또는 [구분자]+번호 단위
+     — "HMD 수능 Unit 01. 부제", "학문당 수능 Day 3", "심화 5강 정리" 등. 표식 앞 문자열 '전체'가 시리즈 이름이
+     되므로 "학문당 고교기본"과 "학문당 수능"은 절대 한 묶음으로 합쳐지지 않는다 */
+  const MID = /[\s\-–—·:~〜∼(\[]+(?:(?:day|데이|chapter|챕터|unit|유닛|lesson|레슨|part|파트|step|스텝|set|세트|list|리스트|level|레벨|week|위크|round|라운드|test|테스트|stage|no|vol)\s*\.?\s*\d+(?:\s*[~\-–—〜∼]\s*\d+)?\s*(?:일차|주차|단계|강|과|회|차|편|번|권|장|탄)?|\d+(?:\s*[~\-–—〜∼]\s*\d+)?\s*(?:일차|주차|단계|강|과|회|차|편|번|권|장|탄))\s*[)\]]?/i;
+  const mm = s.match(MID);
+  if(mm && mm.index > 0){
+    const head = s.slice(0, mm.index).replace(/[\s\-–—·:~〜∼(\[]+$/,'').trim();
+    if(head.length >= 2 && !/^(?:day|데이|chapter|챕터|unit|유닛|lesson|레슨|part|파트|step|스텝|set|세트|list|리스트|level|레벨|week|위크|round|라운드|test|테스트|stage|no|vol)$/i.test(head)) return head;
+  }
+  /* ② 끝 번호 꼬리(기존 방식 그대로): "학문당 고교기본 3", "어원편 contra-1" 등 */
   /* 꼬리 번호 토큰: [구분자][단원 키워드] 번호[~번호] [단위] — Day 3, Day 01~10, 5강, (2), Unit 4 등 */
   const TAIL = /[\s\-–—·:~〜∼(\[]*(?:day|데이|chapter|챕터|unit|유닛|lesson|레슨|part|파트|step|스텝|set|세트|list|리스트|level|레벨|week|위크|round|라운드|test|테스트|stage|no|vol)?\s*\.?\s*\d+(?:\s*[~\-–—〜∼]\s*\d+)?\s*(?:일차|주차|단계|강|과|회|차|편|번|권|부|탄|장|주)?\s*[)\]]?\s*$/i;
   let m = s.match(TAIL);
@@ -4004,8 +4014,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-28';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-28'; });
+const APP_VER = '2026.07.21-29';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-29'; });
 const WN_ITEMS = [
  ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
