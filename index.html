@@ -778,6 +778,90 @@ html[data-theme=dark] .lvhero{box-shadow:none}
 .pf-card .pfa{box-shadow:0 4px 10px rgba(224,58,46,.15)}
 .sec-h::after{height:1px}
 .ovl .card{border-width:1.5px}
+
+/* ═══ V5 정밀 리파인 — 디자인 전용 오버라이드 (기능 무관) ═══ */
+:root{
+  --ink:#26222B; --ink2:#8A8492; --ink3:#B9B3C1;
+  --line:#F1EBE1; --line2:#EFEBE2; --edge:#EDE4D4;
+  --card-shadow:0 1px 2px rgba(38,34,43,.04),0 8px 24px rgba(38,34,43,.05);
+}
+html[data-theme=dark]{
+  --bg:#131016; --card:#1F1A23; --card2:#292330; --line:#2F2836; --line2:#2A242F;
+  --ink2:rgba(242,237,230,.58); --ink3:rgba(242,237,230,.36);
+  --glow-red:0 0 18px rgba(255,107,92,.22); --glow-teal:0 0 15px rgba(65,199,167,.18);
+}
+body{letter-spacing:-.01em}
+/* 보더·그림자 통일 (2px 혼용 → 1.5px + 부드러운 그림자) */
+.ex-row,.hcard,.lvrow,.bl-head,.pickcard,.lgt,.rec,.wrong-item,.bars,.starlists .sl,.li-grp-h,.li-grp-body,.top .back,.ex-box,.search,.sp-in,.cls-in,.ad-code-row input,.range-row input,.trow input[type=number],.acc select{border-width:1.5px}
+.pickcard,.hcard,.ex-row,.bl-head,.rec,.wrong-item,.starlists .sl,.bars{box-shadow:var(--card-shadow)}
+.pickcard{border-radius:22px}
+.wcard{border-radius:20px}
+/* 홈 히어로 */
+.hero{margin-top:16px;padding:22px 20px 20px;border-radius:28px}
+.hero .h-sub{font-size:11.5px;letter-spacing:.12em}
+.hero .h-head{font-size:27px;line-height:1.25}
+.hero .h-meta{margin-top:6px}
+.hero .h-cta{margin-top:16px;padding:15px;border-radius:16px;font-size:16px}
+.lvhero{border-radius:28px}
+/* 모드 카드: 아이콘 칩 */
+.mode{padding:16px 15px 15px;border-radius:22px}
+.mode>svg,.mode>span[style*="font-size:24px"]{width:42px;height:42px;border-radius:14px;background:color-mix(in oklab,currentColor 13%,transparent);box-shadow:inset 0 0 0 1.5px color-mix(in oklab,currentColor 12%,transparent)}
+.mode>svg{padding:9px}
+.mode>span[style*="font-size:24px"]{display:flex;align-items:center;justify-content:center}
+.mode b{margin-top:10px}
+.sec-h{margin-top:24px}
+/* 퀴즈·카드 */
+.q-card{padding:24px 20px;border-radius:24px}
+.q-kind{margin-bottom:12px}
+.opts{gap:10px}
+.opt{border-radius:18px;padding:15px 16px}
+.opt .cn{font-size:17px;line-height:1}
+.face{border-radius:30px}
+.fc-btns .btn{border-radius:18px}
+/* 하단 탭 */
+.tabbar{border-radius:30px;padding:9px 8px 8px}
+.tab{font-size:13px}
+/* 진행바 샤인 완화 */
+.hero .h-bar i::after,.pbar i::after,.lvhero .lbar i::after{animation-duration:3.4s}
+/* 오버레이·토스트 */
+html[data-theme=dark] .ovl{background:rgba(0,0,0,.62)}
+#toast{border:none;box-shadow:0 10px 26px rgba(0,0,0,.24);padding:13px 22px}
+html[data-theme=dark] #toast{box-shadow:0 10px 26px rgba(0,0,0,.5)}
+/* 다크 디테일 */
+html[data-theme=dark] .hero{border-color:rgba(255,107,92,.24)}
+html[data-theme=dark] .sw::after{background:#F2EDE6}
+/* 데스크톱 호버 */
+@media(hover:hover){
+  .btn.ghost:hover{border-color:var(--ink3)}
+  .btn.primary:hover{filter:brightness(1.05)}
+  .opt:hover{border-color:var(--red-line)}
+  .qt:hover{border-color:var(--ink3)}
+  .mode:hover{transform:translateY(-2px)}
+  .tab:not(.on):hover{color:var(--ink)}
+  .li-grp-h:hover,.li-card:hover{border-color:var(--ink3)}
+}
+/* 키보드 포커스 */
+button:focus-visible{outline:2px solid var(--red);outline-offset:2px}
+/* 스크롤바 */
+.face.back::-webkit-scrollbar,#wn-body::-webkit-scrollbar,#lv-guide .card::-webkit-scrollbar{width:5px}
+.face.back::-webkit-scrollbar-thumb,#wn-body::-webkit-scrollbar-thumb,#lv-guide .card::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+.brand .sub::after{content:' · UI v5'}
+.hd .logo{white-space:nowrap}
+/* ═══ V5.1 워드마크 리디자인 — '꾹' 도장(스탬프) 컨셉 ═══ */
+@keyframes stampIn{0%{transform:rotate(-16deg) scale(1.9);opacity:0}55%{transform:rotate(6deg) scale(.92);opacity:1}75%{transform:rotate(2deg) scale(1.06)}100%{transform:rotate(4deg) scale(1)}}
+/* 로그인 브랜드 */
+.brand .logo{font-weight:900;letter-spacing:-.045em;color:var(--ink)}
+.brand .logo .pre{display:inline;font-weight:900;letter-spacing:-.02em;color:var(--red);margin-right:.04em}
+.brand .logo em{display:inline-block;font-size:.8em;line-height:1.15;padding:.03em .17em .07em;margin-left:.14em;border-radius:.2em;background:linear-gradient(180deg,var(--red),var(--red-deep));color:var(--on-red);box-shadow:0 10px 22px rgba(224,58,46,.35),inset 0 1px 0 rgba(255,255,255,.25);transform:rotate(4deg);animation:stampIn .55s cubic-bezier(.2,.9,.3,1.2) .15s backwards;vertical-align:.02em}
+html[data-theme=dark] .brand .logo em{background:var(--red);box-shadow:0 0 22px rgba(255,107,92,.35)}
+.brand .sub{background:transparent;border:none;border-top:1.5px solid var(--line);border-radius:0;padding:12px 6px 0;margin-top:16px;letter-spacing:.18em;font-size:11.5px;color:var(--ink2)}
+.brand .sub::after{content:''}
+/* 홈 헤더 로고 */
+.hd .logo{font-size:20px;font-weight:900;letter-spacing:-.04em;line-height:1.05}
+.hd .logo .pre{display:inline;font-weight:900;letter-spacing:-.02em;color:var(--red);margin-right:2px}
+.hd .logo em{display:inline-block;font-size:.82em;line-height:1.15;padding:.5px 4.5px 1.5px;margin-left:3px;border-radius:5px;background:linear-gradient(180deg,var(--red),var(--red-deep));color:var(--on-red);box-shadow:0 3px 8px rgba(224,58,46,.3),inset 0 1px 0 rgba(255,255,255,.25);transform:rotate(4deg);vertical-align:.03em}
+html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgba(255,107,92,.35)}
+@media (prefers-reduced-motion:reduce){.brand .logo em{animation:none!important}}
 </style>
 </head>
 <body>
