@@ -2086,6 +2086,7 @@ function startFlash(words, fromWrong, partial){
     }
   }
   resetSessXp();
+  sessStart('flash', FL.listId);
   $('fl-mode-label').textContent = fromWrong ? '오답 복습' : ((partial ? '🔒 메모리 락 — ' : '') + (activeList()?activeList().name:''));
   $('fl-done').style.display='none';
   $('fl-stage').style.display='block';
@@ -2148,6 +2149,8 @@ function renderFlash(){
 }
 function nextFlash(){
   questBump('flash', 1);
+  dayBump(1);
+  sessBump();
   FL.i++;
   if(!FL.fromWrong && !FL.partial && FL.listId){
     const g = ensureGame();
@@ -2370,6 +2373,7 @@ $('btn-qz-start').addEventListener('click', ()=>{
   const qs = buildQuestions(Array.from(qzSel), n);
   if(qs.length<1){ toast('이 유형으로 만들 문제가 부족해요. 뜻이 서로 다른 단어가 5개 이상 필요해요'); return; }
   QZ = {qs, i:0, right:0, wrongL:[], combo:0}; resetSessXp();
+  sessStart('quiz', DB.activeListId);
   $('qz-setup').style.display='none';
   $('qz-done').style.display='none';
   $('qz-play').style.display='block';
@@ -2391,6 +2395,8 @@ $('qz-opts').addEventListener('click', e=>{
   const q = QZ.qs[QZ.i];
   const pick = parseInt(b.dataset.i,10);
   revTouch(DB.activeListId, q.w.word, pick===q.ans);
+  dayBump(1);
+  sessBump(pick===q.ans);
   document.querySelectorAll('#qz-opts .opt').forEach(o=>o.setAttribute('disabled',''));
   if(pick===q.ans){
     QZ.right++; QZ.combo++;
@@ -2446,6 +2452,7 @@ function startSpell(words, listen, fromWrong){
   if(!words || !words.length){ go('scr-home'); return; }
   { const aL = activeList(); STUDY.mult = fromWrong ? 1 : (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; }
   SP = {deck: shuffleArr(words), i:0, right:0, answered:false, listen: !!listen, fromWrong: !!fromWrong}; resetSessXp();
+  sessStart(listen ? 'listen' : 'spell', DB.activeListId);
   $('sp-done').style.display='none';
   $('sp-play').style.display='block';
   renderSpell();
@@ -2487,6 +2494,8 @@ function checkSpell(){
   const ok = exact || near;
   const lid = w._lid || DB.activeListId;
   SP.answered = true;
+  dayBump(1);
+  sessBump(ok);
   revTouch(lid, w.word, ok);
   $('sp-in').disabled = true;
   const fb = $('sp-fb');
@@ -2878,6 +2887,7 @@ async function pushProgress(urgent){
 /* 화면을 벗어나면(새로고침·탭 전환·앱 닫기) 대기 중인 저장·전송을 그 자리에서 흘려보낸다 */
 function flushNow(){
   try{ clearTimeout(saveTimer); storageSave(); }catch(e){}
+  try{ clearTimeout(sessTimer); sessTimer = null; sessPush(true); }catch(e){}
   if(pushDirty && DB && DB.auth){ clearTimeout(pushTimer); pushProgress(true); }
 }
 window.addEventListener('pagehide', flushNow);
@@ -2892,8 +2902,92 @@ document.addEventListener('visibilitychange', async ()=>{
   const ok = await pullProgress();
   if(ok && curScr === 'scr-home') renderHome();
 });
+/* ════════ 진행 중 학습 서버 반영 ════════
+   학습 한 번마다 표식을 하나 만들어, 서버의 같은 행을 계속 덮어쓴다.
+   중간에 나가도 그때까지 푼 문항이 남고, 한 번 학습 = 한 행이 유지되므로
+   학습 현황·리그 점수가 부풀지 않는다. (서버 함수 push_session과 짝) */
+const SESS_IDLE = 3*60*60*1000;   /* 3시간 넘게 손을 놓으면 새 학습으로 본다 */
+let SESS = null, sessTimer = null;
+function newSid(){ return 's' + Date.now().toString(36) + Math.random().toString(36).slice(2,10); }
+function sessKeep(){
+  if(!SESS) return;
+  const g = ensureGame();
+  g.openSess = {sid:SESS.sid, mode:SESS.mode, lid:SESS.lid, listName:SESS.listName,
+                total:SESS.total, right:SESS.right, ts:Date.now()};
+  scheduleSave();
+}
+function sessStart(mode, lid){
+  sessEnd();                                     /* 앞 세션이 남아 있으면 먼저 닫는다 */
+  const id = lid || DB.activeListId || null;
+  const L = id ? DB.lists.find(l=>l.id===id) : null;
+  const g = ensureGame();
+  const op = g.openSess;
+  const reuse = op && op.sid && op.mode===mode && op.lid===id
+             && dayKeyOf(op.ts)===dayKeyOf(Date.now())
+             && (Date.now()-op.ts) < SESS_IDLE;
+  SESS = reuse
+    ? {sid:op.sid, mode:mode, lid:id, listName:(L?L.name:(op.listName||'')),
+       total:op.total||0, right:(op.right===undefined?null:op.right), dirty:false}
+    : {sid:newSid(), mode:mode, lid:id, listName:(L?L.name:''), total:0, right:null, dirty:false};
+  sessKeep();
+}
+function sessBump(ok){
+  if(!SESS) return;
+  SESS.total++;
+  if(ok===true || ok===false) SESS.right = (SESS.right||0) + (ok?1:0);
+  SESS.dirty = true;
+  sessKeep();
+  if(!sessTimer) sessTimer = setTimeout(()=>{ sessTimer = null; sessPush(false); }, 4000);
+}
+function queueSess(snap){
+  if(!DB.pendingSess) DB.pendingSess = [];
+  DB.pendingSess = DB.pendingSess.filter(x=>x.sid !== snap.sid);
+  DB.pendingSess.push(snap);
+  if(DB.pendingSess.length > 50) DB.pendingSess = DB.pendingSess.slice(-50);
+  scheduleSave();
+}
+function sessPush(urgent){
+  if(!SESS || !SESS.dirty || !DB || !DB.auth) return;
+  const snap = {sid:SESS.sid, list_name:SESS.listName, mode:SESS.mode, total:SESS.total, right:SESS.right};
+  SESS.dirty = false;
+  const opts = {method:'POST', body: JSON.stringify({p_sid:snap.sid, p_list_name:snap.list_name,
+                p_mode:snap.mode, p_total:snap.total, p_correct:snap.right})};
+  if(urgent === true) opts.keepalive = true;   /* 화면을 떠나는 순간에도 전송이 끊기지 않게 */
+  Promise.resolve(api('/rest/v1/rpc/push_session', opts))
+    .then(r=>{ if(!r || !r.ok) queueSess(snap); })
+    .catch(()=>queueSess(snap));
+}
+function sessEnd(){                              /* 중간에 화면을 떠날 때 — 표식은 남겨 이어붙인다 */
+  clearTimeout(sessTimer); sessTimer = null;
+  if(SESS && SESS.total > 0 && SESS.dirty) sessPush(true);
+  SESS = null;
+}
+function sessDone(){                             /* 끝까지 마쳤을 때 — 확정하고 표식을 버린다 */
+  clearTimeout(sessTimer); sessTimer = null;
+  if(SESS){ SESS.dirty = true; sessPush(true); SESS = null; }
+  const g = ensureGame();
+  if(g.openSess){ delete g.openSess; scheduleSave(); }
+}
+async function flushPendingSess(){
+  if(!DB || !DB.auth || !DB.pendingSess || !DB.pendingSess.length) return;
+  const q = DB.pendingSess.slice(); DB.pendingSess = [];
+  for(const x of q){
+    const r = await api('/rest/v1/rpc/push_session', {method:'POST',
+      body: JSON.stringify({p_sid:x.sid, p_list_name:x.list_name, p_mode:x.mode,
+                            p_total:x.total, p_correct:x.right})});
+    if(!r || !r.ok) DB.pendingSess.push(x);
+  }
+  scheduleSave();
+}
 async function pushSession(rec){
   if(!DB.auth) return;
+  /* 진행 중이던 그 행을 최종값으로 확정한다 — 행을 새로 만들지 않는다 */
+  if(SESS && SESS.mode === rec.mode){
+    SESS.total = Math.max(SESS.total, rec.total || 0);
+    if(rec.right !== null && rec.right !== undefined) SESS.right = Math.max(SESS.right || 0, rec.right);
+    sessDone();
+    return;
+  }
   const L = DB.lists.find(l=>l.id===rec.lid);
   const body = {user_id: DB.auth.uid, list_name: L?L.name:'', mode: rec.mode, total: rec.total, correct_count: rec.right};
   const r = await api('/rest/v1/sessions', {method:'POST', headers:{'Prefer':'return=minimal'}, body: JSON.stringify(body)});
@@ -2904,6 +2998,7 @@ async function pushSession(rec){
   }
 }
 async function flushPending(){
+  flushPendingSess();
   if(!DB.auth || !DB.pendingSessions || !DB.pendingSessions.length) return;
   const q = DB.pendingSessions.slice(); DB.pendingSessions = [];
   for(const body of q){
@@ -3454,7 +3549,9 @@ async function keepAlive(){
 const TITLES = {'scr-lists':'단어 리스트 배포 관리','scr-flash':'플래시카드','scr-quiz':'객관식 퀴즈','scr-spell':'스펠링 쓰기','scr-wrong':'오답 복습','scr-test':'단어 시험지 출력','scr-dash':'학생 학습 현황','scr-admin':'계정 관리','scr-assign':'과제 내기'};
 const MAIN_SCRS = ['scr-home','scr-browse','scr-stats','scr-msg','scr-profile'];
 let curScr = 'scr-home';
+const STUDY_SCRS = ['scr-flash','scr-quiz','scr-spell'];
 function go(id){
+  if(id !== curScr && STUDY_SCRS.indexOf(curScr) >= 0) sessEnd();
   document.querySelectorAll('.scr').forEach(s=>s.classList.remove('on'));
   $(id).classList.add('on');
   curScr = id;
@@ -3483,7 +3580,17 @@ $('btn-back').addEventListener('click', ()=>go('scr-home'));
 function dayKeyOf(t){ const d=new Date(t); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function todayCount(){
   const k = dayKeyOf(Date.now());
-  return (DB.log||[]).filter(s=>dayKeyOf(s.t)===k).reduce((a,s)=>a+(s.total||0),0);
+  const logged = (DB.log||[]).filter(s=>dayKeyOf(s.t)===k).reduce((a,s)=>a+(s.total||0),0);
+  const live = (DB.game && DB.game.dayKey===k) ? (DB.game.dayItems||0) : 0;
+  return Math.max(logged, live);
+}
+/* 문항 하나를 풀 때마다 즉시 누적 — 세션을 끝내지 않아도 오늘 진행분이 잡힌다.
+   세션 완주 시 남는 로그 합계와는 max로 합쳐 이중 계산을 막는다 */
+function dayBump(n){
+  const g = ensureGame();
+  g.dayItems = (g.dayItems||0) + (n||1);
+  scheduleSave();
+  checkDailyGoal();
 }
 function renderHome(){
   const curL = DB.lists.find(l=>l.id===DB.activeListId);
@@ -3705,12 +3812,12 @@ function levelInfo(xp){
 function fmtXp(x){ return (x||0).toLocaleString('ko-KR'); }
 function weekKeyOf(t){ const d=new Date(t); const day=(d.getDay()+6)%7; d.setDate(d.getDate()-day); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function ensureGame(){
-  if(!DB.game) DB.game = {xp:0, weekXp:0, weekKey:weekKeyOf(Date.now()), dayXp:0, dayKey:dayKeyOf(Date.now()), streak:0, lastDay:null, freezeWeek:null, goalHit:null, streakBonus:0, stars:{}, nickname:null, avatar:null, goal:40};
+  if(!DB.game) DB.game = {xp:0, weekXp:0, weekKey:weekKeyOf(Date.now()), dayXp:0, dayItems:0, dayKey:dayKeyOf(Date.now()), streak:0, lastDay:null, freezeWeek:null, goalHit:null, streakBonus:0, stars:{}, nickname:null, avatar:null, goal:40};
   const g = DB.game;
   const wk = weekKeyOf(Date.now());
   if(g.weekKey!==wk){ g.weekKey=wk; g.weekXp=0; }
   const dk = dayKeyOf(Date.now());
-  if(g.dayKey!==dk){ g.dayKey=dk; g.dayXp=0; }
+  if(g.dayKey!==dk){ g.dayKey=dk; g.dayXp=0; g.dayItems=0; }
   return g;
 }
 function mergeGame(a,b){
@@ -3718,6 +3825,11 @@ function mergeGame(a,b){
   const g = Object.assign({}, b, a);
   g.xp = Math.max(a.xp||0, b.xp||0);
   if(b.weekKey===a.weekKey) g.weekXp = Math.max(a.weekXp||0, b.weekXp||0);
+  if(b.dayKey===a.dayKey) g.dayItems = Math.max(a.dayItems||0, b.dayItems||0);
+  if(a.openSess || b.openSess){
+    const ao = a.openSess, bo = b.openSess;
+    g.openSess = !ao ? bo : (!bo ? ao : (((ao.ts||0) >= (bo.ts||0)) ? ao : bo));
+  }
   g.streak = Math.max(a.streak||0, b.streak||0);
   g.nickname = a.nickname || b.nickname;
   g.avatar = a.avatar || b.avatar;
@@ -4801,8 +4913,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.25-40';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.25-40'; });
+const APP_VER = '2026.07.25-42';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.25-42'; });
 const WN_ITEMS = [
  ['🔓','메모리 락이 똑똑해졌어요','이제 복습 날에 퀴즈로 물어보고, 정답으로 꺼낸 단어만 다음 단계로 잠겨요. 5번 성공하면 졸업!'],
  ['🧹','오답 탈출 보너스','퀴즈·스펠링에서 오답 단어를 맞히면 확실히 탈출 +20 XP. 오답 화면에 "전체 단어장" 탭도 생겼어요'],
