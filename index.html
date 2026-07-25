@@ -862,6 +862,26 @@ html[data-theme=dark] .brand .logo em{background:var(--red);box-shadow:0 0 22px 
 .hd .logo em{display:inline-block;font-size:.82em;line-height:1.15;padding:.5px 4.5px 1.5px;margin-left:3px;border-radius:5px;background:linear-gradient(180deg,var(--red),var(--red-deep));color:var(--on-red);box-shadow:0 3px 8px rgba(224,58,46,.3),inset 0 1px 0 rgba(255,255,255,.25);transform:rotate(4deg);vertical-align:.03em}
 html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgba(255,107,92,.35)}
 @media (prefers-reduced-motion:reduce){.brand .logo em{animation:none!important}}
+/* ═══ 메모리 락 안내 (입구 ? + 모달) ═══ */
+.rv-h{position:relative;padding-right:42px}
+.rv-h .rv-info-btn{position:absolute;right:0;top:0;width:32px;height:32px;border-radius:99px;border:1.5px solid var(--line);background:var(--card2);color:var(--ink2);font-size:15px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.rv-nwrap{position:relative;padding-right:42px}
+.rv-nwrap .rv-info-btn{position:absolute;right:0;top:-6px;width:32px;height:32px;border-radius:99px;border:1.5px solid var(--line);background:var(--card2);color:var(--ink2);font-size:15px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+#ml-guide .card{text-align:left;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+#ml-guide .ml-body{overflow-y:auto;min-height:0;margin:0 -8px;padding:0 8px 2px}
+#ml-guide h3{text-align:center;font-size:18px;margin:0}
+#ml-guide .ml-lead{text-align:center;font-size:13.5px;font-weight:800;color:var(--red);line-height:1.5;margin:7px 0 12px}
+#ml-guide .ml-p{font-size:13.5px;line-height:1.62;color:var(--ink);margin:0 0 10px}
+#ml-guide .ml-p b{color:var(--red)}
+.ml-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 3px;margin:11px 0;padding:10px 5px;background:var(--card2);border-radius:14px}
+.ml-line .c{font-size:11.5px;font-weight:900;background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 7px;white-space:nowrap;letter-spacing:0}
+.ml-line .c.g{background:var(--teal-soft);border-color:var(--teal-line);color:var(--teal-deep)}
+#ml-guide .ml-how{background:var(--card2);border-radius:14px;padding:11px 13px;margin:2px 0 11px}
+#ml-guide .ml-how b{font-size:12.5px}
+#ml-guide .ml-how div{font-size:12.8px;line-height:1.6;color:var(--ink2);margin-top:3px}
+#ml-guide .ml-how div b{color:var(--ink)}
+#ml-guide .ml-end{font-size:13px;line-height:1.6;color:var(--ink2);text-align:center;margin:0 0 13px;padding-top:11px;border-top:1.5px dashed var(--line)}
+#ml-guide .ml-end b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -1249,6 +1269,25 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
     <div class="desc">이번 업데이트로 생긴 새 기능들이에요.<br>하나씩 눌러 보면서 익혀 보세요!</div>
     <div id="wn-body" style="margin:12px 0;max-height:46vh;overflow:auto"></div>
     <button class="btn primary" id="wn-close" style="width:100%">좋아, 시작하자!</button>
+  </div>
+</div>
+<div class="ovl" id="ml-guide">
+  <div class="card">
+    <h3>🔒 메모리 락이 뭐예요?</h3>
+    <div class="ml-lead">잊어버리는 건 게을러서가 아니에요.<br>뇌가 원래 그렇게 생겼어요.</div>
+    <div class="ml-body">
+    <div class="ml-p">오늘 외운 단어는 <b>내일이면 절반쯤</b> 사라져요. 일주일 뒤엔 대부분 지워지고요. 뇌는 한 번 본 것을 "중요하지 않다"고 보고 버리거든요.</div>
+    <div class="ml-p">그런데 <b>잊어버리기 직전에 다시 보면</b> 뇌는 생각을 바꿔요. "또 나오네? 중요한가 보다." 그때마다 단어는 더 오래가는 기억 자리로 옮겨져요. 그 타이밍이 바로 <b>1·3·7·14·30일</b>이에요.</div>
+    <div class="ml-line"><span class="c">1일</span><span class="c">3일</span><span class="c">7일</span><span class="c">14일</span><span class="c">30일</span><span class="c g">🔓 졸업</span></div>
+    <div class="ml-p">메모리 락은 이 타이밍에 맞춰, 공부한 단어를 홈으로 다시 데려와요. 한 번의 복습은 몇 분이면 끝나요. 다섯 번을 채운 단어는 벼락치기와 달라요 — <b>한 달 뒤에도, 시험장에서도</b> 남아 있어요.</div>
+    <div class="ml-how"><b>이렇게 써요</b>
+      <div>· 공부만 하면 자동으로 예약돼요. 따로 신청할 게 없어요.</div>
+      <div>· 복습 날엔 홈에 <b>[지금 복습]</b>이 떠요. 그날 치 단어만 봐요.</div>
+      <div>· 밀려도 사라지지 않아요. 30일차를 마치면 졸업이에요.</div>
+    </div>
+    <div class="ml-end">결국 메모리 락은 숙제가 아니라,<br><b>한 번 외운 단어를 두 번 외우지 않게 지켜 주는 자물쇠</b>예요.</div>
+    </div>
+    <button class="btn primary block" id="ml-close" style="flex:0 0 auto">알겠어요!</button>
   </div>
 </div>
 <div class="ovl" id="lv-guide">
@@ -3672,6 +3711,7 @@ function renderLvGuide(){
 document.addEventListener('click', e=>{
   if(e.target.closest('#btn-lvguide')){ renderLvGuide(); $('lv-guide').classList.add('on'); }
   if(e.target.closest('#lvg-close')){ $('lv-guide').classList.remove('on'); }
+  if(e.target.closest('#ml-close')){ $('ml-guide').classList.remove('on'); }
 });
 function openMakeTest(){
   const L = activeList();
@@ -3791,8 +3831,8 @@ function renderReview(){
     ? '<div class="rv-next tap" data-act="rv-toggle">🔒 다음 메모리 락 '+(revExpand?'▴':'▾')+' — '+up.slice(0,2).map(x=>revDayLabel(x.nextDue, today)+' '+x.day+'일차 '+(TIERS[x.L.tier||1]||TIERS[1]).e+' '+esc(x.L.name)+' '+x.nextN+'단어').join(' · ')+(up.length>2?' 외 '+(up.length-2)+'개':'')+'</div>'
       + (revExpand ? up.map(x=>'<div class="rv-up-row"><span class="sp">'+(TIERS[x.L.tier||1]||TIERS[1]).e+' <b>'+esc(x.L.name)+'</b> — '+revDayLabel(x.nextDue, today)+' · '+x.day+'일차 '+x.nextN+'단어</span><button class="rv-del" data-del="'+esc(x.lid)+'" aria-label="메모리 락에서 빼기">✕</button></div>').join('') : '')
     : '';
-  if(!due.length){ el.innerHTML = nextLine; return; }
-  el.innerHTML = '<div class="rv-h">🔒 오늘의 메모리 락<span>1·3·7·14·30일차에 다시 봐야 오래 남아요</span></div>'
+  if(!due.length){ el.innerHTML = '<div class="rv-nwrap">' + nextLine + '<button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'; return; }
+  el.innerHTML = '<div class="rv-h">🔒 오늘의 메모리 락<span>1·3·7·14·30일차에 다시 봐야 오래 남아요</span><button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'
     + due.map(x=>{
         const late = today - x.minDue;
         return '<div class="rv-row"><div class="rv-info"><b>'+esc(x.L.name)+'</b><span>'
@@ -3806,6 +3846,7 @@ function renderReview(){
 }
 let revExpand = false;
 $('rev-card').addEventListener('click', e=>{
+  if(e.target.closest('[data-act="ml-info"]')){ $('ml-guide').classList.add('on'); return; }
   const d = e.target.closest('.rv-del');
   if(d){
     const lid = d.dataset.del;
@@ -3963,8 +4004,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.21-26';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-26'; });
+const APP_VER = '2026.07.21-28';
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.21-28'; });
 const WN_ITEMS = [
  ['🗂️','단어장 묶어 보기','Day 1·2·3 같은 시리즈는 한 묶음으로 접혀요. 남의 단어장에선 이름 검색도 돼요'],
  ['📚','단어장 고르기','홈 위쪽 카드에서 지금 공부할 단어장을 눌러 바꿔요'],
@@ -3973,7 +4014,7 @@ const WN_ITEMS = [
  ['🎖️','레벨 40단계','최고 칭호 "어휘의 신" — 아레나의 레벨 안내에서 확인'],
  ['🖨️','시험지 만들기','단어장에서 시험지를 뽑아 집에서 미리 시험 보기'],
  ['▶️','카드 이어하기','하다 만 카드 학습, 나갔다 와도 그 자리부터'],
- ['🔒','메모리 락','공부한 단어가 1·3·7·14·30일차마다 돌아와요 — 그때 다시 봐야 오래 남아요'],
+ ['🔒','메모리 락','공부한 단어가 1·3·7·14·30일차마다 돌아와요 — 홈 카드의 ? 를 누르면 왜 그런지 알려줘요'],
  ['🎯','일일 퀘스트','세 가지 미션 채우면 매일 +150 XP 보너스'],
  ['🏫','반 대항전','아레나에서 우리 반 평균 점수로 겨뤄요'],
  ['🎧','듣기 모드','발음을 듣고 철자 쓰기 — 듣기 시험 대비까지'],
@@ -3988,7 +4029,7 @@ const WN_STAFF = [
  ['📚','홈 화면 정리','단어장 고르는 칸이 카드로 커지고, 남의 단어장은 아래 옵션 줄로 옮겼어요'],
  ['🔎','남의 단어장','학생이 배정 안 된 단어장도 골라서 공부할 수 있어요'],
  ['🖨️','시험지 만들기','학생·선생님 모두 A·B형 시험지를 뽑을 수 있어요 (정답지 포함)'],
- ['🔒','메모리 락 (자동 복습)','학생이 공부한 단어가 1·3·7·14·30일차마다 복습으로 돌아와요'],
+ ['🔒','메모리 락 (자동 복습)','학생이 공부한 단어가 1·3·7·14·30일차마다 복습으로 돌아와요. 카드의 ? 버튼에 학생용 안내를 담았어요'],
  ['🎯','일일 퀘스트','학생이 매일 세 미션을 채우면 +150 XP 보너스'],
  ['🏫','반 대항전','아레나에서 반 평균 점수로 겨뤄요. 반 전원이 분모예요'],
  ['🎧','듣기 모드','발음을 듣고 철자를 쓰는 학습이 추가됐어요'],
