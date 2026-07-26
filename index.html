@@ -67,6 +67,8 @@
 .lg-row .clk{flex:0 0 40px;font-weight:900;font-size:14px}
 .lg-row .clsc{font-weight:900;font-size:13.5px}
 .lg-row.me{outline:2px solid var(--gold,#F5B841);outline-offset:-2px;border-radius:10px}
+.lg-more{text-align:center;color:var(--soft,#B9AFA3);font-weight:900;padding:1px 0;letter-spacing:.2em}
+.lg-gap{font-size:12.5px;font-weight:800;color:var(--teal-deep,#0E7C6B);background:var(--teal-soft,#E0F4F0);border-radius:11px;padding:7px 11px;margin-top:8px;text-align:center}
 
 .wr-card{background:linear-gradient(135deg,#2B2622,#4A3F35);color:#FFFDF6;border-radius:18px;padding:16px 17px;margin-bottom:12px}
 .wr-h{font-size:15.5px;font-weight:900}
@@ -4125,6 +4127,40 @@ async function fetchLeague(period){
 }
 let leagueCache = {};
 
+/* ── 성장 랭킹 — 지난주보다 더 푼 문항 수로 겨루는 판 (서버 함수 league_growth, 미설치 시 조용히 접힘) ── */
+let growthCache = null, growthMissing = false;
+async function fetchGrowth(){
+  const now = Date.now();
+  if(growthCache && (now - growthCache.t) < 5*60*1000) return growthCache.d;
+  const r = await api('/rest/v1/rpc/league_growth', {method:'POST', body:'{}'});
+  if(!r) return null;
+  if(r.status === 404){ growthMissing = true; return null; }
+  if(!r.ok) return null;
+  const d = await r.json();
+  growthCache = {t: now, d};
+  return d;
+}
+async function renderGrowth(){
+  const sec = document.getElementById('growth-sec'), el = document.getElementById('growth-body');
+  if(!sec || !el) return;
+  const rows = await fetchGrowth();
+  if(growthMissing){ sec.style.display = 'none'; return; }
+  if(!rows){ el.innerHTML = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오지 못했어요. 잠시 후 다시 열어 보세요.</span></span></div>'; return; }
+  if(!rows.length){ el.innerHTML = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">아직 아무도 지난주의 자신을 넘지 못했어요. 첫 성장왕이 되어 보자!</span></span></div>'; return; }
+  const g = ensureGame();
+  const frCls = g.frame ? ' fr-'+g.frame : '';
+  let meIn = false;
+  const line = r=>{
+    if(r.me) meIn = true;
+    return '<div class="lg-row r'+r.rn+(r.me?' me':'')+'"><span class="rank">'+r.rn+'</span><span class="avt'+(r.me?frCls:'')+'">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nick||'')+(r.me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span><span class="wxp">+'+Number(r.delta||0).toLocaleString('ko-KR')+' 문항</span></div>';
+  };
+  const top = rows.filter(r=>r.rn <= 10).map(line).join('');
+  const mineRow = rows.find(r=>r.me && r.rn > 10);
+  el.innerHTML = top
+    + (mineRow ? '<div class="lg-more">⋯</div>'+line(mineRow) : '')
+    + ((!meIn && !mineRow && !(DB.profile && DB.profile.hidden)) ? '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">지난주의 나보다 한 문항만 더 풀면 이 판에 올라요 📈</span></span></div>' : '');
+}
+
 /* ════════ XP 상점 (v2.2) — 재화는 '누적 XP − 사용'. 써도 레벨은 내려가지 않는다 ════════ */
 const SHOP = [
   {k:'freeze',      e:'🧊', n:'스트릭 프리즈 +1',   d:'하루 빠져도 자동으로 연속 기록을 지켜요 · 최대 2개 보관', cost:300, type:'consume'},
@@ -4220,6 +4256,8 @@ function renderStats(){
     +'<div class="lg-tabs"><button type="button" class="lgt'+(lgView==='p'?' on':'')+'" id="lg-tab-p">👤 개인전</button><button type="button" class="lgt'+(lgView==='c'?' on':'')+'" id="lg-tab-c">🏫 반 대항전</button></div>'
     +(lgView==='p' && !lgWeekMissing ? '<div class="lg-tabs lg-per"><button type="button" class="lgt'+(lgPeriod==='m'?' on':'')+'" id="lg-per-m">이번 달</button><button type="button" class="lgt'+(lgPeriod==='w'?' on':'')+'" id="lg-per-w">이번 주</button></div>' : '')
     +'<div class="lg-card" id="lg-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div>';
+  h += '<div id="growth-sec"><div class="stat-h">📈 성장 랭킹<span class="sub">지난주의 나를 이긴 만큼 오른다 · 월요일 새 출발</span></div>'
+    +'<div class="lg-card" id="growth-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div></div>';
   h += '<div class="stat-h">명예의 전당<span class="sub">달이 끝나면 그달 TOP 10이 새겨져요</span></div><div class="lg-card" id="hall-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div>';
   h += '<div class="stat-h">최근 7일 학습량<span class="sub">푼 문항 수</span></div><div class="bars">'
     +days.map(d=>'<div class="bar'+(d.n?'':' zero')+'"><i style="height:'+Math.max(2,Math.round(d.n/max*72))+'px"></i><span>'+d.label+'</span></div>').join('')+'</div>';
@@ -4243,6 +4281,7 @@ function renderStats(){
   }
   box.innerHTML = h;
   renderLeague();
+  renderGrowth();
   renderHall();
 }
 let lgView = 'p';
@@ -4263,22 +4302,31 @@ async function renderLeaguePersonal(){
     return;
   }
   let mine=false;
-  const html = rows.slice(0,10).map((r,i)=>{
-    const me = !!r.me;
-    if(me) mine=true;
-    return '<div class="lg-row r'+(i+1)+(me?' me':'')+'"><span class="rank">'+(i+1)+'</span><span class="avt'+(me?frCls:'')+'">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.class_name||''))+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
-  }).join('');
+  const rowHTML = (r, rank, isMe)=>'<div class="lg-row r'+rank+(isMe?' me':'')+'"><span class="rank">'+rank+'</span><span class="avt'+(isMe?frCls:'')+'">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(isMe?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.class_name||''))+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
+  const html = rows.slice(0,10).map((r,i)=>{ if(r.me) mine=true; return rowHTML(r, i+1, !!r.me); }).join('');
+  const idx = rows.findIndex(r=>r.me);
   let tail = '';
   if(!mine && !ghost){
-    const idx = rows.findIndex(r=>r.me);
-    tail = (idx >= 0)
-      ? '<div class="lg-row me"><span class="rank">'+(idx+1)+'</span><span class="avt'+frCls+'">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+((DB.profile && DB.profile.class_name)||''))+'</span></span><span class="wxp">'+fmtXp(rows[idx].week_xp)+' XP</span></div>'
-      : meRow;
+    /* 내 구간 — TOP 10 밖이면 내 앞뒤 이웃과 함께 보여, 절대 순위 대신 닿을 수 있는 다음 목표가 보인다 */
+    if(idx >= 0){
+      const parts = ['<div class="lg-more">···</div>'];
+      if(idx - 1 >= 10) parts.push(rowHTML(rows[idx-1], idx, false));
+      parts.push(rowHTML(rows[idx], idx+1, true));
+      if(rows[idx+1]) parts.push(rowHTML(rows[idx+1], idx+2, false));
+      tail = parts.join('');
+    } else tail = meRow;
   }
-  el.innerHTML = html + (ghost ? ghostNote : tail);
+  let gap = '';
+  if(!ghost && idx > 0){
+    const need = Math.max(0, (rows[idx-1].week_xp||0) - (rows[idx].week_xp||0)) + 1;
+    gap = '<div class="lg-gap">▲ 한 계단 위까지 <b>+'+fmtXp(need)+' XP</b> — 오늘 한 판이면 닿아요</div>';
+  } else if(!ghost && idx === 0){
+    gap = '<div class="lg-gap">👑 지금 '+(per==='w'?'이번 주':'이번 달')+' 1위 — 자리를 지키자!</div>';
+  }
+  el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.2.5';
+const APP_VERSION = '2.2.6';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -5043,9 +5091,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-47';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-47'; });
+const APP_VER = '2026.07.27-48';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-48'; });
 const WN_ITEMS = [
+ ['📈','성장 랭킹 & 내 구간','아레나에 성장 랭킹이 생겼어요 — 지난주의 나보다 늘어난 만큼 오르는 판! 리그에는 내 앞뒤 순위와 "한 계단 위까지 +N XP"가 보여요'],
  ['🌱','오늘의 학습 = 새 단어만','홈의 오늘 목표는 이제 새로 공부한 문항만 세요. 메모리 락 복습은 목표와 별개 — 매일 새 단어 + 복습, 두 루틴을 다 챙겨요'],
  ['🎯','틀린 단어, 그 자리에서 다시','퀴즈·스펠링이 끝나면 틀린 단어만 한 번 더 물어봐요. 거기서 맞히면 메모리 락 1일차 예약! 이제 정답으로 꺼낸 단어만 등록돼요'],
  ['🧯','밀린 복습은 40개씩','며칠 쉬어도 복습이 산처럼 쏟아지지 않아요. 오래 밀린 단어부터 40개씩 잘라서 물어봐요'],
@@ -5062,6 +5111,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['📈','리그 개편 1차','성장 랭킹(전주 대비 푼 문항 증가·서버 SQL 1회 설치)과 내 주변 순위 보기를 넣었습니다. 절대 순위표의 하위권 위축을 줄이고 닿을 수 있는 다음 목표를 보여 주는 조치예요'],
  ['🌱','일일 목표 집계 변경','오늘의 학습에서 메모리 락 복습 문항을 제외합니다. 매일 새 단어 N문항 + 누적 복습이라는 이중 루틴을 세우는 조치예요'],
  ['🎯','등록 기준 도입','첫 세션에서 정답 인출에 성공한 단어만 메모리 락에 등록됩니다. 틀린 단어는 세션 끝 다시 도전 라운드에서 정답을 받아낸 뒤 등록돼요(점수·별·기록 미포함, XP +5)'],
  ['🧯','지각 완충','밀린 복습은 오래된 단어부터 세션당 40개씩 나눠 묻습니다. 복귀 장벽을 낮추는 장치예요'],
