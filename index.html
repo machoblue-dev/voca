@@ -1844,6 +1844,7 @@ async function storageLoad(){
   return memDB;
 }
 async function storageSave(){
+  prefSave();
   const s = JSON.stringify(DB);
   if(window.storage && typeof window.storage.set === 'function'){
     try{ await window.storage.set(DB_KEY, s); return; }catch(e){}
@@ -1852,7 +1853,37 @@ async function storageSave(){
   memDB = JSON.parse(s);
 }
 let saveTimer = null;
-function scheduleSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(()=>{ storageSave(); }, 600); if(typeof DB==='object' && DB && DB.auth) schedulePush(); }
+/* ════════ 설정값은 따로 담는다 ════════
+   앱 전체(단어장 본문 포함)는 한 칸에 통째로 저장되는데, 단어장이 쌓이면 그 칸이
+   먼저 꽉 찬다. 그러면 화면 모드·효과음 같은 작은 설정까지 함께 저장에 실패해
+   새로고침할 때마다 예전 값으로 되돌아간다.
+   설정만 따로 담으면 다 합쳐 백 바이트 남짓이라 어떤 경우에도 살아남는다. */
+const PREF_KEY = 'kiwonT-voca-pref';
+const PREF_FIELDS = ['theme', 'fx', 'qzExKo', 'activeListId'];
+let prefLast = '';
+function prefSave(){
+  if(!DB || typeof DB !== 'object') return;
+  try{
+    const o = {};
+    PREF_FIELDS.forEach(k=>{ if(DB[k] !== undefined) o[k] = DB[k]; });
+    const s = JSON.stringify(o);
+    if(s === prefLast) return;                 /* 안 바뀌었으면 건드리지 않는다 */
+    localStorage.setItem(PREF_KEY, s);
+    prefLast = s;
+  }catch(e){}
+}
+function prefLoad(){
+  if(!DB || typeof DB !== 'object') return;
+  try{
+    const v = localStorage.getItem(PREF_KEY);
+    if(!v) return;
+    const o = JSON.parse(v);
+    if(!o || typeof o !== 'object') return;
+    PREF_FIELDS.forEach(k=>{ if(o[k] !== undefined) DB[k] = o[k]; });
+    prefLast = v;
+  }catch(e){}
+}
+function scheduleSave(){ prefSave(); clearTimeout(saveTimer); saveTimer = setTimeout(()=>{ storageSave(); }, 600); if(typeof DB==='object' && DB && DB.auth) schedulePush(); }
 
 /* ════════ 데이터 ════════ */
 let DB = null; // {version, activeListId, lists:[{id,name,words:[…]}], wrong:{listId:{word:count}}}
@@ -3361,8 +3392,10 @@ $('btn-signup').addEventListener('click', async ()=>{
 $('btn-logout').addEventListener('click', async ()=>{
   if(!confirm('로그아웃할까요? 이 기기의 기록은 지워져요 (서버에는 안전하게 저장돼 있어요).')) return;
   await pushProgress();
-  DB = {version:2, activeListId:null, lists:[], wrong:{}, log:[], auth:null, profile:null, theme:DB.theme};
-  await storageSave();
+  DB = {version:2, activeListId:null, lists:[], wrong:{}, log:[], auth:null, profile:null, theme:DB.theme, fx:DB.fx, qzExKo:DB.qzExKo};
+  try{ localStorage.removeItem(PREF_KEY); }catch(e){}
+  prefLast = '';
+  await storageSave();   /* 화면 모드·효과음은 그대로 두고, 단어장 선택만 비운다 */
   $('li-email').value=''; $('li-pw').value=''; $('li-err').textContent='';
   authTab(true);
   go('scr-auth');
@@ -4693,6 +4726,7 @@ async function init(){
   if(!DB.lists) DB.lists = [];
   if(!DB.wrong) DB.wrong = {};
   DB.version = 2;
+  prefLoad();          /* 본체 저장이 실패했더라도 설정은 여기서 되살아난다 */
   applyTheme();
   ensureGame();
   updLast = Date.now();
@@ -5578,8 +5612,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-52';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-52'; });
+const APP_VER = '2026.07.27-53';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-53'; });
 const WN_ITEMS = [
  ['🏆','승강제 리그 개막','아레나에 새 판! 20~25명 조에서 일주일간 겨루고, 월요일 새벽 상위는 승급 · 하위는 강등돼요. 모두 🥉 브론즈에서 출발 — 🥇 골드까지 올라가 보자'],
  ['🗓️','시험 역산 모드','시험이 등록되면 홈에 D-day 카드가 떠요. D-4까지는 "하루 N개 페이스" 안내, D-3부터는 전 범위 최종 점검(퀴즈 70%+ ✅)!'],
