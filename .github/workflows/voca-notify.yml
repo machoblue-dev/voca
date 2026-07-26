@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════════════════════════
+# VOCA꾹 알림 자동 발송 — 이 파일은 .github/workflows/voca-notify.yml 에 둔다
+# · 매일 19:00 KST → 📌 과제 마감 임박 알림
+# · 매일 21:00 KST → 🔥 스트릭 세이버 알림
+# · Actions 탭에서 "Run workflow"로 언제든 수동 시험 가능 (기본은 가상 발송)
+# · 실제 발송 스위치: Settings → Secrets and variables → Actions → Variables 에
+#   ENABLE_LIVE = 1 을 만들면 켜지고, 0으로 바꾸거나 지우면 꺼진다.
+# ═══════════════════════════════════════════════════════════
+name: VOCA꾹 알림
+
+on:
+  schedule:
+    - cron: '0 10 * * *'   # 19:00 KST — 과제 마감 임박
+    - cron: '0 12 * * *'   # 21:00 KST — 스트릭 세이버
+  workflow_dispatch:
+    inputs:
+      task:
+        description: '보낼 알림 종류'
+        type: choice
+        default: both
+        options: [both, streak, assign]
+      live:
+        description: '1 = 실제 발송, 0 = 가상 발송(로그만)'
+        default: '0'
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: 발송 모듈 설치
+        run: npm install web-push@3 --no-fund --no-audit
+      - name: 알림 발송기 실행
+        run: node notify/send.js
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          TASK: ${{ inputs.task || (github.event.schedule == '0 12 * * *' && 'streak' || 'assign') }}
+          LIVE: ${{ inputs.live || vars.ENABLE_LIVE || '0' }}
