@@ -197,14 +197,14 @@ async function main() {
 
   /* 2) 발송 도우미 — 실패한 만료 주소는 그 자리에서 정리 */
   let sent = 0, dead = 0;
-  async function pushTo(uid, title, body) {
+  async function pushTo(uid, title, body, tag) {   /* tag = 알림 꼬리표 — 같으면 새것이 옛것을 덮으므로 종류별로 나눈다 */
     const p = stu.get(uid) || {};
     const label = (p.name || uid.slice(0, 6)) + '(' + (p.class_name || '반 미지정') + ')';
     for (const s of (subsByUser.get(uid) || [])) {
       if (!live) { console.log('  [가상] ' + label + ' ← ' + title + ' | ' + body); sent++; continue; }
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
-          JSON.stringify({ title, body, tag: APP_TAG, url: './' }), { TTL: 6 * 3600 });
+          JSON.stringify({ title, body, tag: tag || APP_TAG, url: './' }), { TTL: 6 * 3600 });
         console.log('  [발송] ' + label + ' ← ' + title);
         sent++;
       } catch (e) {
@@ -246,7 +246,7 @@ async function main() {
       const n = streaks.get(uid);
       if (!n) continue;                              /* 스트릭이 없는 학생은 재촉하지 않는다 */
       await pushTo(uid, '🔥 ' + n + '일 스트릭이 오늘 밤 사라져요!',
-        '자정 전에 딱 한 판이면 지켜져요. 새 단어든 메모리 락이든, 뭐든 좋아요!');
+        '자정 전에 딱 한 판이면 지켜져요. 새 단어든 메모리 락이든, 뭐든 좋아요!', 'voca-streak');
     }
   }
 
@@ -273,7 +273,7 @@ async function main() {
             const p = stu.get(uid);
             if (!classMatches(p.class_name, a.target_classes)) continue;
             if (assignDoneFor(a, byUser.get(uid) || [])) continue;
-            await pushTo(uid, '📌 과제 마감 임박', '"' + (a.title || a.list_name) + '" — ' + when + ' 마감이에요. 지금 한 판이면 끝!');
+            await pushTo(uid, '📌 과제 마감 임박', '"' + (a.title || a.list_name) + '" — ' + when + ' 마감이에요. 지금 한 판이면 끝!', 'voca-assign-' + a.id);
             cnt++;
           }
           console.log('· "' + (a.title || a.list_name) + '" (' + when + ' 마감) → 미완료 알림 ' + cnt + '명');
