@@ -1484,8 +1484,8 @@ html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
 <div class="ovl" id="goal-modal">
   <div class="card">
     <h3>🎯 목표 설정</h3>
-    <div class="desc">하루에 몇 문항을 풀지, 연속 학습을 며칠까지 이어갈지 정해요.</div>
-    <div class="stat-h" style="margin-top:8px">하루 목표<span class="sub">달성하면 +50 XP</span></div>
+    <div class="desc">하루에 새 단어를 몇 문항 풀지, 연속 학습을 며칠까지 이어갈지 정해요.<br>메모리 락 복습은 목표에 세지 않아요 — 새 단어는 새 단어대로, 복습은 복습대로!</div>
+    <div class="stat-h" style="margin-top:8px">하루 목표<span class="sub">새 단어 문항 기준 · 달성하면 +50 XP</span></div>
     <div class="goal-grid" id="gm-daily"></div>
     <div class="stat-h">스트릭 목표<span class="sub">달성하면 +200 XP</span></div>
     <div class="goal-grid" id="gm-streak"></div>
@@ -2394,9 +2394,9 @@ $('btn-qz-start').addEventListener('click', ()=>{
 function renderQ(){
   const q = QZ.qs[QZ.i];
   $('qz-bar').style.width = (QZ.i/QZ.qs.length*100)+'%';
-  $('qz-pos').textContent = (QZ.i+1)+' / '+QZ.qs.length;
+  $('qz-pos').textContent = (QZ.retry?'✍️ 다시 도전 ':'')+(QZ.i+1)+' / '+QZ.qs.length;
   $('qz-score').innerHTML = (QZ.combo>=2 ? '<span class="combochip">🔥 '+QZ.combo+' 콤보</span> ' : '')+'맞힌 개수 '+QZ.right;
-  $('qz-kind').textContent = q.kind;
+  $('qz-kind').textContent = (QZ.retry?'다시 도전 — ':'')+q.kind;
   $('qz-prompt').className = 'q-prompt'+(q.xsmall?' xsmall':(q.small?' small':''));
   $('qz-prompt').innerHTML = (q.phtml ? q.phtml : esc(q.prompt)) + (q.say?' <button class="spk" data-say="'+esc(q.say)+'">🔊</button>':'');
   $('qz-opts').innerHTML = q.opts.map((o,idx)=>'<button class="opt" data-i="'+idx+'"><span class="cn">'+CIRC[idx]+'</span><span>'+esc(o)+'</span></button>').join('');
@@ -2407,14 +2407,19 @@ $('qz-opts').addEventListener('click', e=>{
   const q = QZ.qs[QZ.i];
   const pick = parseInt(b.dataset.i,10);
   revTouch(DB.activeListId, q.w.word, pick===q.ans);
-  dayBump(1);
-  sessBump(pick===q.ans);
+  if(!QZ.review) dayBump(1);   /* 메모리 락 복습 문항은 '오늘의 새 단어'에 안 센다 */
+  if(!QZ.retry) sessBump(pick===q.ans);   /* 다시 도전 라운드는 점수·별·기록에서 뺀다 */
   document.querySelectorAll('#qz-opts .opt').forEach(o=>o.setAttribute('disabled',''));
   if(pick===q.ans){
-    QZ.right++; QZ.combo++;
-    let gain = Math.round(10*(QZ.combo>=5?1.5:1));
-    if(wrongMap()[q.w.word]){ removeWrong(q.w.word); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
-    awardXp(gain); b.classList.add('reveal-right'); fxRight();
+    if(QZ.retry){
+      awardXp(5);   /* 고쳐 낸 보상 — 처음 맞힌 것보다는 작게. 오답 탈출은 다음 세션에서 진짜 인출로 */
+      b.classList.add('reveal-right'); fxRight();
+    } else {
+      QZ.right++; QZ.combo++;
+      let gain = Math.round(10*(QZ.combo>=5?1.5:1));
+      if(wrongMap()[q.w.word]){ removeWrong(q.w.word); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
+      awardXp(gain); b.classList.add('reveal-right'); fxRight();
+    }
   }
   else{
     QZ.combo=0;
@@ -2422,18 +2427,39 @@ $('qz-opts').addEventListener('click', e=>{
     const r = document.querySelector('#qz-opts .opt[data-i="'+q.ans+'"]');
     if(r) r.classList.add('reveal-right');
     addWrong(q.w.word);
-    QZ.wrongL.push(q.w);
+    if(!QZ.retry) QZ.wrongL.push(q.w);
   }
   const nb = $('btn-qz-next');
   nb.style.display='block';
-  nb.textContent = (QZ.i+1>=QZ.qs.length)?'결과 보기 →':'다음 문제 →';
+  nb.textContent = (QZ.i+1>=QZ.qs.length)
+    ? ((!QZ.retry && !QZ.review && QZ.wrongL.length) ? '✍️ 틀린 단어 다시 도전 →' : '결과 보기 →')
+    : '다음 문제 →';
 });
 $('btn-qz-next').addEventListener('click', ()=>{
   QZ.i++;
-  if(QZ.i>=QZ.qs.length) endQuiz(); else renderQ();
+  if(QZ.i>=QZ.qs.length){
+    if(!QZ.retry && !QZ.review && QZ.wrongL.length){ startQuizRetry(); return; }
+    endQuiz();
+  } else renderQ();
 });
+function startQuizRetry(){
+  /* ✍️ 다시 도전 — 틀린 단어를 그 자리에서 한 번 더 물어, 정답을 받아낸 뒤 메모리 락에 등록한다.
+     문제는 새로 뽑아 보기 위치 암기를 막는다. 점수·별·학습 기록에는 넣지 않고, 한 번만 돈다.
+     (메모리 락 복습 세션은 자체 재도전 흐름이 있으므로 여기서 제외) */
+  const uniq = []; const seen = new Set();
+  QZ.wrongL.forEach(w=>{ if(!seen.has(w.word)){ seen.add(w.word); uniq.push(w); } });
+  const rqs = buildQuestions(Array.from(qzSel), uniq.length, uniq);
+  if(!rqs.length){ endQuiz(); return; }
+  QZ.mainTotal = QZ.qs.length;
+  QZ.retry = true;
+  QZ.qs = shuffleArr(rqs);
+  QZ.i = 0;
+  QZ.combo = 0;
+  renderQ();
+}
 function endQuiz(){
-  logSession('quiz', QZ.qs.length, QZ.right);
+  const total = QZ.mainTotal || QZ.qs.length;   /* 다시 도전 라운드는 총계에서 뺀다 */
+  logSession('quiz', total, QZ.right, !!QZ.review);
   $('qz-play').style.display='none';
   const uniq = []; const seen = new Set();
   QZ.wrongL.forEach(w=>{ if(!seen.has(w.word)){ seen.add(w.word); uniq.push(w); } });
@@ -2448,8 +2474,8 @@ function endQuiz(){
   }
   const headP = rv
     ? (remain ? '오늘 큐에 <b>'+remain+'단어</b>가 남았어요. 정답으로 꺼내야 다음 단계로 잠겨요.' : '오늘의 메모리 락 완료 — 전부 다음 단계로 잠겼어요 🔒')
-    : (uniq.length?'틀린 단어 '+uniq.length+'개는 오답 목록에 저장했어요.':'전부 맞혔어요. 완벽해요!');
-  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars('quiz', QZ.right, QZ.qs.length))+'<div class="sc"><em>'+QZ.right+'</em> / '+QZ.qs.length+'</div><p>'+headP+'</p>'+xpLineHTML()+revNextLine()+'</div>'
+    : (uniq.length?'틀린 단어 '+uniq.length+'개는 오답 목록에 저장했어요.'+(QZ.retry?' 다시 도전에서 맞힌 단어는 🔒 1일차에 등록됐어요.':''):'전부 맞혔어요. 완벽해요!');
+  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars('quiz', QZ.right, total))+'<div class="sc"><em>'+QZ.right+'</em> / '+total+'</div><p>'+headP+'</p>'+xpLineHTML()+revNextLine()+'</div>'
     +(uniq.length?'<div class="wrong-list">'+uniq.map(w=>'<div class="wrong-item"><span class="wi-w">'+esc(w.word)+'</span><span class="wi-m">'+esc(w.meaning)+'</span><button class="spk sm" data-say="'+esc(w.word)+'">🔊</button></div>').join('')+'</div>':'')
     +(rv
       ? '<div class="row">'+(remain?'<button class="btn primary" id="qz-rv-again">'+(remainLate===remain?'남은 '+remain+'단어 쓰기로 인출 ✏️':'남은 '+remain+'단어 다시 인출')+'</button>':'')+'<button class="btn '+(remain?'ghost':'primary')+'" id="qz-home">홈으로</button></div>'
@@ -2477,11 +2503,12 @@ function startSpell(words, listen, fromWrong){
 function renderSpell(){
   const w = SP.deck[SP.i];
   $('sp-bar').style.width = (SP.i/SP.deck.length*100)+'%';
-  $('sp-pos').textContent = (SP.i+1)+' / '+SP.deck.length;
+  $('sp-pos').textContent = (SP.retry?'✍️ 다시 도전 ':'')+(SP.i+1)+' / '+SP.deck.length;
   $('sp-score').textContent = '맞힌 개수 '+SP.right;
-  /* 메모리 락 쓰기 인출 — 일차 표시 + 14·30일차는 첫 글자 힌트 봉인 */
+  /* 메모리 락 쓰기 인출 — 일차 표시 + 14·30일차는 첫 글자 힌트 봉인. 다시 도전 라운드도 표시 */
   const kEl = $('sp-kind');
-  if(kEl) kEl.textContent = (SP.review && w._st != null) ? '🔒 '+REV_GAPS[w._st]+'일차 메모리 락 — 뜻 보고 철자 쓰기' : '뜻 보고 철자 쓰기';
+  if(kEl) kEl.textContent = SP.retry ? '✍️ 다시 도전 — 뜻 보고 철자 쓰기'
+    : ((SP.review && w._st != null) ? '🔒 '+REV_GAPS[w._st]+'일차 메모리 락 — 뜻 보고 철자 쓰기' : '뜻 보고 철자 쓰기');
   $('btn-sp-first').style.display = (SP.review && w._st >= 3) ? 'none' : '';
   if(SP.listen){
     $('sp-mean').innerHTML = '<div class="lsn">🎧 발음을 듣고 철자를 쓰자</div><button type="button" class="btn" id="sp-say">🔊 다시 듣기</button>';
@@ -2515,30 +2542,41 @@ function checkSpell(){
   const ok = exact || near;
   const lid = w._lid || DB.activeListId;
   SP.answered = true;
-  dayBump(1);
-  sessBump(ok);
+  if(!SP.review) dayBump(1);   /* 메모리 락 복습 문항은 '오늘의 새 단어'에 안 센다 */
+  if(!SP.retry) sessBump(ok);   /* 다시 도전 라운드는 점수·별·기록에서 뺀다 */
   revTouch(lid, w.word, ok);
   $('sp-in').disabled = true;
   const fb = $('sp-fb');
   if(ok){
-    SP.right++;
-    let gain = exact ? 15 : 8;
-    if(wrongMapOf(lid)[w.word]){ removeWrong(w.word, lid); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
-    awardXp(gain);
-    fb.className='sp-fb ok';
-    fb.innerHTML = (exact ? '정답 ✓' : '아깝다! 오타 하나 — 정답 처리 ✓<div>'+spellDiffHTML(inp, w.word)+'</div>')
-      + ((SP.listen || near) ? '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>' : '');
-    fxRight();
+    if(SP.retry){
+      awardXp(5);   /* 고쳐 낸 보상 — 오답 탈출은 다음 세션에서 진짜 인출로 */
+      fb.className='sp-fb ok';
+      fb.innerHTML = (exact ? '정답 ✓' : '아깝다! 오타 하나 — 정답 처리 ✓<div>'+spellDiffHTML(inp, w.word)+'</div>')
+        + '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>';
+      fxRight();
+    } else {
+      SP.right++;
+      let gain = exact ? 15 : 8;
+      if(wrongMapOf(lid)[w.word]){ removeWrong(w.word, lid); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
+      awardXp(gain);
+      fb.className='sp-fb ok';
+      fb.innerHTML = (exact ? '정답 ✓' : '아깝다! 오타 하나 — 정답 처리 ✓<div>'+spellDiffHTML(inp, w.word)+'</div>')
+        + ((SP.listen || near) ? '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>' : '');
+      fxRight();
+    }
   }
   else{
     fb.className='sp-fb no';
     fb.innerHTML='아쉬워요 ✗<div>'+spellDiffHTML(inp, w.word)+'</div><span class="ans">'+esc(w.word)+((SP.listen && w.meaning)?' — '+esc(w.meaning):'')+'</span><span class="myans">내 답: '+esc(inp)+'</span>';
     addWrong(w.word, lid); fxWrong();
+    if(!SP.retry && !SP.fromWrong && !SP.review) (SP.retryL || (SP.retryL = [])).push(w);
   }
   $('btn-sp-check').style.display='none';
   const nb = $('btn-sp-next');
   nb.style.display='block';
-  nb.textContent = (SP.i+1>=SP.deck.length)?'결과 보기 →':'다음 →';
+  nb.textContent = (SP.i+1>=SP.deck.length)
+    ? ((!SP.retry && !SP.fromWrong && !SP.review && SP.retryL && SP.retryL.length) ? '✍️ 틀린 단어 다시 도전 →' : '결과 보기 →')
+    : '다음 →';
 }
 $('btn-sp-check').addEventListener('click', checkSpell);
 $('sp-in').addEventListener('keydown', e=>{
@@ -2548,10 +2586,23 @@ $('btn-sp-next').addEventListener('click', ()=>nextSpell());
 function nextSpell(){
   if(!SP) return;
   SP.i++;
-  if(SP.i>=SP.deck.length) endSpell(); else renderSpell();
+  if(SP.i>=SP.deck.length){
+    if(!SP.retry && !SP.fromWrong && !SP.review && SP.retryL && SP.retryL.length){ startSpellRetry(); return; }
+    endSpell();
+  } else renderSpell();
+}
+function startSpellRetry(){
+  /* ✍️ 다시 도전 — 틀린 단어만 곧바로 한 번 더 물어, 정답을 받아낸 뒤 메모리 락에 등록한다.
+     점수·별·학습 기록에는 넣지 않고, 한 번만 돈다. */
+  SP.mainTotal = SP.deck.length;
+  SP.retry = true;
+  SP.deck = shuffleArr(SP.retryL);
+  SP.i = 0;
+  renderSpell();
 }
 function endSpell(){
-  logSession(SP.listen?'listen':'spell', SP.deck.length, SP.right);
+  const total = SP.mainTotal || SP.deck.length;   /* 다시 도전 라운드는 총계에서 뺀다 */
+  logSession(SP.listen?'listen':'spell', total, SP.right, !!SP.review);
   $('sp-play').style.display='none';
   const box = $('sp-done');
   box.style.display='block';
@@ -2566,7 +2617,7 @@ function endSpell(){
     return;
   }
   const wn = wrongWords().length;
-  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars(SP.listen?'listen':'spell', SP.right, SP.deck.length))+'<div class="sc"><em>'+SP.right+'</em> / '+SP.deck.length+'</div><p>'+(SP.right===SP.deck.length?'철자까지 완벽해요!':'틀린 단어는 오답 목록에 저장했어요.')+'</p>'+xpLineHTML()+revNextLine()+'</div>'
+  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars(SP.listen?'listen':'spell', SP.right, total))+'<div class="sc"><em>'+SP.right+'</em> / '+total+'</div><p>'+(SP.right===total?'철자까지 완벽해요!':'틀린 단어는 오답 목록에 저장했어요.'+(SP.retry?' 다시 도전에서 맞힌 단어는 🔒 1일차에 등록됐어요.':''))+'</p>'+xpLineHTML()+revNextLine()+'</div>'
     +'<div class="row"><button class="btn ghost" id="sp-again">다시</button><button class="btn primary" id="sp-home">홈으로</button></div>'
     +(wn?'<button class="btn soft block" id="sp-gowrong" style="margin-top:10px">오답 복습 하러 가기</button>':'');
   $('sp-again').addEventListener('click', ()=>{
@@ -2580,9 +2631,10 @@ function endSpell(){
 
 
 /* ════════ 학습 기록 ════════ */
-function logSession(mode, total, right){
+function logSession(mode, total, right, rv){
   if(!DB.log) DB.log = [];
   const rec = {t:Date.now(), lid:DB.activeListId, mode, total, right};
+  if(rv) rec.rv = 1;   /* 메모리 락 복습 세션 표식 — '오늘의 새 단어' 집계에서 뺀다 (스트릭·리그·선생님 화면에는 그대로 잡힌다) */
   DB.log.push(rec); gameOnSession(rec);
   if(DB.log.length>300) DB.log = DB.log.slice(-300);
   scheduleSave();
@@ -3612,8 +3664,9 @@ $('btn-back').addEventListener('click', ()=>go('scr-home'));
 /* ════════ 홈 ════════ */
 function dayKeyOf(t){ const d=new Date(t); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function todayCount(){
+  /* '오늘의 새 단어' 집계 — 메모리 락 복습(rv 표식)은 세지 않는다. 새 단어는 새 단어대로, 복습은 복습대로 */
   const k = dayKeyOf(Date.now());
-  const logged = (DB.log||[]).filter(s=>dayKeyOf(s.t)===k).reduce((a,s)=>a+(s.total||0),0);
+  const logged = (DB.log||[]).filter(s=>dayKeyOf(s.t)===k && !s.rv).reduce((a,s)=>a+(s.total||0),0);
   const live = (DB.game && DB.game.dayKey===k) ? (DB.game.dayItems||0) : 0;
   return Math.max(logged, live);
 }
@@ -3641,8 +3694,8 @@ function renderHome(){
   const today = todayCount();
   const goal = g.goal || 40;
   const left = Math.max(0, goal - today);
-  $('hero-sub').textContent = L ? '오늘의 학습 · '+(TIERS[L.tier||1]||TIERS[1]).e+' '+L.name : '오늘의 학습';
-  $('hero-head').innerHTML = !n ? '단어장이 도착하길<br>기다리고 있어요' : (left>0 ? left+'단어만 더 하면<br>목표 달성!' : '오늘 목표 달성!<br>더 달려볼까요? 🎉');
+  $('hero-sub').textContent = L ? '오늘의 새 단어 · '+(TIERS[L.tier||1]||TIERS[1]).e+' '+L.name : '오늘의 새 단어';
+  $('hero-head').innerHTML = !n ? '단어장이 도착하길<br>기다리고 있어요' : (left>0 ? '새 단어 '+left+'개만 더 하면<br>목표 달성!' : '오늘 목표 달성!<br>더 달려볼까요? 🎉');
   $('hero-bar').style.width = Math.min(100, Math.round(today/goal*100))+'%';
   $('hero-meta-l').textContent = Math.min(today,goal)+' / '+goal+' 단어';
   $('hero-meta-r').textContent = g.dayXp ? '오늘 +'+g.dayXp+' XP' : '';
@@ -4225,7 +4278,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail);
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.2.3';
+const APP_VERSION = '2.2.5';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -4449,13 +4502,14 @@ function openMakeTest(){
 }
 /* ════════ 메모리 락 (망각 곡선 복습 큐 — 단어 단위) ════════ */
 const REV_GAPS = [1, 3, 7, 14, 30];
+const REV_CHUNK = 40;   /* 한 세션에 물어보는 상한 — 밀린 날에도 40개씩 잘라 꺼낸다 (복귀 장벽 완충) */
 function revDayNum(t){ const d = new Date(t); d.setHours(0,0,0,0); return Math.round(d.getTime()/864e5); }
 let revDoneCnt = 0, revDoneTimer = null;
 function revStamp(g, lid){ if(!g.rev2t) g.rev2t = {}; g.rev2t[lid] = Date.now(); }
 function revTouch(lid, word, ok){
-  /* v2.2 — 단계 진급은 '정답 인출'에만 허용한다. 노출만으로는 잠기지 않는다.
-     ok === false : 인출 실패 — 단계 유지. 만기 단어는 오늘 큐에 그대로 남아 다시 물어본다.
-     첫 노출은 정오답과 무관하게 '등록'만 한다(내일 1일차 예약). */
+  /* v2.2.4 — 등록에도 기준이 생겼다: 첫 만남에서 '정답 인출'에 성공한 단어만 등록된다(내일 1일차 예약).
+     틀린 단어는 오답 목록에 남고, 세션 끝 '다시 도전'이나 오답 복습에서 맞히는 순간 등록된다.
+     단계 진급은 종전대로 '정답 인출'에만 허용한다. ok === false : 실패 — 단계 유지, 만기 단어는 오늘 큐에 남는다. */
   if(!lid || !word) return;
   const g = ensureGame();
   if(!g.rev2) g.rev2 = {};
@@ -4463,7 +4517,7 @@ function revTouch(lid, word, ok){
   const m = g.rev2[lid];
   const today = revDayNum(Date.now());
   const v = m[word];
-  if(v === undefined){ m[word] = today + REV_GAPS[0]; revStamp(g, lid); return; }
+  if(v === undefined){ if(ok !== true) return; m[word] = today + REV_GAPS[0]; revStamp(g, lid); return; }
   if(ok === false) return;
   const st = Math.floor(v/100000), due = v%100000;
   if(today >= due){
@@ -4541,11 +4595,14 @@ function startReviewSession(lid){
      맞힌 단어만 다음 단계로 잠기고, 틀린 단어는 오늘 큐에 남아 다시 물어본다.
      선택지를 만들 수 없는 작은 리스트는 전 단어를 쓰기로 인출한다(쓰기는 보기가 필요 없다). */
   DB.activeListId = lid; scheduleSave();
-  const ws = revDueWords(lid);
+  let ws = revDueWords(lid);
   const L = activeList();
   if(!ws.length){ startFlash(L ? L.words : [], false); go('scr-flash'); return; }
   const g = ensureGame();
   const m = (g.rev2 && g.rev2[lid]) || {};
+  if(ws.length > REV_CHUNK){   /* 지각 완충 — 밀린 날에도 벽이 되지 않게, 오래 밀린 단어부터 40개씩 */
+    ws = ws.slice().sort((a,b)=>(m[a.word]%100000)-(m[b.word]%100000)).slice(0, REV_CHUNK);
+  }
   const stOf = w => Math.floor((m[w.word] || 0) / 100000);
   const early = ws.filter(w => stOf(w) <= 1);   /* 1·3일차 — 고르기 */
   const late  = ws.filter(w => stOf(w) >= 2);   /* 7·14·30일차 — 쓰기 */
@@ -4622,6 +4679,7 @@ function renderReview(){
         const late = today - x.minDue;
         return '<div class="rv-row"><div class="rv-info"><b>'+esc(x.L.name)+'</b><span>'
           +x.days+'일차 메모리 락 · '+x.dueN+'단어'
+          +(x.dueN > REV_CHUNK ? ' · '+REV_CHUNK+'개씩 나눠 물어요' : '')
           +(late > 0 ? ' · <b style="color:var(--red,#E5484D)">'+late+'일 밀렸어요</b>' : '')
           +'</span></div>'
           +'<button class="btn primary rv-go" data-id="'+esc(x.lid)+'">지금 복습</button>'
@@ -4985,9 +5043,12 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.26-45';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.26-45'; });
+const APP_VER = '2026.07.27-47';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-47'; });
 const WN_ITEMS = [
+ ['🌱','오늘의 학습 = 새 단어만','홈의 오늘 목표는 이제 새로 공부한 문항만 세요. 메모리 락 복습은 목표와 별개 — 매일 새 단어 + 복습, 두 루틴을 다 챙겨요'],
+ ['🎯','틀린 단어, 그 자리에서 다시','퀴즈·스펠링이 끝나면 틀린 단어만 한 번 더 물어봐요. 거기서 맞히면 메모리 락 1일차 예약! 이제 정답으로 꺼낸 단어만 등록돼요'],
+ ['🧯','밀린 복습은 40개씩','며칠 쉬어도 복습이 산처럼 쏟아지지 않아요. 오래 밀린 단어부터 40개씩 잘라서 물어봐요'],
  ['✏️','7일차부터는 직접 쓰기','메모리 락이 한 단계 세졌어요. 1·3일차는 고르기, 7일차부터는 철자를 직접 써서 꺼내요. 14·30일차는 힌트 없이 — 시험장에서 쓰는 기억은 쓰기가 만들어요'],
  ['🔓','메모리 락이 똑똑해졌어요','이제 복습 날에 퀴즈로 물어보고, 정답으로 꺼낸 단어만 다음 단계로 잠겨요. 5번 성공하면 졸업!'],
  ['🧹','오답 탈출 보너스','퀴즈·스펠링에서 오답 단어를 맞히면 확실히 탈출 +20 XP. 오답 화면에 "전체 단어장" 탭도 생겼어요'],
@@ -5001,6 +5062,9 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['🌱','일일 목표 집계 변경','오늘의 학습에서 메모리 락 복습 문항을 제외합니다. 매일 새 단어 N문항 + 누적 복습이라는 이중 루틴을 세우는 조치예요'],
+ ['🎯','등록 기준 도입','첫 세션에서 정답 인출에 성공한 단어만 메모리 락에 등록됩니다. 틀린 단어는 세션 끝 다시 도전 라운드에서 정답을 받아낸 뒤 등록돼요(점수·별·기록 미포함, XP +5)'],
+ ['🧯','지각 완충','밀린 복습은 오래된 단어부터 세션당 40개씩 나눠 묻습니다. 복귀 장벽을 낮추는 장치예요'],
  ['✏️','메모리 락 인출 상향','복습 인출이 일차별로 세집니다 — 1·3일차 5지선다, 7일차 쓰기(첫 글자 힌트 허용), 14·30일차 힌트 없는 쓰기. 회상 연습이 재인보다 오래 남는다는 연구를 따랐어요'],
  ['📌','과제 내기','선생님 도구에 새 메뉴 — 단어장·모드·정답률·마감·대상 반을 정해 과제를 내고, 반별 완료 현황을 봐요'],
  ['🔓','메모리 락 개편','복습이 퀴즈(인출)로 바뀌고, 정답을 맞힌 단어만 단계가 올라가요. 학습과학의 successive relearning 방식이에요'],
