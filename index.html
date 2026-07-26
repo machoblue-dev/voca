@@ -278,7 +278,7 @@ html[data-theme=dark] .btn.know{box-shadow:var(--glow-teal)}
 .row .btn{flex:1}
 .fld{margin-bottom:14px}
 .fld label{display:block;font-size:13px;font-weight:800;color:var(--ink2);margin-bottom:6px}
-.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld select,.fld textarea{width:100%;padding:12px 13px;border:2px solid var(--line);border-radius:14px;background:var(--card);transition:border-color .15s}
+.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld input[type=datetime-local],.fld select,.fld textarea{width:100%;padding:12px 13px;border:2px solid var(--line);border-radius:14px;background:var(--card);transition:border-color .15s}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--red)}
 .fld textarea{min-height:150px;font-size:13px;line-height:1.5;resize:vertical}
 .check{display:flex;align-items:center;gap:9px;padding:10px 2px;font-size:14.5px;font-weight:700}
@@ -780,7 +780,7 @@ html[data-theme=dark] .hero{box-shadow:none}
 .opt{box-shadow:0 1px 2px rgba(31,32,51,.04),0 3px 10px rgba(31,32,51,.05)}
 .opt.picked-wrong,.opt.reveal-right{box-shadow:none}
 .qt{border-width:1.5px}
-.search,.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld select,.fld textarea{border-width:1.5px}
+.search,.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld input[type=datetime-local],.fld select,.fld textarea{border-width:1.5px}
 .tabbar{border-width:1.5px;box-shadow:0 2px 6px rgba(31,32,51,.05),0 18px 44px rgba(31,32,51,.14)}
 html[data-theme=dark] .tabbar{box-shadow:0 20px 44px rgba(0,0,0,.55)}
 .tab.on .ticon{box-shadow:0 6px 14px rgba(255,75,62,.35)}
@@ -961,6 +961,16 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
 .as-form{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px}
 .as-status{font-size:12px;font-weight:700;color:var(--ink2);line-height:1.55;margin-top:7px}
 .as-status b{color:var(--ink)}
+/* 과제 — 마감 입력: 앱 글꼴·색 그대로, 달력 UI는 테마 따라감 */
+.fld input[type=datetime-local]{font:inherit;font-size:14px;font-weight:800;color:var(--ink);color-scheme:light;min-height:47px;-webkit-appearance:none;appearance:none}
+html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
+.fld input[type=datetime-local]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.85}
+/* 과제 — 단어장 고르기 버튼(접이식 모달 연결) */
+.as-list-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);font:inherit;font-size:14px;font-weight:800;color:var(--ink);cursor:pointer;text-align:left;transition:border-color .15s}
+.as-list-btn:active{border-color:var(--red)}
+.as-list-btn.ph #as-list-name{color:var(--ink2);font-weight:700}
+.as-list-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.as-list-btn .chev{font-style:normal;color:var(--ink2);flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -1297,7 +1307,7 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
   <section class="scr" id="scr-assign" data-screen-label="과제">
     <div class="as-form">
       <div class="fld"><label>과제 제목 — 비우면 단어장 이름으로</label><input type="text" id="as-title" placeholder="예) 3월 2주차 필수 어휘 과제"></div>
-      <div class="fld"><label>단어장</label><select id="as-list"></select></div>
+      <div class="fld"><label>단어장</label><button type="button" class="as-list-btn ph" id="as-list-btn"><span id="as-list-name">단어장을 골라 주세요</span><i class="chev">▾</i></button><input type="hidden" id="as-list"></div>
       <div class="row" style="gap:8px">
         <div class="fld" style="flex:1;margin-bottom:0"><label>학습 모드</label><select id="as-mode"><option value="any">아무 모드나</option><option value="quiz">객관식 퀴즈</option><option value="spell">스펠링 쓰기</option><option value="listen">듣기</option><option value="flash">플래시카드</option></select></div>
         <div class="fld" style="flex:1;margin-bottom:0"><label>기준 정답률(%)</label><input type="number" id="as-acc" min="1" max="100" placeholder="비우면 없음"></div>
@@ -3654,12 +3664,14 @@ $('goal-modal').addEventListener('click', e=>{
     toast(g.streakGoal ? '스트릭 목표: '+g.streakGoal+'일 연속! 달성하면 +200 XP' : '스트릭 목표를 껐어요');
   }
 });
-/* ── 단어장 고르기 모달: 묶음은 접힌 채로, 누르면 열림 ── */
+/* ── 단어장 고르기 모달: 묶음은 접힌 채로, 누르면 열림 (홈·과제 겸용) ── */
+let lpMode = 'home';   /* 'home' 학습용 선택 | 'assign' 과제용 선택 */
 function renderListPick(){
-  const cid = DB.activeListId;
+  const cid = lpMode==='assign' ? $('as-list').value : DB.activeListId;
+  const tag = lpMode==='assign' ? ' · 선택됨' : ' · 사용 중';
   const row = l=>'<button type="button" class="lp-row'+(l.id===cid?' on':'')+'" data-pick="'+esc(l.id)+'">'
     +'<span class="lt">'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+'</span>'
-    +'<span class="lc">'+(l.words||[]).length+'개'+(l.id===cid?' · 사용 중':'')+'</span></button>';
+    +'<span class="lc">'+(l.words||[]).length+'개'+(l.id===cid?tag:'')+'</span></button>';
   const html = groupLists(DB.lists).map(it=>{
     if(it.one) return row(it.one);
     const open = it.lists.some(l=>l.id===cid);
@@ -3670,15 +3682,21 @@ function renderListPick(){
   }).join('');
   $('lp-body').innerHTML = html || '<div class="note">아직 받은 단어장이 없어요. 새 단어장이 올라오면 여기 나타나요.</div>';
 }
-$('home-list-btn').addEventListener('click', ()=>{ renderListPick(); $('list-pick').classList.add('on'); });
-$('lp-close').addEventListener('click', ()=>$('list-pick').classList.remove('on'));
+$('home-list-btn').addEventListener('click', ()=>{ lpMode = 'home'; renderListPick(); $('list-pick').classList.add('on'); });
+$('lp-close').addEventListener('click', ()=>{ $('list-pick').classList.remove('on'); lpMode = 'home'; });
 $('list-pick').addEventListener('click', e=>{
-  if(e.target === $('list-pick')){ $('list-pick').classList.remove('on'); return; }
+  if(e.target === $('list-pick')){ $('list-pick').classList.remove('on'); lpMode = 'home'; return; }
   const gh = e.target.closest('.li-grp-h');
   if(gh){ gh.closest('.li-grp').classList.toggle('open'); return; }
   const r = e.target.closest('.lp-row');
   if(r){
     const L = DB.lists.find(l=>l.id===r.dataset.pick); if(!L) return;
+    if(lpMode === 'assign'){   /* 과제용 — 학습 중인 단어장은 건드리지 않는다 */
+      setAsList(L);
+      $('list-pick').classList.remove('on');
+      lpMode = 'home';
+      return;
+    }
     DB.activeListId = L.id; scheduleSave();
     $('list-pick').classList.remove('on');
     renderHome();
@@ -4184,7 +4202,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail);
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.2.1';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -4772,12 +4790,20 @@ document.getElementById('as-target-chips').addEventListener('click', e=>{
   t.value = cur.join(', ');
   renderAsTargetChips();
 });
+function setAsList(L){
+  /* 과제 폼의 단어장 선택 상태 — 숨은 입력(id) + 버튼 라벨을 함께 갱신한다 */
+  $('as-list').value = L ? L.id : '';
+  const btn = $('as-list-btn');
+  $('as-list-name').textContent = L
+    ? (TIERS[L.tier||1]||TIERS[1]).e+' '+L.name+' · '+(L.words||[]).length+'단어'
+    : (DB.lists.length ? '단어장을 골라 주세요' : '단어장이 없어요');
+  btn.classList.toggle('ph', !L);
+}
+$('as-list-btn').addEventListener('click', ()=>{ lpMode = 'assign'; renderListPick(); $('list-pick').classList.add('on'); });
 function renderAssign(){
-  const sel = $('as-list');
-  sel.innerHTML = DB.lists.length
-    ? DB.lists.map(l=>'<option value="'+esc(l.id)+'">'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+'</option>').join('')
-    : '<option value="">단어장이 없어요</option>';
-  if(DB.activeListId && DB.lists.some(l=>l.id===DB.activeListId)) sel.value = DB.activeListId;
+  const curId = $('as-list').value;
+  const cur = DB.lists.find(l=>l.id===curId) || DB.lists.find(l=>l.id===DB.activeListId) || null;
+  setAsList(cur);
   if(!$('as-due').value){
     const d = new Date(Date.now()+3*86400000); d.setHours(22,0,0,0);
     const pad = n=>String(n).padStart(2,'0');
