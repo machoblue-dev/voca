@@ -103,14 +103,20 @@ if (process.argv.includes('--selftest')) {
 
 /* ═══ 여기서부터 실제 발송 흐름 ═══ */
 async function main() {
-  if (!ENV.SUPABASE_SERVICE_KEY || !ENV.VAPID_PRIVATE_KEY) {
-    console.log('🔒 비밀키가 아직 설정되지 않아 발송 없이 끝냅니다. (Settings → Secrets에 SUPABASE_SERVICE_KEY, VAPID_PRIVATE_KEY 등록 후 다시)');
+  if (!ENV.SUPABASE_SERVICE_KEY) {
+    console.log('🔒 SUPABASE_SERVICE_KEY가 아직 없어 명단을 읽을 수 없습니다. (Settings → Secrets 등록 후 다시)');
     return;
   }
-  let webpush;
-  try { webpush = require('web-push'); }
-  catch (e) { console.error('web-push 모듈이 없습니다 — 워크플로의 npm install 단계를 확인하세요.'); process.exit(1); }
-  webpush.setVapidDetails('mailto:voca@hakmundang.app', VAPID_PUBLIC, ENV.VAPID_PRIVATE_KEY);
+  let live = LIVE, webpush = null;
+  if (live && !ENV.VAPID_PRIVATE_KEY) {
+    console.log('⚠ VAPID_PRIVATE_KEY가 없어 실제 발송은 불가 — 이번 실행은 가상 발송으로 전환합니다.');
+    live = false;
+  }
+  if (live) {
+    try { webpush = require('web-push'); }
+    catch (e) { console.error('web-push 모듈이 없습니다 — 워크플로의 npm install 단계를 확인하세요.'); process.exit(1); }
+    webpush.setVapidDetails('mailto:voca@hakmundang.app', VAPID_PUBLIC, ENV.VAPID_PRIVATE_KEY);
+  }
 
   const H = { apikey: ENV.SUPABASE_SERVICE_KEY, Authorization: 'Bearer ' + ENV.SUPABASE_SERVICE_KEY };
   async function sbGet(path) {                       /* 1000행 단위로 끝까지 받아온다 */
@@ -148,7 +154,7 @@ async function main() {
     if (!subsByUser.has(s.user_id)) subsByUser.set(s.user_id, []);
     subsByUser.get(s.user_id).push(s);
   }
-  console.log('구독 기기 ' + subs.length + '대 · 알림 대상 학생 ' + subsByUser.size + '명 · 모드: ' + (LIVE ? '🔴 실제 발송' : '🟡 가상 발송(로그만)'));
+  console.log('구독 기기 ' + subs.length + '대 · 알림 대상 학생 ' + subsByUser.size + '명 · 모드: ' + (live ? '🔴 실제 발송' : '🟡 가상 발송(로그만)'));
 
   /* 2) 발송 도우미 — 실패한 만료 주소는 그 자리에서 정리 */
   let sent = 0, dead = 0;
@@ -156,7 +162,7 @@ async function main() {
     const p = stu.get(uid) || {};
     const label = (p.name || uid.slice(0, 6)) + '(' + (p.class_name || '반 미지정') + ')';
     for (const s of (subsByUser.get(uid) || [])) {
-      if (!LIVE) { console.log('  [가상] ' + label + ' ← ' + title + ' | ' + body); sent++; continue; }
+      if (!live) { console.log('  [가상] ' + label + ' ← ' + title + ' | ' + body); sent++; continue; }
       try {
         await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
           JSON.stringify({ title, body, tag: APP_TAG, url: './' }), { TTL: 6 * 3600 });
@@ -237,7 +243,7 @@ async function main() {
     }
   }
 
-  console.log('\n요약: ' + (LIVE ? '실제 발송 ' : '가상 발송 ') + sent + '건' + (dead ? ' · 만료 주소 정리 ' + dead + '건' : ''));
+  console.log('\n요약: ' + (live ? '실제 발송 ' : '가상 발송 ') + sent + '건' + (dead ? ' · 만료 주소 정리 ' + dead + '건' : ''));
 }
 
 main().catch(e => { console.error('오류로 중단: ' + e.message); process.exit(1); });
