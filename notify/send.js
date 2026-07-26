@@ -20,6 +20,32 @@ const APP_TAG = 'voca-kkuk';
 const ENV = process.env;
 const TASK = (ENV.TASK || 'both').trim();            /* streak | assign | both */
 const LIVE = String(ENV.LIVE || '0').trim() === '1'; /* 1이 아니면 전부 가상 발송 */
+const SVC_KEY = (ENV.SUPABASE_SERVICE_KEY || '').trim();   /* 붙여넣기 때 딸려 온 공백·줄바꿈 제거 */
+const VAPID_PRIV = (ENV.VAPID_PRIVATE_KEY || '').trim();
+
+/* ── 열쇠 형식 판별 — 신형(sb_secret_)과 구형(JWT)은 문에 내미는 방식이 다르다 ── */
+function keyKind(k) {
+  if (!k) return 'none';
+  if (k.startsWith('sb_secret_')) return 'sb_secret';
+  if (k.startsWith('sb_publishable_')) return 'sb_publishable';
+  const seg = k.split('.');
+  if (seg.length === 3 && k.startsWith('eyJ')) {
+    try {
+      const pay = JSON.parse(Buffer.from(seg[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString());
+      if (pay.role === 'service_role') return 'jwt_service';
+      if (pay.role === 'anon') return 'jwt_anon';
+      return 'jwt';
+    } catch (e) { return 'jwt'; }
+  }
+  return 'unknown';
+}
+function authHeaders(k) {
+  /* 신형 sb_secret_ 열쇠: apikey 한 칸에만. Authorization까지 끼우면 구형 검사기가 JWT가 아니라며 401을 낸다.
+     구형 service_role(JWT): 관례대로 apikey + Authorization 두 칸. */
+  const kind = keyKind(k);
+  if (kind === 'jwt_service' || kind === 'jwt') return { apikey: k, Authorization: 'Bearer ' + k };
+  return { apikey: k };
+}
 
 /* ── KST 시간 도구 (실행 서버가 어느 시간대든 한국 시각 기준으로 계산) ── */
 const KST_MS = 9 * 3600 * 1000;
@@ -90,6 +116,11 @@ if (process.argv.includes('--selftest')) {
   A('마감 23시간 전 → 발송', dueSoon({ due_at: new Date(now + 23 * 3600e3).toISOString() }, now) === true);
   A('마감 25시간 전 → 미발송', dueSoon({ due_at: new Date(now + 25 * 3600e3).toISOString() }, now) === false);
   A('마감 지난 과제 → 미발송', dueSoon({ due_at: new Date(now - 1 * 3600e3).toISOString() }, now) === false);
+  const fake = p => 'eyJhbGciOiJIUzI1NiJ9.' + Buffer.from(JSON.stringify(p)).toString('base64').replace(/=+$/,'') + '.sig';
+  A('신형 비밀키 판별', keyKind('sb_secret_abc') === 'sb_secret' && !('Authorization' in authHeaders('sb_secret_abc')));
+  A('신형 공개키 판별', keyKind('sb_publishable_abc') === 'sb_publishable');
+  A('구형 service_role 판별', keyKind(fake({role:'service_role'})) === 'jwt_service' && ('Authorization' in authHeaders(fake({role:'service_role'}))));
+  A('구형 anon 판별', keyKind(fake({role:'anon'})) === 'jwt_anon');
   const asg = { created_at: new Date(now - 5 * 86400e3).toISOString(), due_at: new Date(now + 20 * 3600e3).toISOString(),
                 list_name: 'HMD 수능 Day 3', mode: 'quiz', min_acc: 80, min_count: 2 };
   const ss = (m, tot, ok, dt) => ({ list_name: 'HMD 수능 Day 3', mode: m, total: tot, correct_count: ok, created_at: new Date(now - dt).toISOString() });
@@ -103,28 +134,36 @@ if (process.argv.includes('--selftest')) {
 
 /* ═══ 여기서부터 실제 발송 흐름 ═══ */
 async function main() {
-  if (!ENV.SUPABASE_SERVICE_KEY) {
+  if (!SVC_KEY) {
     console.log('🔒 SUPABASE_SERVICE_KEY가 아직 없어 명단을 읽을 수 없습니다. (Settings → Secrets 등록 후 다시)');
     return;
   }
+  const kk = keyKind(SVC_KEY);
+  if (kk === 'sb_publishable') { console.log('✗ 등록된 열쇠가 공개키(sb_publishable_…)입니다 — 수파베이스 API Keys 화면의 비밀키(sb_secret_…)로 바꿔 등록하세요.'); process.exit(1); }
+  if (kk === 'jwt_anon') { console.log('✗ 등록된 열쇠가 anon 키입니다 — service_role(또는 sb_secret_…) 열쇠로 바꿔 등록하세요.'); process.exit(1); }
+  if (kk === 'unknown') console.log('⚠ 열쇠 형식을 알아보지 못했습니다(sb_secret_/JWT 아님) — 일단 시도합니다.');
   let live = LIVE, webpush = null;
-  if (live && !ENV.VAPID_PRIVATE_KEY) {
+  if (live && !VAPID_PRIV) {
     console.log('⚠ VAPID_PRIVATE_KEY가 없어 실제 발송은 불가 — 이번 실행은 가상 발송으로 전환합니다.');
     live = false;
   }
   if (live) {
     try { webpush = require('web-push'); }
     catch (e) { console.error('web-push 모듈이 없습니다 — 워크플로의 npm install 단계를 확인하세요.'); process.exit(1); }
-    webpush.setVapidDetails('mailto:voca@hakmundang.app', VAPID_PUBLIC, ENV.VAPID_PRIVATE_KEY);
+    webpush.setVapidDetails('mailto:voca@hakmundang.app', VAPID_PUBLIC, VAPID_PRIV);
   }
 
-  const H = { apikey: ENV.SUPABASE_SERVICE_KEY, Authorization: 'Bearer ' + ENV.SUPABASE_SERVICE_KEY };
+  const H = authHeaders(SVC_KEY);
   async function sbGet(path) {                       /* 1000행 단위로 끝까지 받아온다 */
     const out = [];
     for (let off = 0; ; off += 1000) {
       const r = await fetch(SB_URL + '/rest/v1/' + path, { headers: Object.assign({ Range: off + '-' + (off + 999), 'Range-Unit': 'items', Prefer: 'count=exact' }, H) });
       if (r.status === 404) return { missing: true, rows: out };
-      if (!r.ok) throw new Error('조회 실패 ' + r.status + ' — ' + path.split('?')[0]);
+      if (!r.ok) {
+        let why = ''; try { why = (await r.text()).slice(0, 200); } catch (e) {}
+        if (r.status === 401 || r.status === 403) why += '\n  → SUPABASE_SERVICE_KEY 값이 올바른 비밀키(sb_secret_… 또는 service_role)인지 확인하세요.';
+        throw new Error('조회 실패 ' + r.status + ' — ' + path.split('?')[0] + (why ? '\n  서버 응답: ' + why : ''));
+      }
       const rows = await r.json();
       out.push(...rows);
       if (rows.length < 1000) return { rows: out };
