@@ -964,7 +964,10 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
 .fc.th-night .face.front{background:linear-gradient(160deg,#232752 0%,#3A3F7A 55%,#4A4F96 100%);border-color:#1B1E40}
 .fc.th-night .face.front .w,.fc.th-night .face.front .pr,.fc.th-night .face.front .tip{color:#fff}
 .fc.th-night .face.front .tip{opacity:.75}
-.fc.th-mint .face.front{background:linear-gradient(160deg,#D8F6EC 0%,#BFEFDE 60%,#A9E8D2 100%);border-color:#8CD8BE}
+.fc.th-mint .face.front{background:linear-gradient(160deg,#0F5747 0%,#0E7C6B 55%,#0FA184 100%);border-color:#0A4438}
+.fc.th-mint .face.front .w,.fc.th-mint .face.front .pr,.fc.th-mint .face.front .tip{color:#fff}
+.fc.th-mint .face.front .tip{opacity:.75}
+.fc.th-mint .face.front .gchip{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3);color:#fff}
 /* 아바타 테두리 */
 .pfa.fr-gold,.avt.fr-gold{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(240,177,0,.25)}
 .pfa.fr-fire,.avt.fr-fire{box-shadow:0 0 0 3px var(--red),0 0 0 6px rgba(255,75,62,.28)}
@@ -4502,7 +4505,7 @@ const SHOP = [
   {k:'frame_gold',  e:'🥇', n:'황금 테두리',        d:'프로필 아바타에 금빛 테두리', cost:500, type:'frame'},
   {k:'frame_fire',  e:'🔥', n:'불꽃 테두리',        d:'프로필 아바타에 불꽃 테두리', cost:800, type:'frame'},
   {k:'theme_night', e:'🌌', n:'카드 테마 — 밤하늘', d:'플래시카드 앞면이 밤하늘로 바뀌어요', cost:600, type:'theme'},
-  {k:'theme_mint',  e:'🍃', n:'카드 테마 — 민트',   d:'플래시카드 앞면이 민트빛으로 바뀌어요', cost:600, type:'theme'},
+  {k:'theme_mint',  e:'🍃', n:'카드 테마 — 민트',   d:'플래시카드 앞면이 딥민트빛으로 바뀌어요', cost:600, type:'theme'},
   {k:'greet_hype',  e:'📣', n:'인사말 팩 — 응원 폭발', d:'홈 인사말 12종이 추가돼요', cost:400, type:'own'}
 ];
 function wallet(){ const g = ensureGame(); return Math.max(0, (g.xp||0) - (g.spent||0)); }
