@@ -69,6 +69,15 @@
 .lg-row.me{outline:2px solid var(--gold,#F5B841);outline-offset:-2px;border-radius:10px}
 .lg-more{text-align:center;color:var(--soft,#B9AFA3);font-weight:900;padding:1px 0;letter-spacing:.2em}
 .lg-gap{font-size:12.5px;font-weight:800;color:var(--teal-deep,#0E7C6B);background:var(--teal-soft,#E0F4F0);border-radius:11px;padding:7px 11px;margin-top:8px;text-align:center}
+.bshelf{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.bdg{background:var(--card,#fff);border:2px solid var(--line,#EDE6DC);border-radius:14px;padding:10px 3px;text-align:center;opacity:.42}
+.bdg.on{opacity:1;border-color:var(--gold,#F5B841)}
+.bdg span{font-size:22px;display:block}
+.bdg b{font-size:11px;display:block;margin-top:3px}
+.bdg i{font-style:normal;font-size:10.5px;color:var(--ink2,#8A8177);display:block;margin-top:1px}
+.av-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-height:46vh;overflow:auto;margin-top:10px}
+.av-grid button{font-size:25px;padding:7px 0;border-radius:12px;border:2px solid var(--line,#EDE6DC);background:var(--card,#fff);cursor:pointer}
+.av-grid button.on{border-color:var(--gold,#F5B841);outline:2px solid var(--gold,#F5B841);outline-offset:-1px}
 
 .wr-card{background:linear-gradient(135deg,#2B2622,#4A3F35);color:#FFFDF6;border-radius:18px;padding:16px 17px;margin-bottom:12px}
 .wr-h{font-size:15.5px;font-weight:900}
@@ -1267,6 +1276,7 @@ html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
         <div class="rl"><span id="pf-name"></span> <span class="rolebadge" id="pf-role">학생</span></div>
       </div>
     </div>
+    <div id="badge-shelf"></div>
     <button class="btn" id="btn-whatsnew" style="width:100%;margin-bottom:12px">🎁 새로워진 기능 보기</button>
     <div class="vertag" id="ver-tag2"></div>
     <div class="set-card">
@@ -1459,12 +1469,21 @@ html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
     </div>
   </div>
 </div>
+<div class="ovl" id="avatar-pick">
+  <div class="card">
+    <h3>🧸 아바타 고르기</h3>
+    <div class="desc">61종 동물 중 마음대로! 언제든 다시 바꿀 수 있어요.</div>
+    <div class="av-grid" id="av-grid"></div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="av-close" style="flex:1">닫기</button></div>
+  </div>
+</div>
 <div class="ovl" id="nick-modal">
   <div class="card">
     <h3>랭킹에서 쓸 닉네임 뽑기</h3>
-    <div class="desc">실명 대신 이 닉네임이 랭킹에 표시돼요.<br>마음에 들 때까지 다시 뽑을 수 있어요.<br><b style="color:var(--red)">한 번 확정하면 바꿀 수 없어요!</b></div>
+    <div class="desc" id="nk-desc">실명 대신 이 닉네임이 랭킹에 표시돼요.<br>마음에 들 때까지 다시 뽑을 수 있어요.<br><b style="color:var(--red)">한 번 확정하면 바꿀 수 없어요!</b></div>
     <div class="nickbox"><div class="nka" id="nk-avatar">🦊</div><div class="nkn" id="nk-name">…</div></div>
     <div class="row" style="margin-top:14px">
+      <button class="btn ghost" id="nk-cancel" style="display:none">그만두기</button>
       <button class="btn ghost" id="nk-reroll">🎲 다시 뽑기</button>
       <button class="btn primary" id="nk-confirm">이걸로 확정</button>
     </div>
@@ -2637,7 +2656,7 @@ function logSession(mode, total, right, rv){
   if(!DB.log) DB.log = [];
   const rec = {t:Date.now(), lid:DB.activeListId, mode, total, right};
   if(rv) rec.rv = 1;   /* 메모리 락 복습 세션 표식 — '오늘의 새 단어' 집계에서 뺀다 (스트릭·리그·선생님 화면에는 그대로 잡힌다) */
-  DB.log.push(rec); gameOnSession(rec);
+  DB.log.push(rec); gameOnSession(rec); checkBadges();
   if(DB.log.length>300) DB.log = DB.log.slice(-300);
   scheduleSave();
   pushSession(rec);
@@ -3142,6 +3161,7 @@ async function enterApp(freshLogin){
   }
   go('scr-home');
   maybeNick();
+  checkBadges(true);   /* 업데이트 첫 진입 — 이미 조건을 채운 배지를 조용히 채워 준다 */
   if(freshLogin && DB.profile) toast(DB.profile.name + ' — 어서 와요!');
   if(DB.unreadCount) setTimeout(()=>toast('📩 읽지 않은 쪽지 ' + DB.unreadCount + '통'), 1600);
   keepAlive();
@@ -3812,7 +3832,34 @@ function renderProfile(){
   $('fx-tog').classList.toggle('on', fxOn());
   renderInstallRow(); renderPushRow();   /* v2.2 — PWA */
   $('pf-ver').textContent = '앱 버전 '+APP_VERSION+' · 새 버전이 올라오면 자동으로 업데이트돼요';
+  $('pf-avatar').style.cursor = (DB.profile && DB.profile.role==='student' && g.items && g.items.avatar_pass) ? 'pointer' : '';
+  const bs = document.getElementById('badge-shelf');
+  if(bs) bs.innerHTML = (DB.profile && DB.profile.role==='student') ? badgeShelfHTML() : '';
 }
+/* ── 🧸 아바타 자유 이용권 — 61종 도감에서 골라 끼기 ── */
+function openAvatarPick(){
+  const g = ensureGame();
+  $('av-grid').innerHTML = NICK_ANI.map(p=>'<button type="button" data-av="'+p[1]+'" class="'+(g.avatar===p[1]?'on':'')+'" title="'+esc(p[0])+'">'+p[1]+'</button>').join('');
+  $('avatar-pick').classList.add('on');
+}
+$('pf-avatar').addEventListener('click', ()=>{
+  const g = ensureGame();
+  if(!(DB.profile && DB.profile.role==='student')) return;
+  if(!(g.items && g.items.avatar_pass)){ toast('아레나 상점의 🧸 아바타 자유 이용권이 있으면 바꿀 수 있어요'); return; }
+  openAvatarPick();
+});
+$('av-close').addEventListener('click', ()=>$('avatar-pick').classList.remove('on'));
+$('avatar-pick').addEventListener('click', e=>{
+  if(e.target === $('avatar-pick')){ $('avatar-pick').classList.remove('on'); return; }
+  const b = e.target.closest('[data-av]'); if(!b) return;
+  const g = ensureGame();
+  g.avatar = b.dataset.av; g.nickTs = Date.now();   /* 짝(닉네임·아바타) 최신 승자 병합용 도장 */
+  scheduleSave(); pushLeague();
+  $('avatar-pick').classList.remove('on');
+  toast(b.dataset.av+' 새 아바타 장착!');
+  renderProfile();
+});
+
 /* ════════ PWA — 홈 화면 설치·서비스워커·복습 알림 (v2.2) ════════
    sw.js·manifest.json이 index.html 옆에 함께 배포되어야 한다.
    PUSH_CFG.vapid가 비어 있으면 알림 UI는 조용히 숨는다(서버 준비 전 상태). */
@@ -3927,8 +3974,17 @@ function mergeGame(a,b){
     g.openSess = !ao ? bo : (!bo ? ao : (((ao.ts||0) >= (bo.ts||0)) ? ao : bo));
   }
   g.streak = Math.max(a.streak||0, b.streak||0);
-  g.nickname = a.nickname || b.nickname;
-  g.avatar = a.avatar || b.avatar;
+  if((a.nickTs||0) !== (b.nickTs||0)){
+    /* 🎲 재추첨·아바타 교체 대응 — 더 최근에 정한 짝이 이긴다. 옛 기기가 새 이름을 되돌리지 못하게 */
+    const w = (a.nickTs||0) >= (b.nickTs||0) ? a : b;
+    g.nickname = w.nickname || a.nickname || b.nickname;
+    g.avatar = w.avatar || a.avatar || b.avatar;
+  } else {
+    g.nickname = a.nickname || b.nickname;
+    g.avatar = a.avatar || b.avatar;
+  }
+  g.nickTs = Math.max(a.nickTs||0, b.nickTs||0);
+  if(a.badges || b.badges) g.badges = Object.assign({}, b.badges||{}, a.badges||{});
   g.stars = Object.assign({}, b.stars||{}, a.stars||{});
   /* 메모리 락 병합 — 리스트 단위로 '마지막에 손댄 쪽'이 이긴다(rev2t에 변경 시각 기록).
      시각 기록이 양쪽 다 없으면(구버전 데이터) 종전처럼 합집합. 삭제는 데이터 없이
@@ -4072,6 +4128,18 @@ $('lvup-ok').addEventListener('click', ()=>$('lvup-modal').classList.remove('on'
 /* ════════ 닉네임 ════════ */
 const NICK_ADJ = ['새벽의','겁없는','조용한','번개','불꽃','유쾌한','성실한','비밀스런','용감한','재빠른','느긋한','반짝이는','단단한','엉뚱한','신중한','명랑한','끈질긴','바람의','호기심','폭풍의','달빛의','새침한','우아한','장난꾸러기','씩씩한','수줍은','당당한','똑똑한','졸린','배고픈','춤추는','노래하는','질주하는','은빛','금빛','무지개','한밤의','정오의','안개속','천둥','서리','이슬맺힌','활활타는','미소짓는','비상하는','잠입한','전설의','꼬마','대장','수수께끼','명탐정','거침없는','살금살금','반전의','최강','행운의','집중한','각성한','유유자적','묵묵한'];
 const NICK_ANI = [['호랑이','🐯'],['여우','🦊'],['부엉이','🦉'],['판다','🐼'],['늑대','🐺'],['고래','🐳'],['수달','🦦'],['토끼','🐰'],['펭귄','🐧'],['사자','🦁'],['다람쥐','🐿️'],['독수리','🦅'],['거북이','🐢'],['돌고래','🐬'],['치타','🐆'],['고슴도치','🦔'],['코알라','🐨'],['곰','🐻'],['북극곰','🐻‍❄️'],['하마','🦛'],['코뿔소','🦏'],['기린','🦒'],['얼룩말','🦓'],['캥거루','🦘'],['라마','🦙'],['나무늘보','🦥'],['스컹크','🦨'],['오소리','🦡'],['비버','🦫'],['공룡','🦖'],['용','🐉'],['유니콘','🦄'],['강아지','🐶'],['고양이','🐱'],['햄스터','🐹'],['병아리','🐤'],['오리','🦆'],['백조','🦢'],['공작','🦚'],['앵무새','🦜'],['플라밍고','🦩'],['비둘기','🕊️'],['문어','🐙'],['오징어','🦑'],['새우','🦐'],['게','🦀'],['복어','🐡'],['상어','🦈'],['물개','🦭'],['개구리','🐸'],['달팽이','🐌'],['나비','🦋'],['꿀벌','🐝'],['무당벌레','🐞'],['원숭이','🐵'],['고릴라','🦍'],['말','🐴'],['젖소','🐮'],['양','🐑'],['염소','🐐'],['수탉','🐓'],['박쥐','🦇']];
+const NICK_REROLL_COST = 2000;
+const NK_DESC_FIRST = '실명 대신 이 닉네임이 랭킹에 표시돼요.<br>마음에 들 때까지 다시 뽑을 수 있어요.<br><b style="color:var(--red)">한 번 확정하면 바꿀 수 없어요!</b>';
+let nickRerollMode = false;
+function openNickReroll(){
+  /* 🎲 재추첨권 — 결제는 확정 순간에만. 중간에 그만두면 P는 그대로 */
+  nickRerollMode = true;
+  $('nk-desc').innerHTML = '마음에 들 때까지 몇 번이든 다시 뽑고,<br><b style="color:var(--red)">확정하는 순간에만 '+fmtXp(NICK_REROLL_COST)+' P가 사용돼요.</b>';
+  $('nk-confirm').textContent = '이걸로 확정 (−'+fmtXp(NICK_REROLL_COST)+' P)';
+  $('nk-cancel').style.display = '';
+  rollNick();
+  $('nick-modal').classList.add('on');
+}
 let nickDraft = null;
 function rollNick(){
   const a = NICK_ADJ[Math.floor(Math.random()*NICK_ADJ.length)];
@@ -4084,9 +4152,14 @@ function rollNick(){
 function maybeNick(){
   const g = ensureGame();
   if(g.nickname || !DB.profile || DB.profile.role!=='student') return;
+  nickRerollMode = false;
+  $('nk-desc').innerHTML = NK_DESC_FIRST;
+  $('nk-confirm').textContent = '이걸로 확정';
+  $('nk-cancel').style.display = 'none';
   rollNick();
   $('nick-modal').classList.add('on');
 }
+$('nk-cancel').addEventListener('click', ()=>{ nickRerollMode = false; $('nick-modal').classList.remove('on'); toast('다음에 다시 — P는 그대로예요'); });
 $('tts-close').addEventListener('click', ()=>$('tts-help').classList.remove('on'));
 $('tts-open-chrome').addEventListener('click', openInBrowser);
 $('nk-reroll').addEventListener('click', ()=>{ rollNick(); if(fxOn()) beep(500,.06,0,'sine',.08); });
@@ -4098,13 +4171,58 @@ $('nk-confirm').addEventListener('click', async ()=>{
   if(r && r.ok){ const d = await r.json().catch(()=>true); ok = (d!==false); }
   btn.disabled=false;
   if(!ok){ toast('아깝게 다른 친구가 먼저 가져갔어요! 다시 뽑아 주세요'); rollNick(); return; }
-  const g=ensureGame(); g.nickname=nickDraft.name; g.avatar=nickDraft.avatar;
+  const g=ensureGame();
+  if(nickRerollMode){
+    if(wallet() < NICK_REROLL_COST){ toast('포인트가 부족해요'); nickRerollMode=false; $('nick-modal').classList.remove('on'); return; }
+    g.spent = (g.spent||0) + NICK_REROLL_COST;   /* 🎲 확정하는 순간에만 결제 */
+  }
+  g.nickname=nickDraft.name; g.avatar=nickDraft.avatar; g.nickTs=Date.now();
   scheduleSave();
   $('nick-modal').classList.remove('on');
-  toast('"'+g.nickname+'" — 멋진 이름이에요!');
+  toast(nickRerollMode ? '"'+g.nickname+'" — 새 이름으로 다시 태어났다! 🎲' : '"'+g.nickname+'" — 멋진 이름이에요!');
+  nickRerollMode = false;
   pushLeague();
   if(curScr==='scr-home') renderHome();
+  if(curScr==='scr-profile') renderProfile();
+  if(curScr==='scr-stats') renderStats();
 });
+
+/* ── 🎖️ 마일스톤 배지 — 사는 게 아니라 쌓아서 얻는 훈장. 프로필 진열장에 걸린다 ── */
+const BADGES = [
+  {k:'st7',    e:'🔥', n:'7일 연속',     need:7,    kind:'streak'},
+  {k:'st30',   e:'🔥', n:'30일 연속',    need:30,   kind:'streak'},
+  {k:'st100',  e:'🔥', n:'100일 연속',   need:100,  kind:'streak'},
+  {k:'st365',  e:'🔥', n:'365일 연속',   need:365,  kind:'streak'},
+  {k:'gr50',   e:'🔓', n:'졸업 50단어',   need:50,   kind:'grad'},
+  {k:'gr200',  e:'🔓', n:'졸업 200단어',  need:200,  kind:'grad'},
+  {k:'gr500',  e:'🔓', n:'졸업 500단어',  need:500,  kind:'grad'},
+  {k:'gr1000', e:'🔓', n:'졸업 1000단어', need:1000, kind:'grad'}
+];
+function gradCount(){
+  const g = ensureGame(); let n = 0;
+  if(g.revDone) for(const l in g.revDone) n += Object.keys(g.revDone[l]).length;
+  return n;
+}
+function checkBadges(quiet){
+  const g = ensureGame(); if(!g.badges) g.badges = {};
+  const cur = { streak: g.streak||0, grad: gradCount() };
+  const fresh = [];
+  BADGES.forEach(b=>{ if(!g.badges[b.k] && cur[b.kind] >= b.need){ g.badges[b.k] = Date.now(); fresh.push(b); } });
+  if(fresh.length){
+    scheduleSave();
+    if(!quiet){ fxRight(); setTimeout(()=>toast('🎖️ 배지 획득 — '+fresh.map(b=>b.e+' '+b.n).join(' · ')+'!'), 400); }
+  }
+  return fresh;
+}
+function badgeShelfHTML(){
+  const g = ensureGame(); const got = g.badges||{};
+  const cur = { streak: g.streak||0, grad: gradCount() };
+  return '<div class="stat-h" style="margin-top:2px">🎖️ 배지<span class="sub">모은 '+Object.keys(got).length+' / '+BADGES.length+'</span></div><div class="bshelf">'
+    + BADGES.map(b=>{
+        const on = !!got[b.k];
+        return '<div class="bdg'+(on?' on':'')+'"><span>'+b.e+'</span><b>'+b.n+'</b>'+(on?'':'<i>'+Math.min(cur[b.kind],b.need)+'/'+b.need+'</i>')+'</div>';
+      }).join('')+'</div>';
+}
 
 /* ════════ 월간 리그 ════════ */
 async function pushLeague(){ /* 리그는 서버가 학습 기록으로 직접 집계한다 */ }
@@ -4163,6 +4281,8 @@ async function renderGrowth(){
 
 /* ════════ XP 상점 (v2.2) — 재화는 '누적 XP − 사용'. 써도 레벨은 내려가지 않는다 ════════ */
 const SHOP = [
+  {k:'nick_reroll', e:'🎲', n:'닉네임 재추첨권', d:'닉네임을 새로 뽑는다 — 확정하는 순간에만 결제, 그 전엔 몇 번이든 무료', cost:NICK_REROLL_COST, type:'ticket'},
+  {k:'avatar_pass', e:'🧸', n:'아바타 자유 이용권', d:'내 정보에서 아바타를 61종 동물 중 마음대로, 몇 번이든', cost:1200, type:'own'},
   {k:'freeze',      e:'🧊', n:'스트릭 프리즈 +1',   d:'하루 빠져도 자동으로 연속 기록을 지켜요 · 최대 2개 보관', cost:300, type:'consume'},
   {k:'frame_gold',  e:'🥇', n:'황금 테두리',        d:'프로필 아바타에 금빛 테두리', cost:500, type:'frame'},
   {k:'frame_fire',  e:'🔥', n:'불꽃 테두리',        d:'프로필 아바타에 불꽃 테두리', cost:800, type:'frame'},
@@ -4196,6 +4316,11 @@ document.addEventListener('click', e=>{
     const g = ensureGame();
     if(it.type==='consume' && (g.freezeExtra||0)>=2){ toast('프리즈는 2개까지만 보관돼요'); return; }
     if(wallet() < it.cost){ toast('포인트가 부족해요 — '+fmtXp(it.cost - wallet())+' P 더 모으면 살 수 있어요!'); return; }
+    if(it.k === 'nick_reroll'){
+      if(!confirm('🎲 닉네임 다시 뽑기를 시작할까요?\n확정하는 순간에만 '+fmtXp(it.cost)+' P가 사용돼요. 그 전엔 무료!')) return;
+      openNickReroll();
+      return;
+    }
     if(!confirm('"'+it.n+'"을(를) '+fmtXp(it.cost)+' P로 살까요?')) return;
     g.spent = (g.spent||0) + it.cost;
     if(it.type==='consume') g.freezeExtra = (g.freezeExtra||0) + 1;
@@ -4326,7 +4451,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.2.6';
+const APP_VERSION = '2.2.7';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -4577,6 +4702,7 @@ function revTouch(lid, word, ok){
       g.revDone[lid][word] = 1;   /* 졸업 명부 — 단어장 화면 마스터리 게이지에 쓴다 */
       revStamp(g, lid);
       revDoneCnt++;
+      checkBadges();
       clearTimeout(revDoneTimer);
       revDoneTimer = setTimeout(()=>{ toast('🔓 '+revDoneCnt+'개 단어, 5회 인출 성공으로 졸업! 오래 남는 기억이 됐어요'); revDoneCnt = 0; }, 1500);
       return;
@@ -5091,9 +5217,12 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-48';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-48'; });
+const APP_VER = '2026.07.27-49';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-49'; });
 const WN_ITEMS = [
+ ['🎲','닉네임 재추첨권 등장','드디어! 상점에서 2,000 P로 닉네임을 새로 뽑아요. 확정 전까지는 몇 번이든 무료로 다시 굴리기'],
+ ['🧸','아바타 자유 이용권','1,200 P — 내 정보에서 아바타를 61종 동물 중 마음대로 바꿔요'],
+ ['🎖️','배지 진열장','내 정보에 훈장이 생겼어요 — 스트릭 7·30·100·365일, 졸업 50·200·500·1000단어. 이미 채운 조건은 자동으로 걸려 있어요!'],
  ['📈','성장 랭킹 & 내 구간','아레나에 성장 랭킹이 생겼어요 — 지난주의 나보다 늘어난 만큼 오르는 판! 리그에는 내 앞뒤 순위와 "한 계단 위까지 +N XP"가 보여요'],
  ['🌱','오늘의 학습 = 새 단어만','홈의 오늘 목표는 이제 새로 공부한 문항만 세요. 메모리 락 복습은 목표와 별개 — 매일 새 단어 + 복습, 두 루틴을 다 챙겨요'],
  ['🎯','틀린 단어, 그 자리에서 다시','퀴즈·스펠링이 끝나면 틀린 단어만 한 번 더 물어봐요. 거기서 맞히면 메모리 락 1일차 예약! 이제 정답으로 꺼낸 단어만 등록돼요'],
@@ -5111,6 +5240,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['🛍️','XP 경제 확장','닉네임 재추첨권(2,000P)·아바타 이용권(1,200P)·마일스톤 배지 8종을 추가했습니다. 쌓인 XP의 소비처와 장기 수집 목표를 만들어 획득 동기를 유지하는 조치예요'],
  ['📈','리그 개편 1차','성장 랭킹(전주 대비 푼 문항 증가·서버 SQL 1회 설치)과 내 주변 순위 보기를 넣었습니다. 절대 순위표의 하위권 위축을 줄이고 닿을 수 있는 다음 목표를 보여 주는 조치예요'],
  ['🌱','일일 목표 집계 변경','오늘의 학습에서 메모리 락 복습 문항을 제외합니다. 매일 새 단어 N문항 + 누적 복습이라는 이중 루틴을 세우는 조치예요'],
  ['🎯','등록 기준 도입','첫 세션에서 정답 인출에 성공한 단어만 메모리 락에 등록됩니다. 틀린 단어는 세션 끝 다시 도전 라운드에서 정답을 받아낸 뒤 등록돼요(점수·별·기록 미포함, XP +5)'],
