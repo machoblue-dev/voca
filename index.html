@@ -78,6 +78,16 @@
 .av-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-height:46vh;overflow:auto;margin-top:10px}
 .av-grid button{font-size:25px;padding:7px 0;border-radius:12px;border:2px solid var(--line,#EDE6DC);background:var(--card,#fff);cursor:pointer}
 .av-grid button.on{border-color:var(--gold,#F5B841);outline:2px solid var(--gold,#F5B841);outline-offset:-1px}
+.exam-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:var(--card,#fff);border:2px solid var(--teal-deep,#0E7C6B);border-radius:18px;padding:13px 14px;margin-top:12px;cursor:pointer}
+.exam-row.hot{border-color:var(--red,#E5484D);background:var(--red-soft,#FDECEC)}
+.exam-row .ex-i{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.exam-row .ex-i b{font-size:15px}
+.exam-row .ex-i span{font-size:12.5px;color:var(--ink2,#6B6257);font-weight:700}
+.exam-row .ex-dd{font-weight:900;font-size:20px;color:var(--teal-deep,#0E7C6B);flex:0 0 auto}
+.exam-row.hot .ex-dd{color:var(--red,#E5484D)}
+.ev-row{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:var(--bg2,#FAF6F0);border:2px solid var(--line,#EDE6DC);border-radius:12px;padding:10px 12px;margin-top:8px;cursor:pointer}
+.ev-row .nm{flex:1;font-weight:800;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ev-row .go{font-size:12px;font-weight:900;color:var(--teal-deep,#0E7C6B);flex:0 0 auto}
 
 .wr-card{background:linear-gradient(135deg,#2B2622,#4A3F35);color:#FFFDF6;border-radius:18px;padding:16px 17px;margin-bottom:12px}
 .wr-h{font-size:15.5px;font-weight:900}
@@ -289,7 +299,7 @@ html[data-theme=dark] .btn.know{box-shadow:var(--glow-teal)}
 .row .btn{flex:1}
 .fld{margin-bottom:14px}
 .fld label{display:block;font-size:13px;font-weight:800;color:var(--ink2);margin-bottom:6px}
-.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld input[type=datetime-local],.fld select,.fld textarea{width:100%;padding:12px 13px;border:2px solid var(--line);border-radius:14px;background:var(--card);transition:border-color .15s}
+.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld input[type=datetime-local],.fld input[type=date],.fld select,.fld textarea{width:100%;padding:12px 13px;border:2px solid var(--line);border-radius:14px;background:var(--card);transition:border-color .15s}
 .fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--red)}
 .fld textarea{min-height:150px;font-size:13px;line-height:1.5;resize:vertical}
 .check{display:flex;align-items:center;gap:9px;padding:10px 2px;font-size:14.5px;font-weight:700}
@@ -791,7 +801,7 @@ html[data-theme=dark] .hero{box-shadow:none}
 .opt{box-shadow:0 1px 2px rgba(31,32,51,.04),0 3px 10px rgba(31,32,51,.05)}
 .opt.picked-wrong,.opt.reveal-right{box-shadow:none}
 .qt{border-width:1.5px}
-.search,.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld input[type=datetime-local],.fld select,.fld textarea{border-width:1.5px}
+.search,.fld input[type=text],.fld input[type=number],.fld input[type=email],.fld input[type=password],.fld input[type=datetime-local],.fld input[type=date],.fld select,.fld textarea{border-width:1.5px}
 .tabbar{border-width:1.5px;box-shadow:0 2px 6px rgba(31,32,51,.05),0 18px 44px rgba(31,32,51,.14)}
 html[data-theme=dark] .tabbar{box-shadow:0 20px 44px rgba(0,0,0,.55)}
 .tab.on .ticon{box-shadow:0 6px 14px rgba(255,75,62,.35)}
@@ -973,9 +983,9 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
 .as-status{font-size:12px;font-weight:700;color:var(--ink2);line-height:1.55;margin-top:7px}
 .as-status b{color:var(--ink)}
 /* 과제 — 마감 입력: 앱 글꼴·색 그대로, 달력 UI는 테마 따라감 */
-.fld input[type=datetime-local]{font:inherit;font-size:14px;font-weight:800;color:var(--ink);color-scheme:light;min-height:47px;-webkit-appearance:none;appearance:none}
+.fld input[type=datetime-local],.fld input[type=date]{font:inherit;font-size:14px;font-weight:800;color:var(--ink);color-scheme:light;min-height:47px;-webkit-appearance:none;appearance:none}
 html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
-.fld input[type=datetime-local]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.85}
+.fld input[type=datetime-local]::-webkit-calendar-picker-indicator,.fld input[type=date]::-webkit-calendar-picker-indicator{cursor:pointer;opacity:.85}
 /* 과제 — 단어장 고르기 버튼(접이식 모달 연결) */
 .as-list-btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border:1.5px solid var(--line);border-radius:14px;background:var(--card);font:inherit;font-size:14px;font-weight:800;color:var(--ink);cursor:pointer;text-align:left;transition:border-color .15s}
 .as-list-btn:active{border-color:var(--red)}
@@ -1040,6 +1050,7 @@ html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
     </div>
     <div class="greet" id="home-greet"></div>
     <div id="rev-card" class="hcard" style="display:none"></div>
+    <div id="exam-card" style="display:none"></div>
     <div id="hw-card" style="display:none"></div>
     <div class="hero">
       <div class="deco"></div>
@@ -1341,6 +1352,25 @@ html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
     </div>
     <div class="stat-h">낸 과제<span class="sub">학생 홈에 D-day와 함께 떠요</span></div>
     <div id="as-list-body"></div>
+    <div class="hr"></div>
+    <div class="stat-h">🗓️ 시험 역산<span class="sub">시험일만 등록하면 학생 홈에 D-day와 페이스가 떠요</span></div>
+    <div class="as-form">
+      <div class="fld"><label>시험명</label><input type="text" id="ex-title" placeholder="예) 2학기 중간고사"></div>
+      <div class="row" style="gap:8px">
+        <div class="fld" style="flex:1;margin-bottom:0"><label>시험일</label><input type="date" id="ex-date"></div>
+        <div class="fld" style="flex:1.4;margin-bottom:0"><label>범위 — 묶음 또는 단어장</label><button type="button" class="as-list-btn ph" id="ex-scope-btn"><span id="ex-scope-name">범위를 골라 주세요</span><i class="chev">▾</i></button><input type="hidden" id="ex-scope"></div>
+      </div>
+      <div class="fld" style="margin-top:12px"><label>대상 반 — 아무것도 안 담으면 전체 학생</label>
+        <div class="row" style="gap:8px">
+          <select id="ex-school" style="flex:1.6"><option value="">학교 선택</option></select>
+          <select id="ex-grade" style="flex:1"><option value="">학년</option><option value="1">1학년</option><option value="2">2학년</option></select>
+          <button type="button" class="grp-back" id="ex-add" style="flex:0 0 auto">＋ 추가</button>
+        </div>
+        <div class="tchips" id="ex-target-chips"></div>
+      </div>
+      <button class="btn primary block" id="ex-create">🗓️ 시험 등록</button>
+    </div>
+    <div id="ex-list-body" style="margin-top:10px"></div>
   </section>
 
   <section class="scr" id="scr-dash" data-screen-label="학생 현황"><input class="search" id="dash-q" type="text" placeholder="🔍 이름·아이디·반으로 검색" autocomplete="off"><div id="dash-body"></div></section>
@@ -1467,6 +1497,14 @@ html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
       <button class="btn ghost" id="tts-close">닫기</button>
       <button class="btn primary" id="tts-open-chrome">Chrome으로 열기</button>
     </div>
+  </div>
+</div>
+<div class="ovl" id="exam-view">
+  <div class="card">
+    <h3 id="ev-title">🗓️</h3>
+    <div class="desc" id="ev-sub"></div>
+    <div id="ev-body" style="max-height:52vh;overflow:auto"></div>
+    <div class="row" style="margin-top:14px"><button class="btn primary" id="ev-close" style="flex:1">닫기</button></div>
   </div>
 </div>
 <div class="ovl" id="avatar-pick">
@@ -3132,6 +3170,7 @@ async function fullSync(){
   await pullProgress();
   await pullUnread();
   pullAssignments();   /* v2.2 — 과제. 서버 미설치·실패여도 앱 흐름을 막지 않는다 */
+  pullExams();         /* 🗓️ 시험 역산 — exams 표 미설치면 조용히 숨는다 */
   await pushProgress();
   await flushPending();
   return okP;
@@ -3710,7 +3749,7 @@ function renderHome(){
   const wn = wrongWordsAll().length;   /* v2.2 — 오답 버튼은 전체 단어장 기준 */
   const g = ensureGame();
   $('home-greet').textContent = greetLine();
-  renderQuest(); renderReview(); renderHW(); ensureWeeklyReport(); maybeWhatsNew();
+  renderQuest(); renderReview(); renderExam(); renderHW(); ensureWeeklyReport(); maybeWhatsNew();
   $('hd-streak').querySelector('span').textContent = g.streakGoal ? (g.streak||0)+'/'+g.streakGoal+'일' : (g.streak||0)+'일';
   $('hd-xp').querySelector('span').textContent = fmtXp(g.xp);
   const today = todayCount();
@@ -3785,10 +3824,14 @@ $('lp-close').addEventListener('click', ()=>{ $('list-pick').classList.remove('o
 $('list-pick').addEventListener('click', e=>{
   if(e.target === $('list-pick')){ $('list-pick').classList.remove('on'); lpMode = 'home'; return; }
   const gh = e.target.closest('.li-grp-h');
-  if(gh){ gh.closest('.li-grp').classList.toggle('open'); return; }
+  if(gh){
+    if(lpMode === 'exam'){ examScopePick(gh.querySelector('.gname').textContent.replace(/^🗂️\s*/,'').trim()); return; }
+    gh.closest('.li-grp').classList.toggle('open'); return;
+  }
   const r = e.target.closest('.lp-row');
   if(r){
     const L = DB.lists.find(l=>l.id===r.dataset.pick); if(!L) return;
+    if(lpMode === 'exam'){ examScopePick(L.name); return; }
     if(lpMode === 'assign'){   /* 과제용 — 학습 중인 단어장은 건드리지 않는다 */
       setAsList(L);
       $('list-pick').classList.remove('on');
@@ -4451,7 +4494,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.2.7';
+const APP_VERSION = '2.2.9';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -4976,6 +5019,146 @@ document.addEventListener('click', e=>{
    서버 assignments 테이블이 없으면(404) 기능이 조용히 접힌다 — 앱은 평소처럼 돈다. */
 let noAssignFlag = false;   /* 이번 세션에서 서버 미설치 확인 여부 (저장 안 함) */
 const MODE_KO_HW = {any:'아무 모드', quiz:'퀴즈', spell:'스펠링', listen:'듣기', flash:'플래시카드'};
+/* ════════ 🗓️ 시험 역산 모드 — 시험일 하나로 D-day·페이스·총정리를 만든다 ════════ */
+let noExamFlag = false;
+async function pullExams(){
+  if(noExamFlag || !DB.auth) return;
+  const r = await api('/rest/v1/exams?select=*&order=exam_date.asc');
+  if(!r) return;
+  if(r.status===404){ noExamFlag = true; return; }   /* 서버 표 미설치 — 조용히 숨는다 */
+  if(!r.ok) return;
+  try{ DB.exams = await r.json(); }catch(e){ return; }
+  scheduleSave();
+  if(curScr==='scr-home') renderExam();
+  if(curScr==='scr-assign') renderExamAdmin();
+}
+function examLists(scope){
+  return (DB.lists||[]).filter(l => l.name===scope || grpBaseOf(l.name)===scope);
+}
+function examDday(dateStr){
+  /* 시험일(YYYY-MM-DD) — 기기 자정 기준 남은 날수. 0=당일, 음수=지남 */
+  const p = String(dateStr||'').split('-').map(Number);
+  if(!p[0]) return -999;
+  const ex = new Date(p[0], p[1]-1, p[2]); ex.setHours(0,0,0,0);
+  const t = new Date(); t.setHours(0,0,0,0);
+  return Math.round((ex - t)/86400000);
+}
+function examMine(){
+  const cls = (DB.profile && DB.profile.class_name) || '';
+  return (DB.exams||[]).filter(e=>{
+    if(examDday(e.exam_date) < 0) return false;
+    const tg = e.target_classes;
+    if(!tg || !tg.length) return true;
+    return tg.some(t=>{ const m=/^(\d)학년전체$/.exec(t); return m ? cls.endsWith(m[1]) : cls===t; });
+  });
+}
+function examFinalStart(ex){
+  const p = String(ex.exam_date||'').split('-').map(Number);
+  const x = new Date(p[0], p[1]-1, p[2]); x.setHours(0,0,0,0);
+  return x.getTime() - 3*86400000;   /* D-3 자정부터 총정리 */
+}
+function examListDone(l){ return (DB.log||[]).some(s=>s.lid===l.id); }
+function examListChecked(l, ex){
+  const start = examFinalStart(ex);
+  return (DB.log||[]).some(s=> s.lid===l.id && s.mode==='quiz' && s.t>=start && s.right!=null && s.total && (s.right/s.total)>=0.7);
+}
+function renderExam(){
+  const el = $('exam-card'); if(!el) return;
+  if(!DB.profile || DB.profile.role!=='student'){ el.style.display='none'; el.innerHTML=''; return; }
+  const exs = examMine().slice(0,2);
+  if(!exs.length){ el.style.display='none'; el.innerHTML=''; return; }
+  el.style.display='block';
+  el.innerHTML = exs.map(ex=>{
+    const dd = examDday(ex.exam_date);
+    const Ls = examLists(ex.scope);
+    const final = dd<=3;
+    let sub;
+    if(!Ls.length) sub = '범위: '+esc(ex.scope)+' (배포 대기)';
+    else if(final){
+      const c = Ls.filter(l=>examListChecked(l, ex)).length;
+      sub = (c>=Ls.length? '최종 점검 전부 완료 — 시험장에서 보자 🍀' : '🔥 총정리 — 최종 점검 '+c+' / '+Ls.length+' (퀴즈 70%+)');
+    } else {
+      const done = Ls.filter(examListDone).length, remain = Ls.length-done;
+      const days = Math.max(1, dd-3);
+      sub = remain ? '남은 '+remain+'개 · 하루 '+Math.ceil(remain/days)+'개 페이스면 총정리 전에 끝나요' : '범위 1회 완주 — 이제 총정리만 남았다 💪';
+    }
+    return '<button type="button" class="exam-row'+(final?' hot':'')+'" data-exid="'+esc(ex.id)+'"><div class="ex-i"><b>🗓️ '+esc(ex.title)+'</b><span>'+sub+'</span></div><span class="ex-dd">'+(dd===0?'오늘!':'D-'+dd)+'</span></button>';
+  }).join('');
+}
+function openExamView(id){
+  const ex = (DB.exams||[]).find(x=>x.id===id); if(!ex) return;
+  const dd = examDday(ex.exam_date), Ls = examLists(ex.scope), final = dd<=3;
+  $('ev-title').textContent = '🗓️ '+ex.title+' — '+(dd===0?'오늘!':'D-'+dd);
+  $('ev-sub').innerHTML = final
+    ? '총정리 기간! 리스트마다 <b>퀴즈 70% 이상</b>이면 점검 완료 ✅ 탭하면 바로 퀴즈로 가요.'
+    : '범위를 하루 몇 개씩 나눠 끝내요. <b>D-3부터는 총정리</b>로 전 범위를 다시 점검해요. 탭하면 그 단어장으로 이동!';
+  $('ev-body').innerHTML = Ls.length ? Ls.map(l=>{
+    const st = final ? (examListChecked(l,ex)?'✅':'⬜') : (examListDone(l)?'✅':'⬜');
+    return '<button type="button" class="ev-row" data-lid="'+esc(l.id)+'"><span class="st">'+st+'</span><span class="nm">'+esc(l.name)+'</span><span class="go">'+(final?'점검 →':'학습 →')+'</span></button>';
+  }).join('') : '<div class="note">범위 단어장이 아직 배포 전이에요. 선생님께 물어봐 주세요.</div>';
+  $('exam-view').dataset.exid = id;
+  $('exam-view').classList.add('on');
+}
+$('exam-card').addEventListener('click', e=>{ const b=e.target.closest('.exam-row'); if(b) openExamView(b.dataset.exid); });
+$('ev-close').addEventListener('click', ()=>$('exam-view').classList.remove('on'));
+$('exam-view').addEventListener('click', e=>{
+  if(e.target===$('exam-view')){ $('exam-view').classList.remove('on'); return; }
+  const r = e.target.closest('.ev-row'); if(!r) return;
+  const L = DB.lists.find(l=>l.id===r.dataset.lid); if(!L) return;
+  DB.activeListId = L.id; scheduleSave();
+  const ex = (DB.exams||[]).find(x=>x.id===$('exam-view').dataset.exid);
+  $('exam-view').classList.remove('on');
+  if(ex && examDday(ex.exam_date)<=3 && (L.words||[]).length>=5){ openQuizSetup(); go('scr-quiz'); }
+  else { go('scr-home'); toast('이제 "'+L.name+'" 차례!'); }
+});
+/* ── 교사용 시험 등록·관리 ── */
+{ const el = document.getElementById('ex-school'); if(el) el.innerHTML = '<option value="">학교 선택</option>'+SCHOOLS.map(sc=>'<option value="'+sc+'">'+sc+'</option>').join(''); }
+let exTargets = [];
+function renderExTargetChips(){ $('ex-target-chips').innerHTML = exTargets.map(c=>'<button type="button" class="tchip" data-c="'+esc(c)+'">'+esc(c)+' ✕</button>').join(''); }
+function examScopePick(scope){
+  $('ex-scope').value = scope;
+  $('ex-scope-name').textContent = scope+' ('+examLists(scope).length+'개 단어장)';
+  $('list-pick').classList.remove('on'); lpMode='home';
+}
+$('ex-scope-btn').addEventListener('click', ()=>{ lpMode='exam'; renderListPick(); $('list-pick').classList.add('on'); });
+$('ex-add').addEventListener('click', ()=>{
+  const sc=$('ex-school').value, gr=$('ex-grade').value;
+  if(!gr){ toast('학년을 골라 주세요'); return; }
+  const t = sc ? sc+gr : gr+'학년전체';
+  if(!exTargets.includes(t)) exTargets.push(t);
+  renderExTargetChips();
+});
+$('ex-target-chips').addEventListener('click', e=>{ const b=e.target.closest('.tchip'); if(!b) return; exTargets=exTargets.filter(c=>c!==b.dataset.c); renderExTargetChips(); });
+$('ex-create').addEventListener('click', async ()=>{
+  const title=$('ex-title').value.trim(), date=$('ex-date').value, scope=$('ex-scope').value;
+  if(!title){ toast('시험명을 적어 주세요'); return; }
+  if(!date){ toast('시험일을 골라 주세요'); return; }
+  if(!scope){ toast('범위를 골라 주세요'); return; }
+  const btn=$('ex-create'); btn.disabled=true;
+  const r = await api('/rest/v1/exams', {method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify({title, exam_date:date, scope, target_classes: exTargets.length?exTargets:null})});
+  btn.disabled=false;
+  if(!r || !r.ok){ toast('등록 실패 — 서버에 exams 표가 설치됐는지 확인해 주세요'); return; }
+  toast('🗓️ 시험 등록 완료 — 학생 홈에 D-day가 떠요');
+  $('ex-title').value=''; $('ex-scope').value=''; $('ex-scope-name').textContent='범위를 골라 주세요';
+  noExamFlag=false; await pullExams(); renderExamAdmin();
+});
+function renderExamAdmin(){
+  const box = $('ex-list-body'); if(!box) return;
+  const list = (DB.exams||[]).filter(e=>examDday(e.exam_date) >= -1).sort((x,y)=> x.exam_date < y.exam_date ? -1 : 1);
+  box.innerHTML = list.length ? list.map(e=>{
+    const dd = examDday(e.exam_date);
+    const tgt = (e.target_classes && e.target_classes.length) ? e.target_classes.join(', ') : '전체';
+    return '<div class="as-item hw-card" style="margin-top:10px"><div class="hw-row" style="border-top:0;padding-top:0"><div class="hw-i"><b>'+esc(e.title)+' <span style="color:var(--teal-deep)">'+(dd===0?'오늘':'D-'+dd)+'</span></b><span>'+esc(e.exam_date)+' · 범위 '+esc(e.scope)+' · 대상: '+esc(tgt)+'</span></div><button type="button" class="grp-back ex-del" data-exid="'+esc(e.id)+'">삭제</button></div></div>';
+  }).join('') : '<div class="note">등록된 시험이 없어요.</div>';
+}
+$('ex-list-body').addEventListener('click', async e=>{
+  const b=e.target.closest('.ex-del'); if(!b) return;
+  if(!confirm('이 시험을 삭제할까요? 학생 홈에서 카드가 사라져요.')) return;
+  const r = await api('/rest/v1/exams?id=eq.'+encodeURIComponent(b.dataset.exid), {method:'DELETE'});
+  if(!r || !r.ok){ toast('삭제 실패'); return; }
+  toast('삭제 완료'); await pullExams(); renderExamAdmin();
+});
+
 async function pullAssignments(){
   if(noAssignFlag || !DB.auth) return;
   const r = await api('/rest/v1/assignments?select=*&order=due_at.asc');
@@ -5090,6 +5273,8 @@ function renderAssign(){
   renderAsTargetChips();
   renderAssignList();
   pullAssignments();
+  renderExamAdmin();
+  pullExams();
 }
 function renderAssignList(){
   const box = $('as-list-body'); if(!box) return;
@@ -5217,9 +5402,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-49';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-49'; });
+const APP_VER = '2026.07.27-50';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-51'; });
 const WN_ITEMS = [
+ ['🗓️','시험 역산 모드','시험이 등록되면 홈에 D-day 카드가 떠요. D-4까지는 "하루 N개 페이스" 안내, D-3부터는 전 범위 최종 점검(퀴즈 70%+ ✅)!'],
  ['🎲','닉네임 재추첨권 등장','드디어! 상점에서 2,000 P로 닉네임을 새로 뽑아요. 확정 전까지는 몇 번이든 무료로 다시 굴리기'],
  ['🧸','아바타 자유 이용권','1,200 P — 내 정보에서 아바타를 61종 동물 중 마음대로 바꿔요'],
  ['🎖️','배지 진열장','내 정보에 훈장이 생겼어요 — 스트릭 7·30·100·365일, 졸업 50·200·500·1000단어. 이미 채운 조건은 자동으로 걸려 있어요!'],
@@ -5240,6 +5426,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['🗓️','시험 역산 모드','과제 화면 아래에서 시험명·시험일·범위(묶음 선택 가능)·대상만 등록하세요. 학생 홈에 D-day와 역산 페이스, D-3 총정리 체크가 자동으로 뜹니다(서버 SQL 1회 설치)'],
  ['🛍️','XP 경제 확장','닉네임 재추첨권(2,000P)·아바타 이용권(1,200P)·마일스톤 배지 8종을 추가했습니다. 쌓인 XP의 소비처와 장기 수집 목표를 만들어 획득 동기를 유지하는 조치예요'],
  ['📈','리그 개편 1차','성장 랭킹(전주 대비 푼 문항 증가·서버 SQL 1회 설치)과 내 주변 순위 보기를 넣었습니다. 절대 순위표의 하위권 위축을 줄이고 닿을 수 있는 다음 목표를 보여 주는 조치예요'],
  ['🌱','일일 목표 집계 변경','오늘의 학습에서 메모리 락 복습 문항을 제외합니다. 매일 새 단어 N문항 + 누적 복습이라는 이중 루틴을 세우는 조치예요'],
