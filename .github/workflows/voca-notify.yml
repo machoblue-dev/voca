@@ -27,10 +27,10 @@ jobs:
   send:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
-          node-version: '20'
+          node-version: '24'
       - name: 발송 모듈 설치
         run: npm install web-push@3 --no-fund --no-audit
       - name: 알림 발송기 실행
