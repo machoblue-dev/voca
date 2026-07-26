@@ -1832,22 +1832,88 @@ function fxWrong(){
 }
 
 
-/* ════════ 저장소 (클로드 storage → localStorage → 메모리) ════════ */
+/* ════════ 저장소 (클로드 storage → 큰 창고 → localStorage → 메모리) ════════
+   단어장이 쌓이면 localStorage의 5MB 한도에 먼저 부딪힌다. 그러면 학습 기록도
+   설정도 저장되지 않고 새로고침할 때마다 되돌아간다.
+   그래서 본체는 브라우저의 큰 창고(IndexedDB)에 넣는다. 한도가 수백 배 넓어
+   단어장을 아무리 받아도 넘치지 않는다. 창고를 못 쓰는 기기에서는 종전대로
+   localStorage를 쓰므로 동작이 달라지지 않는다. */
 const DB_KEY = 'kiwonT-voca-v1';
-let memDB = null;
+const BIG_DB = 'vocakkuk', BIG_STORE = 'kv';
+let memDB = null, bigOff = false;
+
+function bigOpen(){
+  return new Promise((res, rej)=>{
+    try{
+      if(!window.indexedDB){ rej(0); return; }
+      const q = indexedDB.open(BIG_DB, 1);
+      q.onupgradeneeded = ()=>{ try{ q.result.createObjectStore(BIG_STORE); }catch(e){} };
+      q.onsuccess = ()=>res(q.result);
+      q.onerror = ()=>rej(q.error);
+      q.onblocked = ()=>rej(0);
+    }catch(e){ rej(e); }
+  });
+}
+function bigGet(k){
+  return bigOpen().then(db=>new Promise((res, rej)=>{
+    try{
+      const t = db.transaction(BIG_STORE, 'readonly').objectStore(BIG_STORE).get(k);
+      t.onsuccess = ()=>{ res(t.result); db.close(); };
+      t.onerror = ()=>{ rej(t.error); db.close(); };
+    }catch(e){ rej(e); }
+  }));
+}
+function bigSet(k, v){
+  return bigOpen().then(db=>new Promise((res, rej)=>{
+    try{
+      const tx = db.transaction(BIG_STORE, 'readwrite');
+      tx.objectStore(BIG_STORE).put(v, k);
+      tx.oncomplete = ()=>{ res(true); db.close(); };
+      tx.onerror = ()=>{ rej(tx.error); db.close(); };
+      tx.onabort = ()=>{ rej(tx.error); db.close(); };
+    }catch(e){ rej(e); }
+  }));
+}
+
 async function storageLoad(){
   if(window.storage && typeof window.storage.get === 'function'){
     try{ const r = await window.storage.get(DB_KEY); if(r && r.value) return JSON.parse(r.value); }catch(e){}
     return null;
   }
-  try{ if(window.localStorage){ const v = localStorage.getItem(DB_KEY); if(v) return JSON.parse(v); } }catch(e){}
+  /* ① 큰 창고 */
+  if(!bigOff){
+    try{
+      const v = await bigGet(DB_KEY);
+      if(v){ return (typeof v === 'string') ? JSON.parse(v) : v; }
+    }catch(e){ bigOff = true; }
+  }
+  /* ② 예전 자리에 남은 자료 — 창고로 옮기고 그 자리를 비운다 */
+  try{
+    if(window.localStorage){
+      const v = localStorage.getItem(DB_KEY);
+      if(v){
+        const o = JSON.parse(v);
+        if(!bigOff){
+          try{
+            await bigSet(DB_KEY, v);
+            localStorage.removeItem(DB_KEY);   /* 꽉 찼던 공간이 여기서 풀린다 */
+          }catch(e){ bigOff = true; }
+        }
+        return o;
+      }
+    }
+  }catch(e){}
   return memDB;
 }
+
 async function storageSave(){
   prefSave();
   const s = JSON.stringify(DB);
   if(window.storage && typeof window.storage.set === 'function'){
     try{ await window.storage.set(DB_KEY, s); return; }catch(e){}
+  }
+  if(!bigOff){
+    try{ await bigSet(DB_KEY, s); return; }catch(e){ bigOff = true; }
   }
   try{ if(window.localStorage){ localStorage.setItem(DB_KEY, s); return; } }catch(e){}
   memDB = JSON.parse(s);
@@ -5612,8 +5678,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-53';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-53'; });
+const APP_VER = '2026.07.27-54';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-54'; });
 const WN_ITEMS = [
  ['🏆','승강제 리그 개막','아레나에 새 판! 20~25명 조에서 일주일간 겨루고, 월요일 새벽 상위는 승급 · 하위는 강등돼요. 모두 🥉 브론즈에서 출발 — 🥇 골드까지 올라가 보자'],
  ['🗓️','시험 역산 모드','시험이 등록되면 홈에 D-day 카드가 떠요. D-4까지는 "하루 N개 페이스" 안내, D-3부터는 전 범위 최종 점검(퀴즈 70%+ ✅)!'],
