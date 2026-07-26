@@ -1438,7 +1438,9 @@ html[data-theme=dark] .fld input[type=datetime-local]{color-scheme:dark}
     <div id="lvg-body" style="margin:12px 0"></div>
     <div class="desc" style="text-align:left">
       <b>XP 쌓는 법</b><br>
-      · 카드에서 "알아요" +20 · 스펠링 정답 +15 · 퀴즈 정답 +10(콤보 시 더!)<br>
+      · 퀴즈 정답 +10(콤보 5부터 1.5배) · 스펠링 정답 +15 · 카드 "알아요" +2<br>
+      · 오답 단어를 퀴즈·스펠링으로 맞히면 <b>탈출 보너스 +20</b><br>
+      · 일일 퀘스트 +150 · 하루 목표 +50 · 7일 연속마다 +100<br>
       · <b>티어 보너스</b> — 🌱×1.0 · ⚡×1.3 · 🔥×1.6 · 👑×2.0<br>
       · 어려운 단어장에 도전할수록 빨리 오른다!
     </div>
@@ -2855,6 +2857,9 @@ async function pullLists(){
     target_classes: m.target_classes||null,
     words: (m.id in full) ? full[m.id] : (cache[m.id] ? cache[m.id].words : null)
   })).filter(l=>Array.isArray(l.words));
+  /* 탐험으로 가져온 단어장 복원 — 서버 목록에는 없으므로 동기화 때마다 다시 붙인다.
+     (학생이 고른 남의 단어장이 새로고침 후 사라지고 메모리 락 복습까지 끊기던 문제의 수정) */
+  if(DB.exploreList && !DB.lists.find(l=>l.id===DB.exploreList.id)) DB.lists.push(DB.exploreList);
   if(!DB.lists.find(l=>l.id===DB.activeListId)) DB.activeListId = DB.lists.length ? DB.lists[0].id : null;
   scheduleSave();
   return true;
@@ -3260,7 +3265,6 @@ async function loadRecipients(){
       staffRows.forEach(p=>{ msgNames[p.id] = p.name; });
       opts = staffRows.filter(p=>!DB.profile || p.id!==DB.profile.id)
         .map(p=>({id:p.id, label:p.name + (p.class_name?' ('+p.class_name+')':'') + (p.role!=='student'?' — '+roleKo(p.role):'')}));
-  if(DB.exploreList && !DB.lists.find(l=>l.id===DB.exploreList.id)) DB.lists.push(DB.exploreList);
       const stu = staffRows.filter(p=>p.role==='student' && !p.blocked && p.class_name && p.class_name!=='퇴원' && p.class_name!=='졸업');
       const byCls = {};
       stu.forEach(p=>{ (byCls[p.class_name] = byCls[p.class_name]||[]).push(p); });
@@ -4202,7 +4206,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail);
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.2.1';
+const APP_VERSION = '2.2.2';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -4939,8 +4943,8 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.25-42';
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.25-42'; });
+const APP_VER = '2026.07.25-42';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.26-43'; });
 const WN_ITEMS = [
  ['🔓','메모리 락이 똑똑해졌어요','이제 복습 날에 퀴즈로 물어보고, 정답으로 꺼낸 단어만 다음 단계로 잠겨요. 5번 성공하면 졸업!'],
  ['🧹','오답 탈출 보너스','퀴즈·스펠링에서 오답 단어를 맞히면 확실히 탈출 +20 XP. 오답 화면에 "전체 단어장" 탭도 생겼어요'],
