@@ -220,6 +220,14 @@ async function main() {
 
   const now = Date.now();
 
+  /* 2.5) 🏆 승강 리그 주간 개편 — 매일 확인하므로 월요일 실행을 놓쳐도 자가 치유된다. 표 미설치면 건너뛴다 */
+  try {
+    const lt = await fetch(SB_URL + '/rest/v1/rpc/league_tick', { method: 'POST', headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: '{}' });
+    if (lt.status === 404) console.log('\n승강 리그: 미설치 — 건너뜁니다.');
+    else if (!lt.ok) console.log('\n승강 리그 개편 실패 ' + lt.status);
+    else { const d = (await lt.json())[0] || {}; console.log('\n🏆 승강 리그(' + (d.week_out || '?') + '): ' + (d.note || '?') + (d.placed ? ' · ' + d.placed + '명 배치' : '')); }
+  } catch (e) { console.log('\n승강 리그 점검 중 오류: ' + e.message); }
+
   /* 3) 🔥 스트릭 세이버 — 어제는 했는데 오늘 아직 안 한 학생 */
   if (TASK === 'streak' || TASK === 'both') {
     console.log('\n─ 스트릭 세이버 점검 ─');
