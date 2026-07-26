@@ -1,0 +1,34 @@
+# ═══════════════════════════════════════════════════════════
+# VOCA꾹 주간 관리 — 이 파일은 .github/workflows/voca-backup.yml 에 둔다
+# · 매주 월요일 03:30 KST: 📦 전체 백업 → 🗜️ 기록 압축(스위치 켠 경우만) → 🕵️ XP 감사
+# · 압축(원본 삭제) 스위치: Variables 에 ENABLE_ARCHIVE = 1
+# · (선택) 이메일 요약: Secrets 에 RESEND_API_KEY, Variables 에 BACKUP_EMAIL
+# ═══════════════════════════════════════════════════════════
+name: VOCA꾹 주간 백업
+
+on:
+  schedule:
+    - cron: '30 18 * * 0'   # 일 18:30 UTC = 월 03:30 KST
+  workflow_dispatch:
+    inputs:
+      archive:
+        description: '기록 압축 실행 (1=실행, 0=백업만)'
+        default: '0'
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - name: 주간 관리 로봇 실행
+        run: node notify/backup.js
+        env:
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          ENABLE_ARCHIVE: ${{ inputs.archive || vars.ENABLE_ARCHIVE || '0' }}
+          ARCHIVE_KEEP_DAYS: ${{ vars.ARCHIVE_KEEP_DAYS || '90' }}
+          BACKUP_EMAIL: ${{ vars.BACKUP_EMAIL }}
+          BACKUP_FROM: ${{ vars.BACKUP_FROM }}
