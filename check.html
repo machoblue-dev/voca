@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>VOCA꾹 저장 공간 진단</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;padding:18px 14px 60px;background:#F7F3EC;color:#231F20;
+     font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+     font-size:15px;line-height:1.62;max-width:640px;margin-inline:auto}
+h1{font-size:20px;margin:0 0 4px;letter-spacing:-.3px}
+.sub{color:#7C7370;font-size:13px;margin:0 0 18px}
+.card{background:#fff;border:1px solid #E7DFD4;border-radius:16px;padding:16px 15px;margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 10px;color:#7C7370;font-weight:800;letter-spacing:.2px}
+.big{font-size:26px;font-weight:900;letter-spacing:-.5px}
+.bar{height:14px;background:#EFE7DB;border-radius:99px;overflow:hidden;margin:10px 0 6px}
+.bar i{display:block;height:100%;background:#F4402F;border-radius:99px;transition:width .5s}
+.bar.ok i{background:#3FA96B}
+.bar.warn i{background:#E8A33D}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td{padding:6px 0;border-bottom:1px solid #F1EAE0;vertical-align:top}
+td:last-child{text-align:right;font-weight:800;white-space:nowrap;padding-left:10px}
+tr:last-child td{border-bottom:0}
+.v-ok{color:#2E8B57}.v-bad{color:#D93025}.v-dim{color:#9C938F}
+.verdict{border-radius:16px;padding:16px 15px;margin-bottom:12px;font-weight:800;line-height:1.55}
+.verdict.bad{background:#FDEDEC;border:1px solid #F5C6C2;color:#A8271B}
+.verdict.good{background:#EDF7F1;border:1px solid #C3E3D0;color:#1F6B45}
+.verdict small{display:block;font-weight:600;margin-top:6px;opacity:.85;font-size:13px}
+button{width:100%;padding:14px;border:0;border-radius:14px;background:#231F20;color:#fff;
+       font-size:15px;font-weight:800;font-family:inherit;cursor:pointer}
+button.ghost{background:#fff;color:#231F20;border:1.5px solid #E0D7CA;margin-top:8px}
+pre{white-space:pre-wrap;word-break:break-all;background:#F4EFE7;border-radius:12px;
+    padding:12px;font-size:12px;margin:10px 0 0;max-height:220px;overflow:auto}
+.note{font-size:12.5px;color:#8A817D;margin-top:14px;text-align:center}
+</style></head>
+<body>
+
+<h1>VOCA꾹 저장 공간 진단</h1>
+<p class="sub">이 페이지는 아무것도 바꾸지 않아요. 읽어 보기만 해요.</p>
+
+<div id="out">불러오는 중…</div>
+
+<button id="copy">결과 전체 복사하기</button>
+<button class="ghost" id="again">다시 검사</button>
+<p class="note">기원T VOCA꾹 · 진단 도구</p>
+
+<script>
+const K = 'kiwonT-voca-v1';
+const BACKEND = { url:'https://jnfkqhodwomrlfdwvtqq.supabase.co', anonKey:'sb_publishable_qannJGTbI7RGbwZDrdWQGA_-7flHZPQ' };
+const $ = id => document.getElementById(id);
+const mb = n => (n/1048576).toFixed(2);
+const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+let plain = '';
+
+function sizeOf(v){ try{ return JSON.stringify(v).length; }catch(e){ return 0; } }
+
+/* 저장이 되는지 — 실제 앱과 같은 방식으로 시험한다.
+   같은 크기로 덮어쓰기(지금)와, 조금 늘어난 크기(앞으로)를 나눠 본다.
+   앱은 학습할 때마다 기록이 조금씩 늘기 때문에 뒤쪽이 실제로 중요하다. */
+function canSave(raw, extra){
+  const pad = extra ? 'z'.repeat(extra) : '';
+  const body = pad ? raw.slice(0, -1) + ',"__pad__":"' + pad + '"}' : raw;
+  try{
+    localStorage.setItem(K, body);
+    if(pad) localStorage.setItem(K, raw);      /* 곧바로 원래대로 되돌린다 */
+    return {ok:true};
+  }catch(e){
+    try{ localStorage.setItem(K, raw); }catch(e2){}
+    return {ok:false, name:e.name || '알 수 없는 오류'};
+  }
+}
+
+/* 남은 공간 재기 — 임시 키에 조금씩 채워 보고 곧바로 지운다 */
+function headroom(){
+  const T = '__voca_probe__';
+  const CH = 'x'.repeat(51200);          /* 50KB 단위 */
+  let n = 0;
+  try{
+    let buf = '';
+    for(; n < 400; n++){                  /* 최대 20MB까지만 */
+      buf += CH;
+      localStorage.setItem(T, buf);
+    }
+  }catch(e){}
+  try{ localStorage.removeItem(T); }catch(e){}
+  return n * 51200;
+}
+
+function run(){
+  const raw = localStorage.getItem(K) || '';
+  let DB = null;
+  try{ DB = JSON.parse(raw); }catch(e){}
+
+  if(!raw || !DB){
+    $('out').innerHTML = '<div class="verdict bad">앱 정보를 찾지 못했어요.'
+      + '<small>이 페이지가 VOCA꾹과 같은 주소에 있어야 읽을 수 있어요. '
+      + 'machoblue-dev.github.io/voca/check.html 로 접속했는지 확인해 주세요.</small></div>';
+    return;
+  }
+
+  const used = raw.length;
+  const free = headroom();
+  const cap  = used + free;
+  const pct  = cap ? Math.min(100, Math.round(used / cap * 1000) / 10) : 0;
+  const save = canSave(raw);                 /* 지금 그대로 다시 저장 */
+  const grow = canSave(raw, 20480);          /* 20KB 늘어난 상태로 저장 */
+
+  /* 무엇이 자리를 차지하는지 */
+  const parts = [];
+  let wordBytes = 0, listMeta = 0;
+  (DB.lists || []).forEach(l => {
+    wordBytes += sizeOf(l.words || []);
+    listMeta  += sizeOf(Object.assign({}, l, {words: undefined}));
+  });
+  parts.push(['단어장 본문', wordBytes, (DB.lists||[]).length + '개 단어장']);
+  parts.push(['단어장 이름·설정', listMeta, '']);
+  parts.push(['학습 기록', sizeOf(DB.log || []), (DB.log||[]).length + '건']);
+  parts.push(['오답 목록', sizeOf(DB.wrong || {}), '']);
+  parts.push(['게임 정보', sizeOf(DB.game || {}), '경험치·메모리 락 등']);
+  parts.push(['시험 정보', sizeOf(DB.exams || []), '']);
+  parts.push(['그 밖', Math.max(0, used - wordBytes - listMeta
+              - sizeOf(DB.log||[]) - sizeOf(DB.wrong||{}) - sizeOf(DB.game||{}) - sizeOf(DB.exams||[])), '']);
+  parts.sort((a,b) => b[1] - a[1]);
+
+  const g = DB.game || {};
+  const theme = DB.theme === undefined ? '(없음)' : String(DB.theme);
+  const fx    = DB.fx    === undefined ? '(없음)' : (DB.fx ? '켜짐' : '꺼짐');
+
+  const barCls = pct >= 95 ? '' : (pct >= 80 ? 'warn' : 'ok');
+  const cls = v => v ? 'v-ok' : 'v-bad';
+
+  let html = '';
+
+  /* 판정 */
+  if(!save.ok || !grow.ok){
+    html += '<div class="verdict bad">저장 공간이 꽉 찼어요.'
+         + '<small>설정을 바꿔도 기기에 남지 않아요. 새로고침하면 예전 값으로 되돌아가요. '
+         + '학습 기록도 서버에 올라가기 전에는 사라질 수 있어요.</small></div>';
+  }else if(pct >= 85){
+    html += '<div class="verdict bad">거의 다 찼어요.'
+         + '<small>지금은 저장되지만 곧 같은 문제가 생겨요. 단어장을 몇 개 더 받으면 넘칠 수 있어요.</small></div>';
+  }else{
+    html += '<div class="verdict good">저장 공간은 넉넉해요.'
+         + '<small>설정이 되돌아간다면 다른 원인이에요. 아래 값을 그대로 알려 주세요.</small></div>';
+  }
+
+  /* 공간 */
+  html += '<div class="card"><h2>저장 공간</h2>'
+       + '<div class="big">' + mb(used) + ' MB <span style="font-size:15px;color:#9C938F">/ 약 ' + mb(cap) + ' MB</span></div>'
+       + '<div class="bar ' + barCls + '"><i style="width:' + pct + '%"></i></div>'
+       + '<table>'
+       + '<tr><td>사용 비율</td><td>' + pct + ' %</td></tr>'
+       + '<tr><td>남은 공간</td><td>' + mb(free) + ' MB</td></tr>'
+       + '<tr><td>지금 그대로 저장</td><td class="' + cls(save.ok) + '">'
+       + (save.ok ? '됨' : '안 됨 (' + esc(save.name) + ')') + '</td></tr>'
+       + '<tr><td>조금 더 늘어나도 저장</td><td class="' + cls(grow.ok) + '">'
+       + (grow.ok ? '됨' : '안 됨 (' + esc(grow.name) + ')') + '</td></tr>'
+       + '</table></div>';
+
+  /* 차지하는 것 */
+  html += '<div class="card"><h2>무엇이 자리를 차지하나요</h2><table>';
+  parts.forEach(p => {
+    if(p[1] <= 0) return;
+    const r = used ? Math.round(p[1] / used * 1000) / 10 : 0;
+    html += '<tr><td>' + esc(p[0]) + (p[2] ? ' <span class="v-dim">· ' + esc(p[2]) + '</span>' : '')
+         + '</td><td>' + mb(p[1]) + ' MB · ' + r + '%</td></tr>';
+  });
+  html += '</table></div>';
+
+  /* 설정값 */
+  html += '<div class="card"><h2>기기에 저장된 설정</h2><table>'
+       + '<tr><td>화면 모드</td><td>' + esc(theme) + '</td></tr>'
+       + '<tr><td>효과음</td><td>' + esc(fx) + '</td></tr>'
+       + '<tr><td>계정</td><td>' + esc(DB.profile ? (DB.profile.name + ' · ' + DB.profile.role) : '(없음)') + '</td></tr>'
+       + '<tr><td>닉네임</td><td>' + esc(g.nickname || '(없음)') + '</td></tr>'
+       + '<tr id="srv"><td>서버에 저장된 설정</td><td class="v-dim">확인 중…</td></tr>'
+       + '</table></div>';
+
+  $('out').innerHTML = html;
+
+  plain = 'VOCA꾹 저장 진단\n'
+    + '사용 ' + mb(used) + ' MB / 약 ' + mb(cap) + ' MB (' + pct + '%)\n'
+    + '남은 공간 ' + mb(free) + ' MB\n'
+    + '지금 그대로 저장: ' + (save.ok ? '됨' : '안 됨 (' + save.name + ')') + '\n'
+    + '조금 늘어나도 저장: ' + (grow.ok ? '됨' : '안 됨 (' + grow.name + ')') + '\n'
+    + parts.filter(p=>p[1]>0).map(p => '- ' + p[0] + ' ' + mb(p[1]) + ' MB ('
+        + (used ? Math.round(p[1]/used*1000)/10 : 0) + '%)' + (p[2] ? ' ' + p[2] : '')).join('\n') + '\n'
+    + '기기 설정: 화면 ' + theme + ' / 효과음 ' + fx + '\n'
+    + '계정: ' + (DB.profile ? DB.profile.name + ' · ' + DB.profile.role : '(없음)') + '\n';
+
+  /* 서버에 저장된 값도 확인 */
+  if(DB.auth && DB.auth.access_token && DB.auth.uid){
+    fetch(BACKEND.url + '/rest/v1/progress?user_id=eq.' + DB.auth.uid + '&select=data', {
+      headers: { apikey: BACKEND.anonKey, Authorization: 'Bearer ' + DB.auth.access_token }
+    }).then(r => r.ok ? r.json() : null).then(rows => {
+      const d = rows && rows[0] && rows[0].data ? rows[0].data : null;
+      const t = d && d.theme !== undefined ? String(d.theme) : '(없음)';
+      const f = d && d.fx !== undefined ? (d.fx ? '켜짐' : '꺼짐') : '(없음)';
+      const cell = document.querySelector('#srv td:last-child');
+      if(cell){ cell.className = ''; cell.textContent = '화면 ' + t + ' / 효과음 ' + f; }
+      plain += '서버 설정: 화면 ' + t + ' / 효과음 ' + f + '\n';
+    }).catch(() => {
+      const cell = document.querySelector('#srv td:last-child');
+      if(cell){ cell.className = 'v-dim'; cell.textContent = '확인 못 함'; }
+    });
+  }else{
+    const cell = document.querySelector('#srv td:last-child');
+    if(cell){ cell.className = 'v-dim'; cell.textContent = '로그인 정보 없음'; }
+  }
+}
+
+$('copy').addEventListener('click', () => {
+  const t = plain || $('out').innerText;
+  navigator.clipboard.writeText(t).then(() => {
+    $('copy').textContent = '복사했어요 ✓';
+    setTimeout(() => $('copy').textContent = '결과 전체 복사하기', 1600);
+  }).catch(() => {
+    const p = document.createElement('pre'); p.textContent = t;
+    $('out').appendChild(p);
+    $('copy').textContent = '아래 글자를 길게 눌러 복사해 주세요';
+  });
+});
+$('again').addEventListener('click', run);
+run();
+</script>
+</body></html>
