@@ -69,6 +69,11 @@
 .lg-row.me{outline:2px solid var(--gold,#F5B841);outline-offset:-2px;border-radius:10px}
 .lg-more{text-align:center;color:var(--soft,#B9AFA3);font-weight:900;padding:1px 0;letter-spacing:.2em}
 .lg-gap{font-size:12.5px;font-weight:800;color:var(--teal-deep,#0E7C6B);background:var(--teal-soft,#E0F4F0);border-radius:11px;padding:7px 11px;margin-top:8px;text-align:center}
+.lg-tierhead{display:flex;flex-direction:column;gap:2px;padding:4px 4px 9px}
+.lg-tierhead b{font-size:15.5px}
+.lg-tierhead span{font-size:12px;font-weight:700;color:var(--ink2,#6B6257)}
+.lg-row.zup{box-shadow:inset 3px 0 0 var(--teal-deep,#0E7C6B)}
+.lg-row.zdn{box-shadow:inset 3px 0 0 var(--red,#E5484D)}
 .bshelf{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
 .bdg{background:var(--card,#fff);border:2px solid var(--line,#EDE6DC);border-radius:14px;padding:10px 3px;text-align:center;opacity:.42}
 .bdg.on{opacity:1;border-color:var(--gold,#F5B841)}
@@ -4288,6 +4293,49 @@ async function fetchLeague(period){
 }
 let leagueCache = {};
 
+/* ── 🏆 승강 리그 — 20~25명 조에서 겨루고 매주 월요일 승급·강등 (서버 미설치 시 탭이 숨는다) ── */
+const TIER_L = [['🥉','브론즈'],['🥈','실버'],['🥇','골드']];
+let lgGroupMissing = false, lgGroupCache = null;
+async function fetchLeagueGroup(){
+  const now = Date.now();
+  if(lgGroupCache && (now - lgGroupCache.t) < 3*60*1000) return lgGroupCache.d;
+  const r = await api('/rest/v1/rpc/league_my_group', {method:'POST', body:'{}'});
+  if(!r) return null;
+  if(r.status === 404){ lgGroupMissing = true; return null; }
+  if(!r.ok) return null;
+  const d = await r.json();
+  lgGroupCache = {t: now, d};
+  return d;
+}
+async function renderLeagueGroup(){
+  const el = document.getElementById('lg-body'); if(!el) return;
+  const rows = await fetchLeagueGroup();
+  if(lgGroupMissing){ lgView = 'p'; if(curScr==='scr-stats') renderStats(); return; }
+  if(!rows){ el.innerHTML = '<div class="note">불러오지 못했어요. 잠시 후 다시 열어 보세요.</div>'; return; }
+  if(!rows.length){
+    el.innerHTML = '<div class="note">이번 주 조 편성 전이에요. <b>다음 주 월요일 새벽</b>, 🥉 브론즈에서 합류합니다!<br>그때까지 점수를 예열해 두자 💪</div>';
+    return;
+  }
+  const g = ensureGame();
+  const frCls = g.frame ? ' fr-'+g.frame : '';
+  const t = rows[0], zone = t.zone||1, gsize = t.gsize||rows.length;
+  const upN = (t.tier < 2) ? zone : 0, dnN = (t.tier > 0) ? zone : 0;
+  const T = TIER_L[t.tier] || TIER_L[0];
+  const head = '<div class="lg-tierhead"><b>'+T[0]+' '+T[1]+' '+t.grp+'조</b><span>'+gsize+'명 · 점수 = 푼 문항＋맞힌 문항'
+    + (upN? ' · 상위 '+upN+' <b style="color:var(--teal-deep)">↑승급</b>':'')
+    + (dnN? ' · 하위 '+dnN+' <b style="color:var(--red)">↓강등</b>':'')+'</span></div>';
+  el.innerHTML = head + rows.map(r=>{
+    const up = upN && r.rn <= upN, dn = dnN && r.rn > gsize - dnN;
+    return '<div class="lg-row r'+r.rn+(r.me?' me':'')+(up?' zup':'')+(dn?' zdn':'')+'">'
+      +'<span class="rank">'+r.rn+'</span>'
+      +'<span class="avt'+(r.me?frCls:'')+'">'+esc(r.avatar||'🙂')+'</span>'
+      +'<span class="who"><span class="nk">'+esc(r.nick||'')+(r.me?' <span class="mebadge">나</span>':'')+'</span>'
+      +'<span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span>'
+      +'<span class="wxp">'+Number(r.score||0).toLocaleString('ko-KR')+'점'+(up?' ↑':dn?' ↓':'')+'</span></div>';
+  }).join('')
+  + '<div class="lg-gap">'+(t.tier===2 ? '👑 최상위 골드 — 자리를 지켜라!' : '월요일 새벽에 판이 다시 짜여요 — 이번 주 안에 순위를 끌어올리자')+'</div>';
+}
+
 /* ── 성장 랭킹 — 지난주보다 더 푼 문항 수로 겨루는 판 (서버 함수 league_growth, 미설치 시 조용히 접힘) ── */
 let growthCache = null, growthMissing = false;
 async function fetchGrowth(){
@@ -4420,8 +4468,8 @@ function renderStats(){
     +'</div>';
   h += '<div class="stat-h">🛍️ XP 상점<span class="sub">보유 '+fmtXp(wallet())+' P · 써도 레벨은 안 내려가요</span></div>'
     +'<div class="shop" id="shop-body">'+SHOP.map(shopRowHTML).join('')+'</div>';
-  h += '<div class="stat-h">리그<span class="sub">'+(lgView==='p' && lgPeriod==='w' ? '월요일 리셋 · 닉네임으로 표시' : '매달 1일 리셋 · 개인은 닉네임으로 표시')+'</span></div>'
-    +'<div class="lg-tabs"><button type="button" class="lgt'+(lgView==='p'?' on':'')+'" id="lg-tab-p">👤 개인전</button><button type="button" class="lgt'+(lgView==='c'?' on':'')+'" id="lg-tab-c">🏫 반 대항전</button></div>'
+  h += '<div class="stat-h">리그<span class="sub">'+(lgView==='l' ? '매주 월요일 새 조 편성 · 승급을 노려라' : (lgView==='p' && lgPeriod==='w' ? '월요일 리셋 · 닉네임으로 표시' : '매달 1일 리셋 · 개인은 닉네임으로 표시'))+'</span></div>'
+    +'<div class="lg-tabs">'+(lgGroupMissing?'':'<button type="button" class="lgt'+(lgView==='l'?' on':'')+'" id="lg-tab-l">🏆 승강 리그</button>')+'<button type="button" class="lgt'+(lgView==='p'?' on':'')+'" id="lg-tab-p">👤 개인전</button><button type="button" class="lgt'+(lgView==='c'?' on':'')+'" id="lg-tab-c">🏫 반 대항전</button></div>'
     +(lgView==='p' && !lgWeekMissing ? '<div class="lg-tabs lg-per"><button type="button" class="lgt'+(lgPeriod==='m'?' on':'')+'" id="lg-per-m">이번 달</button><button type="button" class="lgt'+(lgPeriod==='w'?' on':'')+'" id="lg-per-w">이번 주</button></div>' : '')
     +'<div class="lg-card" id="lg-body"><div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오는 중…</span></span></div></div>';
   h += '<div id="growth-sec"><div class="stat-h">📈 성장 랭킹<span class="sub">지난주의 나를 이긴 만큼 오른다 · 월요일 새 출발</span></div>'
@@ -4494,7 +4542,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.2.9';
+const APP_VERSION = '2.3.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -4978,6 +5026,7 @@ $('quest-card').addEventListener('click', e=>{
 });
 $('sp-mean').addEventListener('click', e=>{ if(e.target.closest('#sp-say') && SP && SP.deck[SP.i]) speak(SP.deck[SP.i].word); });
 async function renderLeague(){
+  if(lgView === 'l') return renderLeagueGroup();
   if(lgView === 'c') return renderLeagueClass();
   return renderLeaguePersonal();
 }
@@ -5008,11 +5057,11 @@ document.addEventListener('click', e=>{
     if(curScr==='scr-stats') renderStats();
     return;
   }
-  const p = e.target.closest('#lg-tab-p'), c = e.target.closest('#lg-tab-c');
-  if(!p && !c) return;
-  lgView = p ? 'p' : 'c';
+  const p = e.target.closest('#lg-tab-p'), c = e.target.closest('#lg-tab-c'), lt = e.target.closest('#lg-tab-l');
+  if(!p && !c && !lt) return;
+  lgView = lt ? 'l' : (p ? 'p' : 'c');
   if(curScr==='scr-stats'){ renderStats(); return; }
-  document.querySelectorAll('.lgt').forEach(x=>x.classList.toggle('on', x.id === (p ? 'lg-tab-p' : 'lg-tab-c')));
+  document.querySelectorAll('.lgt').forEach(x=>x.classList.toggle('on', x.id === (lt ? 'lg-tab-l' : (p ? 'lg-tab-p' : 'lg-tab-c'))));
   renderLeague();
 });
 /* ════════ 과제 시스템 (v2.2) ════════
@@ -5402,9 +5451,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-50';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-51'; });
+const APP_VER = '2026.07.27-52';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-52'; });
 const WN_ITEMS = [
+ ['🏆','승강제 리그 개막','아레나에 새 판! 20~25명 조에서 일주일간 겨루고, 월요일 새벽 상위는 승급 · 하위는 강등돼요. 모두 🥉 브론즈에서 출발 — 🥇 골드까지 올라가 보자'],
  ['🗓️','시험 역산 모드','시험이 등록되면 홈에 D-day 카드가 떠요. D-4까지는 "하루 N개 페이스" 안내, D-3부터는 전 범위 최종 점검(퀴즈 70%+ ✅)!'],
  ['🎲','닉네임 재추첨권 등장','드디어! 상점에서 2,000 P로 닉네임을 새로 뽑아요. 확정 전까지는 몇 번이든 무료로 다시 굴리기'],
  ['🧸','아바타 자유 이용권','1,200 P — 내 정보에서 아바타를 61종 동물 중 마음대로 바꿔요'],
@@ -5426,6 +5476,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['🏆','승강제 리그','소그룹(≤25명) 조 편성 + 주간 승급·강등 체계를 열었습니다. 절대 순위표에서 보이지 않던 중·하위권에게 매주 닿을 수 있는 목표를 주는 연구 기반 설계예요(서버 SQL 1회 설치)'],
  ['🗓️','시험 역산 모드','과제 화면 아래에서 시험명·시험일·범위(묶음 선택 가능)·대상만 등록하세요. 학생 홈에 D-day와 역산 페이스, D-3 총정리 체크가 자동으로 뜹니다(서버 SQL 1회 설치)'],
  ['🛍️','XP 경제 확장','닉네임 재추첨권(2,000P)·아바타 이용권(1,200P)·마일스톤 배지 8종을 추가했습니다. 쌓인 XP의 소비처와 장기 수집 목표를 만들어 획득 동기를 유지하는 조치예요'],
  ['📈','리그 개편 1차','성장 랭킹(전주 대비 푼 문항 증가·서버 SQL 1회 설치)과 내 주변 순위 보기를 넣었습니다. 절대 순위표의 하위권 위축을 줄이고 닿을 수 있는 다음 목표를 보여 주는 조치예요'],
