@@ -1612,7 +1612,7 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
     <div id="lvg-body" style="margin:12px 0"></div>
     <div class="desc" style="text-align:left">
       <b>XP 쌓는 법</b><br>
-      · 퀴즈 정답 +10(콤보 5부터 1.5배) · 스펠링 정답 +15 · 카드 "알아요" +2<br>
+      · 퀴즈 정답 +10(콤보 5부터 1.5배) · 스펠링 정답 +15(오타 하나는 격려 +3) · 카드 "알아요" +2<br>
       · 오답 단어를 퀴즈·스펠링으로 맞히면 <b>탈출 보너스 +20</b><br>
       · 일일 퀘스트 +150 · 하루 목표 +50 · 7일 연속마다 +100<br>
       · <b>티어 보너스</b> — 🌱×1.0 · ⚡×1.3 · 🔥×1.6 · 👑×2.0<br>
@@ -2425,7 +2425,7 @@ function renderFlash(){
     +'<div class="w'+(w.word.length>18?' sz3':(w.word.length>12?' sz2':''))+'">'+wordHTML(w.word, w.group)+'</div>'
     +(w.pron?'<div class="pr">'+esc(w.pron)+'</div>':'')
     +'<button class="spk" data-say="'+esc(w.word)+'" style="width:46px;height:46px;font-size:20px">🔊</button>'
-    +'<div class="tip">카드를 누르면 뜻이 보여요</div>'
+    +'<div class="tip">카드를 눌러 뜻을 확인하면 버튼이 켜져요</div>'
     +'</div>'
     +'<div class="face back">'
     +'<div class="bw">'+wordHTML(w.word, w.group)+' <button class="spk sm" data-say="'+esc(w.word)+'">🔊</button></div>'
@@ -2437,15 +2437,20 @@ function renderFlash(){
     +'<button class="btn know" id="fl-yes">'+(FL.fromWrong?'이제 안다 ✓':'알아요 ✓')+'</button>'
     +'</div>';
   fitWord($('fc').querySelector('.face.front .w'));
+  const bn = $('fl-no'), by = $('fl-yes');
+  bn.disabled = true; by.disabled = true;
+  /* v2.3.1 — 자기확인 강화: 카드를 뒤집어 뜻을 확인해야 버튼이 켜진다 */
+  let flSeen = false, flWait = false;
+  const flEnable = ()=>{ if(flSeen && flWait && bn.isConnected){ bn.disabled = false; by.disabled = false; } };
   $('fc').addEventListener('click', e=>{
     if(e.target.closest('[data-say]')) return;
     $('fc').classList.toggle('flip');
+    if(!flSeen){ flSeen = true; flEnable(); }
   });
-  $('fl-no').addEventListener('click', ()=>{ const lid = w._lid || FL.listId || DB.activeListId; addWrong(w.word, lid); revTouch(lid, w.word, false); nextFlash(); });
-  $('fl-yes').addEventListener('click', ()=>{ const lid = w._lid || FL.listId || DB.activeListId; if(FL.fromWrong){ removeWrong(w.word, lid); awardXp(10); } else awardXp(2); revTouch(lid, w.word, true); nextFlash(); });
-  const bn = $('fl-no'), by = $('fl-yes');
-  bn.disabled = true; by.disabled = true;
-  setTimeout(()=>{ if(bn.isConnected){ bn.disabled = false; by.disabled = false; } }, 1000);
+  $('fl-no').addEventListener('click', ()=>{ const lid = w._lid || FL.listId || DB.activeListId; addWrong(w.word, lid); nextFlash(); });
+  /* v2.3.1 — '알아요'는 활동 보상만. 메모리 락 등록·진급과 오답 탈출은 퀴즈·스펠링의 실제 정답으로만 */
+  $('fl-yes').addEventListener('click', ()=>{ awardXp(2); nextFlash(); });
+  setTimeout(()=>{ flWait = true; flEnable(); }, 1000);
 }
 function nextFlash(){
   questBump('flash', 1);
@@ -2470,7 +2475,7 @@ function endFlash(){
   const wn = wrongWords().length;
   const box = $('fl-done');
   box.style.display='block';
-  box.innerHTML = '<div class="result-big"><div class="sc">완료 🎉</div><p>'+FL.deck.length+'장을 전부 넘겼어요.'+(wn?' 오답 단어가 '+wn+'개 남아 있어요.':'')+'</p>'+xpLineHTML()+revNextLine()+'</div>'
+  box.innerHTML = '<div class="result-big"><div class="sc">완료 🎉</div><p>'+FL.deck.length+'장을 전부 넘겼어요.'+(wn?' 오답 단어가 '+wn+'개 남아 있어요.':'')+((FL.fromWrong&&wn)?' 퀴즈·스펠링에서 정답으로 맞혀야 오답에서 탈출해요.':'')+'</p>'+xpLineHTML()+revNextLine()+'</div>'
     +'<div class="row" style="margin-top:8px"><button class="btn ghost" id="fl-again">다시 한 번</button><button class="btn primary" id="fl-home">홈으로</button></div>'
     +(wn?'<button class="btn soft block" id="fl-gowrong" style="margin-top:10px">오답 복습 하러 가기</button>':'');
   $('fl-again').addEventListener('click', ()=>{
@@ -2564,11 +2569,19 @@ function qRel(w, relPool, allMeanings){
   const opts = shuffleArr([correct].concat(ds));
   return {kind: useSyn?'유의어 고르기':'반의어 고르기', prompt:'“'+w.word+'”의 '+(useSyn?'유의어':'반의어')+'는?', say:w.word, opts, ans:opts.indexOf(correct), w, small:true};
 }
-function qConf(w){
+function qConf(w, allWords){
   if(!w.meaning) return null;
-  const confs = splitDot(w.conf).map(it=>engPart(it).en).filter(Boolean).slice(0,4);
+  const confs = splitDot(w.conf).map(it=>engPart(it).en).filter(Boolean);
   if(!confs.length) return null;
-  const opts = shuffleArr([w.word].concat(confs));
+  /* v2.3.1 — 선택지 품질 보장: 혼동어가 모자라면 단어장의 다른 단어로 채워 항상 5지선다 */
+  const ds = []; const seen = new Set([w.word.toLowerCase()]);
+  for(const c of confs.concat(shuffleArr((allWords||[]).filter(x=>x!==w.word)))){
+    const k = String(c).toLowerCase();
+    if(!seen.has(k)){ seen.add(k); ds.push(c); }
+    if(ds.length===4) break;
+  }
+  if(ds.length<4) return null;
+  const opts = shuffleArr([w.word].concat(ds));
   return {kind:'혼동어 구별', prompt:w.meaning, say:null, opts, ans:opts.indexOf(w.word), w, small:true};
 }
 function qEx(w, allWords){
@@ -2651,7 +2664,7 @@ function buildQuestions(types, count, srcPool){
     mean: w=>qMean(w, allMeanings),
     word: w=>qWord(w, allWords),
     rel:  w=>qRel(w, relPool, allMeanings),
-    conf: w=>qConf(w),
+    conf: w=>qConf(w, allWords),
     etym: w=>qEtym(w, etymPool),
     root: w=>qRoot(w, L.words),
     ex:   w=>qEx(w, allWords)
@@ -2826,8 +2839,8 @@ function checkSpell(){
   const sIn = normSpell(inp), sAns = normSpell(w.word);
   if(!sIn){ toast('철자를 입력해 주세요'); return; }
   const exact = sIn === sAns;
-  const near = !exact && sAns.length >= 5 && levOps(sIn, sAns).dist === 1;   /* 오타 한 글자 관용 (5자 이상) */
-  const ok = exact || near;
+  const near = !exact && sAns.length >= 5 && levOps(sIn, sAns).dist === 1;   /* v2.3.1 — 오타 한 글자: 격려·소량 XP만. 채점(정답 수·별점·오답 탈출·메모리 락)은 오답 */
+  const ok = exact;
   const lid = w._lid || DB.activeListId;
   SP.answered = true;
   if(!SP.review) dayBump(1);   /* 메모리 락 복습 문항은 '오늘의 새 단어'에 안 센다 */
@@ -2839,23 +2852,24 @@ function checkSpell(){
     if(SP.retry){
       awardXp(5);   /* 고쳐 낸 보상 — 오답 탈출은 다음 세션에서 진짜 인출로 */
       fb.className='sp-fb ok';
-      fb.innerHTML = (exact ? '정답 ✓' : '아깝다! 오타 하나 — 정답 처리 ✓<div>'+spellDiffHTML(inp, w.word)+'</div>')
+      fb.innerHTML = '정답 ✓'
         + '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>';
       fxRight();
     } else {
       SP.right++;
-      let gain = exact ? 15 : 8;
+      let gain = 15;
       if(wrongMapOf(lid)[w.word]){ removeWrong(w.word, lid); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
       awardXp(gain);
       fb.className='sp-fb ok';
-      fb.innerHTML = (exact ? '정답 ✓' : '아깝다! 오타 하나 — 정답 처리 ✓<div>'+spellDiffHTML(inp, w.word)+'</div>')
-        + ((SP.listen || near) ? '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>' : '');
+      fb.innerHTML = '정답 ✓'
+        + (SP.listen ? '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>' : '');
       fxRight();
     }
   }
   else{
+    if(near) awardXp(3);   /* 아깝다 격려 — 기록은 오답, 다시 정확히 쓰면 진짜 정답 */
     fb.className='sp-fb no';
-    fb.innerHTML='아쉬워요 ✗<div>'+spellDiffHTML(inp, w.word)+'</div><span class="ans">'+esc(w.word)+((SP.listen && w.meaning)?' — '+esc(w.meaning):'')+'</span><span class="myans">내 답: '+esc(inp)+'</span>';
+    fb.innerHTML=(near?'아깝다! 오타 하나 ✗ — 시험은 한 글자도 정확해야 해요':'아쉬워요 ✗')+'<div>'+spellDiffHTML(inp, w.word)+'</div><span class="ans">'+esc(w.word)+((SP.listen && w.meaning)?' — '+esc(w.meaning):'')+'</span><span class="myans">내 답: '+esc(inp)+'</span>';
     addWrong(w.word, lid); fxWrong();
     if(!SP.retry && !SP.fromWrong && !SP.review) (SP.retryL || (SP.retryL = [])).push(w);
   }
@@ -3077,6 +3091,16 @@ function buildTest(){
         fil = qn+esc(cue)+' &nbsp;→&nbsp; '+AK(w.word);
       } else if(t.k==='CONF'){
         const confs = splitDot(w.conf).map(it=>engPart(it).en).filter(Boolean).slice(0,3);
+        /* v2.3.1 — 선택지 보강: 혼동어가 모자라면 시험 범위의 다른 단어로 채워 4지선다 확보 */
+        if(confs.length < 3){
+          const cseen = new Set([w.word.toLowerCase()].concat(confs.map(c=>c.toLowerCase())));
+          for(const o of shuffleArr(pool, rng)){
+            if(confs.length >= 3) break;
+            const ck = o.word.toLowerCase();
+            if(cseen.has(ck)) continue;
+            cseen.add(ck); confs.push(o.word);
+          }
+        }
         const choices = shuffleArr([w.word].concat(confs), rng);
         a = w.word;
         stu = qn+esc(w.meaning)+' &nbsp;→&nbsp; ( '+choices.map(esc).join(' / ')+' )';
@@ -3458,6 +3482,7 @@ $('btn-signup').addEventListener('click', async ()=>{
 $('btn-logout').addEventListener('click', async ()=>{
   if(!confirm('로그아웃할까요? 이 기기의 기록은 지워져요 (서버에는 안전하게 저장돼 있어요).')) return;
   await pushProgress();
+  try{ await api('/auth/v1/logout?scope=local', {method:'POST'}); }catch(e){}   /* v2.3.1 — 이 기기의 서버 세션도 폐기 (다른 기기 로그인은 유지) */
   DB = {version:2, activeListId:null, lists:[], wrong:{}, log:[], auth:null, profile:null, theme:DB.theme, fx:DB.fx, qzExKo:DB.qzExKo};
   try{ localStorage.removeItem(PREF_KEY); }catch(e){}
   prefLast = '';
@@ -4231,6 +4256,14 @@ function weekKeyOf(t){ const d=new Date(t); const day=(d.getDay()+6)%7; d.setDat
 function ensureGame(){
   if(!DB.game) DB.game = {xp:0, weekXp:0, weekKey:weekKeyOf(Date.now()), dayXp:0, dayItems:0, dayKey:dayKeyOf(Date.now()), streak:0, lastDay:null, freezeWeek:null, goalHit:null, streakBonus:0, stars:{}, nickname:null, avatar:null, goal:40};
   const g = DB.game;
+  /* v2.3.1 — 옛 버전·부분 저장 데이터 보수: 빠진 조각을 기본값으로 채워 화면 멈춤을 막는다 */
+  if(!g.stars || typeof g.stars !== 'object') g.stars = {};
+  if(typeof g.xp !== 'number' || !isFinite(g.xp)) g.xp = 0;
+  if(typeof g.weekXp !== 'number' || !isFinite(g.weekXp)) g.weekXp = 0;
+  if(typeof g.dayXp !== 'number' || !isFinite(g.dayXp)) g.dayXp = 0;
+  if(typeof g.dayItems !== 'number' || !isFinite(g.dayItems)) g.dayItems = 0;
+  if(typeof g.streak !== 'number' || !isFinite(g.streak)) g.streak = 0;
+  if(typeof g.goal !== 'number' || !isFinite(g.goal) || g.goal <= 0) g.goal = 40;
   const wk = weekKeyOf(Date.now());
   if(g.weekKey!==wk){ g.weekKey=wk; g.weekXp=0; }
   const dk = dayKeyOf(Date.now());
@@ -4768,7 +4801,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.3.1';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -5678,9 +5711,12 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-54';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-54'; });
+const APP_VER = '2026.07.27-55';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-55'; });
 const WN_ITEMS = [
+ ['✍️','채점이 진짜 시험처럼','스펠링은 이제 한 글자도 정확해야 정답! 오타 하나는 "아깝다!"로 격려(+3)하고 오답으로 남겨 다시 물어봐요 — 내신·수능 기준 그대로'],
+ ['🃏','카드는 뜻 확인부터','플래시카드는 카드를 뒤집어 뜻을 본 뒤에만 답할 수 있어요. 메모리 락 등록·진급과 오답 탈출은 퀴즈·스펠링의 진짜 정답으로만!'],
+ ['🎲','혼동어 선택지 보강','혼동어 문제의 보기가 모자라면 단어장의 다른 단어로 자동으로 채워요 — 퀴즈는 5지선다, 시험지는 4지선다 보장'],
  ['🏆','승강제 리그 개막','아레나에 새 판! 20~25명 조에서 일주일간 겨루고, 월요일 새벽 상위는 승급 · 하위는 강등돼요. 모두 🥉 브론즈에서 출발 — 🥇 골드까지 올라가 보자'],
  ['🗓️','시험 역산 모드','시험이 등록되면 홈에 D-day 카드가 떠요. D-4까지는 "하루 N개 페이스" 안내, D-3부터는 전 범위 최종 점검(퀴즈 70%+ ✅)!'],
  ['🎲','닉네임 재추첨권 등장','드디어! 상점에서 2,000 P로 닉네임을 새로 뽑아요. 확정 전까지는 몇 번이든 무료로 다시 굴리기'],
@@ -5693,7 +5729,7 @@ const WN_ITEMS = [
  ['✏️','7일차부터는 직접 쓰기','메모리 락이 한 단계 세졌어요. 1·3일차는 고르기, 7일차부터는 철자를 직접 써서 꺼내요. 14·30일차는 힌트 없이 — 시험장에서 쓰는 기억은 쓰기가 만들어요'],
  ['🔓','메모리 락이 똑똑해졌어요','이제 복습 날에 퀴즈로 물어보고, 정답으로 꺼낸 단어만 다음 단계로 잠겨요. 5번 성공하면 졸업!'],
  ['🧹','오답 탈출 보너스','퀴즈·스펠링에서 오답 단어를 맞히면 확실히 탈출 +20 XP. 오답 화면에 "전체 단어장" 탭도 생겼어요'],
- ['🔤','스펠링 오타 판독','어디가 틀렸는지 글자별로 색으로 보여줘요. 5자 이상 단어는 오타 한 글자면 "아깝다!" 정답 처리'],
+ ['🔤','스펠링 오타 판독','어디가 틀렸는지 글자별로 색으로 보여줘요'],
  ['🧬','어원 조각·어근 찾기','퀴즈에 새 유형 2개 — 어근·접사의 뜻을 맞히고, 같은 어근 단어를 찾아요'],
  ['🔒','단어별 잠금 게이지','단어장 보기에서 단어마다 메모리 락 진행(5칸)과 졸업 🔓이 보여요'],
  ['🎯','목표 설정','홈의 목표 버튼 — 하루 목표(20~100문항)와 스트릭 목표(7·14·30일, 달성 +200 XP)를 정해요'],
@@ -5713,7 +5749,7 @@ const WN_STAFF = [
  ['✏️','메모리 락 인출 상향','복습 인출이 일차별로 세집니다 — 1·3일차 5지선다, 7일차 쓰기(첫 글자 힌트 허용), 14·30일차 힌트 없는 쓰기. 회상 연습이 재인보다 오래 남는다는 연구를 따랐어요'],
  ['📌','과제 내기','선생님 도구에 새 메뉴 — 단어장·모드·정답률·마감·대상 반을 정해 과제를 내고, 반별 완료 현황을 봐요'],
  ['🔓','메모리 락 개편','복습이 퀴즈(인출)로 바뀌고, 정답을 맞힌 단어만 단계가 올라가요. 학습과학의 successive relearning 방식이에요'],
- ['🧹','오답 검증 소거','오답 목록은 퀴즈·스펠링 정답으로만 확실히 지워져요(+20 XP). 카드 자기확인은 +10으로 낮췄어요'],
+ ['🧹','오답 검증 소거','오답 목록은 퀴즈·스펠링 정답으로만 확실히 지워져요(+20 XP)'],
  ['🔤','스펠링 오타 판독','학생이 어느 글자를 틀렸는지 색으로 보여주고, 5자 이상 단어의 오타 1글자는 관용 처리해요'],
  ['🧬','어원 퀴즈 2종','어원(조각 뜻)·그룹(같은 어근 찾기) 데이터가 퀴즈 유형으로 살아나요 — 어원 열을 채울수록 문제가 풍부해져요'],
  ['🎯','학생 목표 설정','학생이 하루 목표·스트릭 목표를 직접 정해요. 목표 달성 보너스로 꾸준함을 만듭니다'],
