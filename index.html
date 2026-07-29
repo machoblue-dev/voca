@@ -1124,6 +1124,27 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
 .rv-h .rv-info-btn,.rv-nwrap .rv-info-btn{border-width:1px}
 .lvrow .lvn{box-shadow:0 3px 8px rgba(108,104,238,.3)}
 .pf-card .pfa{box-shadow:0 3px 8px rgba(224,58,46,.14)}
+/* ── XP 상점 접기 (2026.07.27-56) — 아레나를 열면 리그가 먼저 보이도록, 상점은 눌러서 편다 ── */
+.shop-sec{margin-top:20px}
+.shop-h{display:flex;flex-direction:column;align-items:stretch;gap:5px;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:11px 14px 12px;cursor:pointer;box-shadow:var(--card-shadow);transition:transform .12s,border-color .15s,background .15s}
+.shop-h:active{transform:scale(.985)}
+.shop-h .shx-top{display:flex;align-items:center;gap:9px}
+.shop-h .shx-e{flex:0 0 auto;font-size:22px;line-height:1}
+.shop-h .shx-ttl{flex:1;min-width:0;display:flex;align-items:center;gap:6px;font-size:14.5px;font-weight:900;line-height:1.2}
+.shop-h .shx-sub{display:block;font-size:11.5px;font-weight:800;color:var(--ink2);line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shop-h .shx-n{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 5px;border-radius:99px;background:var(--red);color:#fff;font-size:10.5px;font-weight:900;line-height:1;flex:0 0 auto}
+.shop-h .shx-p{flex:0 0 auto;font-size:12.5px;font-weight:900;color:var(--teal-deep);background:var(--teal-soft);border:1px solid var(--teal-line);border-radius:99px;padding:4px 10px;white-space:nowrap}
+.shop-h .shx-c{flex:0 0 auto;font-style:normal;font-size:12px;font-weight:900;color:var(--ink3);transition:transform .18s}
+.shop-sec.hot:not(.open) .shop-h{border-color:var(--gold);background:var(--yellow-soft)}
+.shop-sec.open .shop-h{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.shop-sec.open .shop-h .shx-c{transform:rotate(180deg)}
+.shop-sec.open .shop-h .shx-n{display:none}
+.shop-wrap{display:none;border:1px solid var(--line);border-top:none;border-radius:0 0 16px 16px;padding:11px 11px 12px;background:var(--card2)}
+.shop-sec.open .shop-wrap{display:block}
+.shop-note{font-size:11.5px;font-weight:800;color:var(--ink2);line-height:1.5;margin:0 2px 10px}
+@keyframes shxpop{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}
+.shop-sec.hot:not(.open) .shx-n{animation:shxpop 1.9s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.shop-sec .shx-n{animation:none}}
 </style>
 </head>
 <body>
@@ -3963,7 +3984,7 @@ function go(id){
   if(!isMain && !isAuth) $('top-ttl').textContent = TITLES[id]||'';
   document.querySelectorAll('#tabbar .tab').forEach(t=>t.classList.toggle('on', t.dataset.go===id));
   if(id==='scr-home') renderHome();
-  if(id==='scr-stats') renderStats();
+  if(id==='scr-stats'){ shopOpen = false; renderStats(); }
   if(id==='scr-profile') renderProfile();
   if(id==='scr-browse') renderBrowse($('browse-q').value);
   if(id!=='scr-test'){ $('print-area').classList.remove('preview'); }
@@ -4659,6 +4680,43 @@ function shopRowHTML(it){
   }
   return '<div class="shop-row"><span class="sh-e">'+it.e+'</span><div class="sh-i"><b>'+it.n+'</b><span>'+it.d+'</span></div>'+right+'</div>';
 }
+/* 아레나에 들어오면 리그 순위가 먼저 눈에 들어와야 한다 — 상점은 접어 두고, 눌러야 열린다 */
+let shopOpen = false;
+function shopAvail(){
+  const g = ensureGame(), w = wallet();
+  let can = 0, left = 0, cheapest = 0;
+  SHOP.forEach(it=>{
+    const owned = (it.type==='consume') ? ((g.freezeExtra||0) >= 2) : !!(g.items && g.items[it.k]);
+    if(owned) return;
+    left++;
+    if(it.cost <= w) can++;
+    else if(!cheapest || it.cost < cheapest) cheapest = it.cost;
+  });
+  return {can:can, left:left, need: cheapest ? Math.max(0, cheapest - w) : 0};
+}
+function shopSectionHTML(){
+  const a = shopAvail();
+  const sub = a.can ? '살 수 있는 게 '+a.can+'개 있어요 — 눌러서 열어 봐요'
+    : (a.left ? fmtXp(a.need)+' P만 더 모으면 살 수 있어요'
+              : '다 모았어요 — 테두리·테마를 바꿔 봐요');
+  return '<div class="shop-sec'+(a.can?' hot':'')+(shopOpen?' open':'')+'" id="shop-sec">'
+    +'<button type="button" class="shop-h" id="shop-toggle" aria-expanded="'+(shopOpen?'true':'false')+'" aria-controls="shop-body">'
+      +'<span class="shx-top"><span class="shx-e">🛍️</span>'
+        +'<span class="shx-ttl">XP 상점'+(a.can?'<i class="shx-n">'+a.can+'</i>':'')+'</span>'
+        +'<span class="shx-p">'+fmtXp(wallet())+' P</span><i class="shx-c">▾</i></span>'
+      +'<span class="shx-sub">'+sub+'</span>'
+    +'</button>'
+    +'<div class="shop-wrap"><div class="shop-note">모은 XP로 사요. 포인트를 써도 레벨은 안 내려가요 — 레벨은 그동안 모은 XP 전체로 정해지니까요.</div>'
+      +'<div class="shop" id="shop-body">'+SHOP.map(shopRowHTML).join('')+'</div></div>'
+    +'</div>';
+}
+document.addEventListener('click', e=>{
+  const th = e.target.closest('#shop-toggle'); if(!th) return;
+  const sec = th.closest('.shop-sec'); if(!sec) return;
+  shopOpen = !sec.classList.contains('open');
+  sec.classList.toggle('open', shopOpen);
+  th.setAttribute('aria-expanded', shopOpen ? 'true' : 'false');
+});
 document.addEventListener('click', e=>{
   const bb = e.target.closest('.shop-buy');
   if(bb){
@@ -4725,8 +4783,7 @@ function renderStats(){
     +'<div class="tchip"><b style="color:var(--gold)">'+starSum+'</b><span>★ 모은 별</span></div>'
     +'<div class="tchip"><b style="color:var(--teal-deep)">'+(acc==null?'—':acc+'%')+'</b><span>누적 정답률</span></div>'
     +'</div>';
-  h += '<div class="stat-h">🛍️ XP 상점<span class="sub">보유 '+fmtXp(wallet())+' P · 써도 레벨은 안 내려가요</span></div>'
-    +'<div class="shop" id="shop-body">'+SHOP.map(shopRowHTML).join('')+'</div>';
+  h += shopSectionHTML();
   h += '<div class="stat-h">리그<span class="sub">'+(lgView==='l' ? '매주 월요일 새 조 편성 · 승급을 노려라' : (lgView==='p' && lgPeriod==='w' ? '월요일 리셋 · 닉네임으로 표시' : '매달 1일 리셋 · 개인은 닉네임으로 표시'))+'</span></div>'
     +'<div class="lg-tabs">'+(lgGroupMissing?'':'<button type="button" class="lgt'+(lgView==='l'?' on':'')+'" id="lg-tab-l">🏆 승강 리그</button>')+'<button type="button" class="lgt'+(lgView==='p'?' on':'')+'" id="lg-tab-p">👤 개인전</button><button type="button" class="lgt'+(lgView==='c'?' on':'')+'" id="lg-tab-c">🏫 반 대항전</button></div>'
     +(lgView==='p' && !lgWeekMissing ? '<div class="lg-tabs lg-per"><button type="button" class="lgt'+(lgPeriod==='m'?' on':'')+'" id="lg-per-m">이번 달</button><button type="button" class="lgt'+(lgPeriod==='w'?' on':'')+'" id="lg-per-w">이번 주</button></div>' : '')
@@ -5711,9 +5768,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-55';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-55'; });
+const APP_VER = '2026.07.27-56';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-56'; });
 const WN_ITEMS = [
+ ['🛍️','상점은 눌러서 열어요','아레나를 열면 리그 순위가 바로 보여요. XP 상점은 접혀 있다가 줄을 톡 누르면 열려요 — 지금 살 수 있는 상품이 몇 개인지도 함께 알려줘요'],
  ['✍️','채점이 진짜 시험처럼','스펠링은 이제 한 글자도 정확해야 정답! 오타 하나는 "아깝다!"로 격려(+3)하고 오답으로 남겨 다시 물어봐요 — 내신·수능 기준 그대로'],
  ['🃏','카드는 뜻 확인부터','플래시카드는 카드를 뒤집어 뜻을 본 뒤에만 답할 수 있어요. 메모리 락 등록·진급과 오답 탈출은 퀴즈·스펠링의 진짜 정답으로만!'],
  ['🎲','혼동어 선택지 보강','혼동어 문제의 보기가 모자라면 단어장의 다른 단어로 자동으로 채워요 — 퀴즈는 5지선다, 시험지는 4지선다 보장'],
@@ -5739,6 +5797,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['🛍️','아레나 상점 접기','XP 상점을 기본 접힘으로 바꿨습니다. 아레나 진입 화면에 리그·성장 랭킹이 먼저 들어오도록 한 조치이며, 헤더에 보유 P와 구매 가능 개수를 남겨 열어 볼 동기는 유지했어요'],
  ['🏆','승강제 리그','소그룹(≤25명) 조 편성 + 주간 승급·강등 체계를 열었습니다. 절대 순위표에서 보이지 않던 중·하위권에게 매주 닿을 수 있는 목표를 주는 연구 기반 설계예요(서버 SQL 1회 설치)'],
  ['🗓️','시험 역산 모드','과제 화면 아래에서 시험명·시험일·범위(묶음 선택 가능)·대상만 등록하세요. 학생 홈에 D-day와 역산 페이스, D-3 총정리 체크가 자동으로 뜹니다(서버 SQL 1회 설치)'],
  ['🛍️','XP 경제 확장','닉네임 재추첨권(2,000P)·아바타 이용권(1,200P)·마일스톤 배지 8종을 추가했습니다. 쌓인 XP의 소비처와 장기 수집 목표를 만들어 획득 동기를 유지하는 조치예요'],
