@@ -1987,8 +1987,32 @@ function engPart(item){
 }
 function wrongMapOf(lid){ if(!DB.wrong) DB.wrong={}; if(!DB.wrong[lid]) DB.wrong[lid]={}; return DB.wrong[lid]; }
 function wrongMap(){ return wrongMapOf(DB.activeListId); }
-function addWrong(word, lid){ const m=wrongMapOf(lid||DB.activeListId); m[word]=(m[word]||0)+1; scheduleSave(); }
-function removeWrong(word, lid){ const m=wrongMapOf(lid||DB.activeListId); if(m[word]) questBump('wrong', 1); delete m[word]; scheduleSave(); }
+/* 오답 변경 시각(초) — 단어마다 '마지막에 손댄 때'를 남긴다.
+   지운 단어는 개수 없이 시각만 남아 묘비가 되고, 이 묘비가 다른 기기·서버로 퍼져
+   옛 기록이 되살아나지 못하게 막는다. (메모리 락 rev2t와 같은 방식) */
+const WRT_KEEP = 60*60*24*60;   /* 묘비 보존 60일 — 그 뒤 저절로 사라진다 */
+function nowSec(){ return Math.floor(Date.now()/1000); }
+function wrongTOf(lid){ if(!DB.wrongT) DB.wrongT={}; if(!DB.wrongT[lid]) DB.wrongT[lid]={}; return DB.wrongT[lid]; }
+function wrongStamp(word, lid){ wrongTOf(lid)[word] = nowSec(); }
+function addWrong(word, lid){ const id=lid||DB.activeListId; const m=wrongMapOf(id); m[word]=(m[word]||0)+1; wrongStamp(word, id); scheduleSave(); }
+function removeWrong(word, lid){ const id=lid||DB.activeListId; const m=wrongMapOf(id); if(m[word]) questBump('wrong', 1); delete m[word]; wrongStamp(word, id); scheduleSave(); }
+/* 오답 목록 비우기 — 지운 단어마다 묘비를 세워야 서버·다른 기기에서도 같이 지워진다 */
+function wrongClear(lid){
+  const t = wrongTOf(lid), m = (DB.wrong && DB.wrong[lid]) || {}, now = nowSec();
+  for(const w in m) t[w] = now;
+  wrongMapOf(lid); DB.wrong[lid] = {};
+}
+function wrongClearAll(){ for(const lid in (DB.wrong||{})) wrongClear(lid); DB.wrong = {}; }
+/* 만료된 묘비 청소 — 개수가 살아 있는 단어의 시각은 병합 판정에 쓰이므로 남긴다 */
+function pruneWrongT(){
+  if(!DB.wrongT) return;
+  const now = nowSec();
+  for(const lid in DB.wrongT){
+    const t = DB.wrongT[lid], m = (DB.wrong && DB.wrong[lid]) || {};
+    for(const w in t){ if(m[w] === undefined && now - t[w] > WRT_KEEP) delete t[w]; }
+    if(!Object.keys(t).length) delete DB.wrongT[lid];
+  }
+}
 function wrongWords(){
   const L=activeList(); if(!L) return [];
   const m=wrongMap();
@@ -2706,7 +2730,7 @@ $('btn-qz-start').addEventListener('click', ()=>{
   const n = Math.max(1, Math.min(m, parseInt($('qz-n').value,10) || 1));
   const qs = buildQuestions(Array.from(qzSel), n);
   if(qs.length<1){ toast('이 유형으로 만들 문제가 부족해요. 뜻이 서로 다른 단어가 5개 이상 필요해요'); return; }
-  QZ = {qs, i:0, right:0, wrongL:[], combo:0}; resetSessXp();
+  QZ = {qs, i:0, right:0, wrongL:[], combo:0, lid: DB.activeListId}; resetSessXp();
   sessStart('quiz', DB.activeListId);
   $('qz-setup').style.display='none';
   $('qz-done').style.display='none';
@@ -2728,7 +2752,8 @@ $('qz-opts').addEventListener('click', e=>{
   const b = e.target.closest('.opt'); if(!b || !QZ) return;
   const q = QZ.qs[QZ.i];
   const pick = parseInt(b.dataset.i,10);
-  revTouch(DB.activeListId, q.w.word, pick===q.ans);
+  const qlid = QZ.lid || DB.activeListId;   /* 문제를 뽑아 온 단어장 — 채점 도중 바뀌어도 흔들리지 않게 */
+  revTouch(qlid, q.w.word, pick===q.ans);
   if(!QZ.review) dayBump(1);   /* 메모리 락 복습 문항은 '오늘의 새 단어'에 안 센다 */
   if(!QZ.retry) sessBump(pick===q.ans);   /* 다시 도전 라운드는 점수·별·기록에서 뺀다 */
   document.querySelectorAll('#qz-opts .opt').forEach(o=>o.setAttribute('disabled',''));
@@ -2739,7 +2764,7 @@ $('qz-opts').addEventListener('click', e=>{
     } else {
       QZ.right++; QZ.combo++;
       let gain = Math.round(10*(QZ.combo>=5?1.5:1));
-      if(wrongMap()[q.w.word]){ removeWrong(q.w.word); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
+      if(wrongMapOf(qlid)[q.w.word]){ removeWrong(q.w.word, qlid); gain += 20; }   /* 검증 소거 — 실제 정답으로 오답 탈출 */
       awardXp(gain); b.classList.add('reveal-right'); fxRight();
     }
   }
@@ -2748,7 +2773,7 @@ $('qz-opts').addEventListener('click', e=>{
     b.classList.add('picked-wrong'); fxWrong();
     const r = document.querySelector('#qz-opts .opt[data-i="'+q.ans+'"]');
     if(r) r.classList.add('reveal-right');
-    addWrong(q.w.word);
+    addWrong(q.w.word, qlid);
     if(!QZ.retry) QZ.wrongL.push(q.w);
   }
   const nb = $('btn-qz-next');
@@ -2990,10 +3015,10 @@ function renderWrong(){
   $('wr-clear').addEventListener('click', ()=>{
     if(wrScope==='all'){
       if(!confirm('모든 단어장의 오답 기록을 전부 지울까?')) return;
-      DB.wrong = {};
+      wrongClearAll();
     } else {
       if(!confirm('이 단어장의 오답 기록을 전부 지울까?')) return;
-      DB.wrong[DB.activeListId] = {};
+      wrongClear(DB.activeListId);
     }
     scheduleSave(); renderWrong(); toast('오답 기록을 지웠어요');
   });
@@ -3268,14 +3293,39 @@ async function pullLists(){
   scheduleSave();
   return true;
 }
+/* 오답 병합 — 단어마다 '마지막에 손댄 쪽'이 이긴다.
+   지운 단어는 묘비(개수 없이 시각만)로 남아 상대편의 옛 기록을 눌러 없앤다.
+   양쪽 다 시각이 없으면(구버전 자료) 종전처럼 합집합으로 둔다. */
+function mergeWrong(sw, st){
+  const lw = DB.wrong || {}, lt = DB.wrongT || {};
+  const W = {}, T = {}, now = nowSec();
+  const lids = {};
+  [lw, lt, sw, st].forEach(o=>{ for(const l in (o||{})) lids[l] = 1; });
+  for(const lid in lids){
+    const a = lw[lid] || {}, b = sw[lid] || {};
+    const ta = lt[lid] || {}, tb = st[lid] || {};
+    const words = {};
+    [a, b, ta, tb].forEach(o=>{ for(const w in o) words[w] = 1; });
+    const mw = {}, mt = {};
+    for(const w in words){
+      const xa = ta[w] || 0, xb = tb[w] || 0;
+      if(!xa && !xb){                                   /* 구버전 자료 — 합집합 */
+        const c = Math.max(a[w] || 0, b[w] || 0);
+        if(c) mw[w] = c;
+        continue;
+      }
+      const win = (xa >= xb) ? a : b, ts = Math.max(xa, xb);
+      if(win[w]){ mw[w] = win[w]; mt[w] = ts; }
+      else if(now - ts < WRT_KEEP) mt[w] = ts;          /* 삭제 묘비 유지 */
+    }
+    if(Object.keys(mw).length) W[lid] = mw;
+    if(Object.keys(mt).length) T[lid] = mt;
+  }
+  DB.wrong = W; DB.wrongT = T;
+}
 function mergeProgress(server){
   server = server || {};
-  const sw = server.wrong || {};
-  if(!DB.wrong) DB.wrong = {};
-  for(const lid in sw){
-    if(!DB.wrong[lid]) DB.wrong[lid] = {};
-    for(const w in sw[lid]) DB.wrong[lid][w] = Math.max(DB.wrong[lid][w]||0, sw[lid][w]);
-  }
+  mergeWrong(server.wrong || {}, server.wrongT || {});
   const seen = new Set((DB.log||[]).map(x=>x.t));
   DB.log = (DB.log||[]).concat((server.log||[]).filter(x=>x && !seen.has(x.t)));
   DB.log.sort((a,b)=>a.t-b.t);
@@ -3298,10 +3348,14 @@ function schedulePush(){ pushDirty = true; clearTimeout(pushTimer); pushTimer = 
 async function pushProgress(urgent){
   if(!DB || !DB.auth) return;
   pushDirty = false;
-  const body = JSON.stringify({data:{wrong:DB.wrong||{}, log:DB.log||[], fx:DB.fx, qzExKo:DB.qzExKo, game:DB.game||null, theme:DB.theme}});
+  pruneWrongT();
+  const body = JSON.stringify({data:{wrong:DB.wrong||{}, wrongT:DB.wrongT||{}, log:DB.log||[], fx:DB.fx, qzExKo:DB.qzExKo, game:DB.game||null, theme:DB.theme}});
   const opts = {method:'PATCH', headers:{'Prefer':'return=minimal'}, body};
   if(urgent === true && body.length < 60000) opts.keepalive = true; /* 화면을 떠나는 순간에도 전송이 끊기지 않게 */
-  await api('/rest/v1/progress?user_id=eq.'+DB.auth.uid, opts);
+  const r = await api('/rest/v1/progress?user_id=eq.'+DB.auth.uid, opts);
+  /* 전송이 실패했으면(끊긴 인터넷 등) 표시를 되살려 다음 기회에 다시 보낸다.
+     이 표시가 없으면 '오답을 지운 사실'만 사라지고 서버의 옛 기록이 되살아난다 */
+  if(!r || !r.ok) pushDirty = true;
 }
 /* 화면을 벗어나면(새로고침·탭 전환·앱 닫기) 대기 중인 저장·전송을 그 자리에서 흘려보낸다 */
 function flushNow(){
@@ -4881,6 +4935,8 @@ async function init(){
   DB = (d && typeof d==='object') ? d : {};
   if(!DB.lists) DB.lists = [];
   if(!DB.wrong) DB.wrong = {};
+  if(!DB.wrongT) DB.wrongT = {};
+  pruneWrongT();
   DB.version = 2;
   prefLoad();          /* 본체 저장이 실패했더라도 설정은 여기서 되살아난다 */
   applyTheme();
@@ -5192,7 +5248,7 @@ function startReviewSession(lid){
   const qs = buildQuestions(['mean','word'], early.length, early);
   if(qs.length >= Math.min(3, early.length)){
     { const aL = activeList(); STUDY.mult = (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; }
-    QZ = {qs: shuffleArr(qs), i:0, right:0, wrongL:[], combo:0, review:{lid, n:ws.length}};
+    QZ = {qs: shuffleArr(qs), i:0, right:0, wrongL:[], combo:0, lid, review:{lid, n:ws.length}};
     resetSessXp();
     $('qz-setup').style.display='none';
     $('qz-done').style.display='none';
@@ -5769,7 +5825,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-56';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-56'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-57'; });
 const WN_ITEMS = [
  ['🛍️','상점은 눌러서 열어요','아레나를 열면 리그 순위가 바로 보여요. XP 상점은 접혀 있다가 줄을 톡 누르면 열려요 — 지금 살 수 있는 상품이 몇 개인지도 함께 알려줘요'],
  ['✍️','채점이 진짜 시험처럼','스펠링은 이제 한 글자도 정확해야 정답! 오타 하나는 "아깝다!"로 격려(+3)하고 오답으로 남겨 다시 물어봐요 — 내신·수능 기준 그대로'],
