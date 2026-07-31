@@ -4543,6 +4543,8 @@ $('lvup-ok').addEventListener('click', ()=>$('lvup-modal').classList.remove('on'
 /* ════════ 닉네임 ════════ */
 const NICK_ADJ = ['새벽의','겁없는','조용한','번개','불꽃','유쾌한','성실한','비밀스런','용감한','재빠른','느긋한','반짝이는','단단한','엉뚱한','신중한','명랑한','끈질긴','바람의','호기심','폭풍의','달빛의','새침한','우아한','장난꾸러기','씩씩한','수줍은','당당한','똑똑한','졸린','배고픈','춤추는','노래하는','질주하는','은빛','금빛','무지개','한밤의','정오의','안개속','천둥','서리','이슬맺힌','활활타는','미소짓는','비상하는','잠입한','전설의','꼬마','대장','수수께끼','명탐정','거침없는','살금살금','반전의','최강','행운의','집중한','각성한','유유자적','묵묵한'];
 const NICK_ANI = [['호랑이','🐯'],['여우','🦊'],['부엉이','🦉'],['판다','🐼'],['늑대','🐺'],['고래','🐳'],['수달','🦦'],['토끼','🐰'],['펭귄','🐧'],['사자','🦁'],['다람쥐','🐿️'],['독수리','🦅'],['거북이','🐢'],['돌고래','🐬'],['치타','🐆'],['고슴도치','🦔'],['코알라','🐨'],['곰','🐻'],['북극곰','🐻‍❄️'],['하마','🦛'],['코뿔소','🦏'],['기린','🦒'],['얼룩말','🦓'],['캥거루','🦘'],['라마','🦙'],['나무늘보','🦥'],['스컹크','🦨'],['오소리','🦡'],['비버','🦫'],['공룡','🦖'],['용','🐉'],['유니콘','🦄'],['강아지','🐶'],['고양이','🐱'],['햄스터','🐹'],['병아리','🐤'],['오리','🦆'],['백조','🦢'],['공작','🦚'],['앵무새','🦜'],['플라밍고','🦩'],['비둘기','🕊️'],['문어','🐙'],['오징어','🦑'],['새우','🦐'],['게','🦀'],['복어','🐡'],['상어','🦈'],['물개','🦭'],['개구리','🐸'],['달팽이','🐌'],['나비','🦋'],['꿀벌','🐝'],['무당벌레','🐞'],['원숭이','🐵'],['고릴라','🦍'],['말','🐴'],['젖소','🐮'],['양','🐑'],['염소','🐐'],['수탉','🐓'],['박쥐','🦇']];
+const NICK_SPECIAL = [['1등급 성민이','👑']];   /* 👑 희귀 통짜 닉네임 — 뽑기마다 2% 확률로 그대로 등장 (숫자 변형 허용) */
+const NICK_SPECIAL_RATE = 0.02;
 const NICK_REROLL_COST = 2000;
 const NK_DESC_FIRST = '실명 대신 이 닉네임이 랭킹에 표시돼요.<br>마음에 들 때까지 다시 뽑을 수 있어요.<br><b style="color:var(--red)">한 번 확정하면 바꿀 수 없어요!</b>';
 let nickRerollMode = false;
@@ -4557,12 +4559,19 @@ function openNickReroll(){
 }
 let nickDraft = null;
 function rollNick(){
-  const a = NICK_ADJ[Math.floor(Math.random()*NICK_ADJ.length)];
-  const pair = NICK_ANI[Math.floor(Math.random()*NICK_ANI.length)];
   const num = Math.random()<0.35 ? ' '+(Math.floor(Math.random()*89)+11) : '';
-  nickDraft = {name:a+' '+pair[0]+num, avatar:pair[1]};
-  $('nk-avatar').textContent = pair[1];
-  $('nk-name').textContent = nickDraft.name;
+  let name, avatar;
+  if(NICK_SPECIAL.length && Math.random()<NICK_SPECIAL_RATE){
+    const sp = NICK_SPECIAL[Math.floor(Math.random()*NICK_SPECIAL.length)];   /* 👑 희귀 닉네임 당첨 */
+    name = sp[0]+num; avatar = sp[1];
+  }else{
+    const a = NICK_ADJ[Math.floor(Math.random()*NICK_ADJ.length)];
+    const pair = NICK_ANI[Math.floor(Math.random()*NICK_ANI.length)];
+    name = a+' '+pair[0]+num; avatar = pair[1];
+  }
+  nickDraft = {name:name, avatar:avatar};
+  $('nk-avatar').textContent = avatar;
+  $('nk-name').textContent = name;
 }
 function maybeNick(){
   const g = ensureGame();
@@ -4945,7 +4954,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.5.1';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -6034,7 +6043,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-60';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-60'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-61'; });
 const WN_ITEMS = [
  ['🎯','셀프테스트 과제','선생님이 낸 시험을 집에서 쳐요. 문항 수·통과 점수·도전 기회가 정해져 있고, 통과하면 선생님께 바로 알림이 가요! 홈 과제 카드에서 시작'],
  ['🃏','카드로도 오답 탈출','오답 복습을 카드로 할 때 「이제 안다 ✓」를 누르면 그 단어가 오답 목록에서 바로 빠져요. 아직 헷갈리는 단어만 남겨 두고 다음에 다시 만나요'],
