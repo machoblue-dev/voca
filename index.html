@@ -1470,7 +1470,7 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
       </div>
       <div class="set-row" id="row-push" style="display:none">
         <span class="sic" style="background:var(--teal-soft);color:var(--teal-deep)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 9.5a6 6 0 1 0-12 0c0 4.6-2 5.9-2 5.9h16s-2-1.3-2-5.9"></path><path d="M10.4 19a1.9 1.9 0 0 0 3.2 0"></path></svg></span>
-        <span class="lbl">복습 알림<small>저녁에 오늘 치 메모리 락을 알려줘요</small></span>
+        <span class="lbl">복습 알림<small>저녁에 오늘 복습할 게 있는지 알려줘요</small></span>
         <button class="sw" id="push-tog" aria-label="복습 알림"></button>
       </div>
       <div class="set-row">
@@ -1630,15 +1630,15 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
     <h3>메모리 락이 뭐예요?</h3>
     <div class="ml-lead">잊어버리는 건 게을러서가 아니에요.<br>뇌가 원래 그렇게 생겼어요.</div>
     <div class="ml-body">
-    <div class="ml-p">오늘 외운 단어는 <b>내일이면 절반쯤</b> 사라져요. 일주일 뒤엔 대부분 지워지고요. 뇌는 한 번 본 것을 "중요하지 않다"고 보고 버리거든요.</div>
-    <div class="ml-p">그런데 <b>잊어버리기 직전에 다시 보면</b> 뇌는 생각을 바꿔요. "또 나오네? 중요한가 보다." 그때마다 단어는 더 오래가는 기억 자리로 옮겨져요. 그 타이밍이 바로 <b>1·3·7·14·30일</b>이에요.</div>
+    <div class="ml-p">오늘 외운 단어는 <b>내일이면 절반쯤</b> 사라져요. 일주일이 지나면 거의 다 지워져요. 한 번만 본 것은 뇌가 안 중요하다고 여기고 버리거든요.</div>
+    <div class="ml-p">그런데 <b>잊기 직전에 다시 보면</b> 뇌가 생각을 바꿔요. "또 나오네? 중요한가 보다." 그러면 그 단어를 잘 안 지워지는 자리로 옮겨 놔요. 그 날짜가 바로 <b>1·3·7·14·30일</b>이에요.</div>
     <div class="ml-line"><span class="c">1일</span><span class="c">3일</span><span class="c">7일</span><span class="c">14일</span><span class="c">30일</span><span class="c g">🔓 졸업</span></div>
-    <div class="ml-p">메모리 락은 이 타이밍에 맞춰, 공부한 단어를 홈으로 다시 데려와요. 한 번의 복습은 몇 분이면 끝나요. 다섯 번을 채운 단어는 벼락치기와 달라요 — <b>한 달 뒤에도, 시험장에서도</b> 남아 있어요.</div>
+    <div class="ml-p">메모리 락은 그 날짜에 맞춰 공부한 단어를 홈으로 다시 불러와요. 한 번 복습하는 데 몇 분이면 끝나요. 다섯 번을 다 맞힌 단어는 벼락치기와 달라요. <b>한 달 뒤에도, 시험장에서도</b> 남아 있어요.</div>
     <div class="ml-how"><b>이렇게 써요</b>
-      <div>· 공부만 하면 자동으로 예약돼요. 따로 신청할 게 없어요.</div>
-      <div>· 복습 날엔 홈에 <b>[지금 복습]</b>이 떠요. 1·3일차는 골라서, <b>7일차부터는 직접 써서</b> 꺼내요.</div>
-      <div>· <b>정답으로 꺼낸 단어만</b> 다음 단계로 잠겨요. 틀리면 그날 다시 물어봐요.</div>
-      <div>· 밀려도 사라지지 않아요. 5번을 성공하면 졸업이에요.</div>
+      <div>· 공부만 하면 복습 날이 저절로 잡혀요. 따로 신청할 게 없어요.</div>
+      <div>· 복습 날에는 홈에 <b>[지금 복습]</b>이 떠요. 1·3일차는 보기에서 고르고, <b>7일차부터는 철자를 직접 써요</b>.</div>
+      <div>· <b>맞힌 단어만</b> 다음 단계로 잠겨요. 틀리면 그날 안에 다시 물어봐요.</div>
+      <div>· 며칠 밀려도 사라지지 않아요. 다섯 번을 다 맞히면 졸업이에요.</div>
     </div>
     <div class="ml-end">결국 메모리 락은 숙제가 아니라,<br><b>한 번 외운 단어를 두 번 외우지 않게 지켜 주는 자물쇠</b>예요.</div>
     </div>
@@ -2386,12 +2386,12 @@ document.addEventListener('click', e=>{
 function mlBadgeHTML(lid, word){
   /* 단어별 메모리 락 진행 게이지 — 5칸(성공 인출 횟수), 졸업은 🔓 */
   const g = ensureGame();
-  if(g.revDone && g.revDone[lid] && g.revDone[lid][word]) return '<span class="mlb done" title="메모리 락 졸업 — 5회 인출 성공">🔓 졸업</span>';
+  if(g.revDone && g.revDone[lid] && g.revDone[lid][word]) return '<span class="mlb done" title="메모리 락 졸업 — 다섯 번 다 맞혔어요">🔓 졸업</span>';
   const v = g.rev2 && g.rev2[lid] ? g.rev2[lid][word] : undefined;
   if(v === undefined) return '';
   const st = Math.floor(v/100000);
   let cells = ''; for(let i=0;i<REV_GAPS.length;i++) cells += '<i class="'+(i<st?'f':'')+'"></i>';
-  return '<span class="mlb" title="메모리 락 '+st+'/5회 성공"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg><span class="mlc">'+cells+'</span></span>';
+  return '<span class="mlb" title="메모리 락 '+st+'/5회 맞힘"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg><span class="mlc">'+cells+'</span></span>';
 }
 function wordCard(w, no){
   return '<div class="wcard"><div class="wc-head">'
@@ -2850,12 +2850,12 @@ function endQuiz(){
     revDueWords(rv.lid).forEach(w=>{ if(Math.floor((m2[w.word]||0)/100000) >= 2) remainLate++; });
   }
   const headP = rv
-    ? (remain ? '오늘 큐에 <b>'+remain+'단어</b>가 남았어요. 정답으로 꺼내야 다음 단계로 잠겨요.' : '오늘의 메모리 락 완료 — 전부 다음 단계로 잠겼어요 🔒')
+    ? (remain ? '오늘 복습할 단어가 <b>'+remain+'개</b> 남았어요. 맞혀야 다음 단계로 잠겨요.' : '오늘의 메모리 락 완료 — 전부 다음 단계로 잠겼어요 🔒')
     : (uniq.length?'틀린 단어 '+uniq.length+'개는 오답 목록에 저장했어요.'+(QZ.retry?' 다시 도전에서 맞힌 단어는 1일차에 등록됐어요.':''):'전부 맞혔어요. 완벽해요!');
   box.innerHTML = '<div class="result-big">'+starsHTML(awardStars('quiz', QZ.right, total))+'<div class="sc"><em>'+QZ.right+'</em> / '+total+'</div><p>'+headP+'</p>'+xpLineHTML()+revNextLine()+'</div>'
     +(uniq.length?'<div class="wrong-list">'+uniq.map(w=>'<div class="wrong-item"><span class="wi-w">'+esc(w.word)+'</span><span class="wi-m">'+esc(w.meaning)+'</span><button class="spk sm" data-say="'+esc(w.word)+'">🔊</button></div>').join('')+'</div>':'')
     +(rv
-      ? '<div class="row">'+(remain?'<button class="btn primary" id="qz-rv-again">'+(remainLate===remain?'남은 '+remain+'단어 쓰기로 인출':'남은 '+remain+'단어 다시 인출')+'</button>':'')+'<button class="btn '+(remain?'ghost':'primary')+'" id="qz-home">홈으로</button></div>'
+      ? '<div class="row">'+(remain?'<button class="btn primary" id="qz-rv-again">'+(remainLate===remain?'남은 '+remain+'단어 쓰기로 풀기':'남은 '+remain+'단어 다시 풀기')+'</button>':'')+'<button class="btn '+(remain?'ghost':'primary')+'" id="qz-home">홈으로</button></div>'
       : '<div class="row"><button class="btn ghost" id="qz-again">다시 풀기</button><button class="btn primary" id="qz-home">홈으로</button></div>')
     +(uniq.length && !rv?'<button class="btn soft block" id="qz-gowrong" style="margin-top:10px">오답 복습 하러 가기</button>':'');
   if(QZ.hw && !rv) hwFinish(QZ.hw, QZ.right, total, box);   /* 🎯 셀프테스트 채점 */
@@ -2988,9 +2988,9 @@ function endSpell(){
   const rv = SP.review;
   if(rv){   /* 메모리 락 쓰기 인출의 마무리 — 남은 큐를 보여주고 이어서 꺼내게 한다 */
     const remain = revDueWords(rv.lid).length;
-    const headP = remain ? '오늘 큐에 <b>'+remain+'단어</b>가 남았어요. 정답으로 꺼내야 다음 단계로 잠겨요.' : '오늘의 메모리 락 완료 — 전부 다음 단계로 잠겼어요 🔒';
+    const headP = remain ? '오늘 복습할 단어가 <b>'+remain+'개</b> 남았어요. 맞혀야 다음 단계로 잠겨요.' : '오늘의 메모리 락 완료 — 전부 다음 단계로 잠겼어요 🔒';
     box.innerHTML = '<div class="result-big">'+starsHTML(awardStars('spell', SP.right, SP.deck.length))+'<div class="sc"><em>'+SP.right+'</em> / '+SP.deck.length+'</div><p>'+headP+'</p>'+xpLineHTML()+revNextLine()+'</div>'
-      +'<div class="row">'+(remain?'<button class="btn primary" id="sp-rv-again">남은 '+remain+'단어 다시 인출</button>':'')+'<button class="btn '+(remain?'ghost':'primary')+'" id="sp-home">홈으로</button></div>';
+      +'<div class="row">'+(remain?'<button class="btn primary" id="sp-rv-again">남은 '+remain+'단어 다시 풀기</button>':'')+'<button class="btn '+(remain?'ghost':'primary')+'" id="sp-home">홈으로</button></div>';
     const ra = $('sp-rv-again'); if(ra) ra.addEventListener('click', ()=>startReviewSession(rv.lid));
     $('sp-home').addEventListener('click', ()=>go('scr-home'));
     return;
@@ -4954,7 +4954,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.5.1';
+const APP_VERSION = '2.5.2';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -5210,7 +5210,7 @@ function revTouch(lid, word, ok){
       revDoneCnt++;
       checkBadges();
       clearTimeout(revDoneTimer);
-      revDoneTimer = setTimeout(()=>{ toast('🔓 '+revDoneCnt+'개 단어, 5회 인출 성공으로 졸업! 오래 남는 기억이 됐어요'); revDoneCnt = 0; }, 1500);
+      revDoneTimer = setTimeout(()=>{ toast('🔓 '+revDoneCnt+'개 단어, 다섯 번 다 맞혀서 졸업! 오래 남는 기억이 됐어요'); revDoneCnt = 0; }, 1500);
       return;
     }
     m[word] = ns*100000 + (today + REV_GAPS[ns]);
@@ -5354,7 +5354,7 @@ function renderReview(){
       + (revExpand ? up.map(x=>'<div class="rv-up-row"><span class="sp">'+(TIERS[x.L.tier||1]||TIERS[1]).e+' <b>'+esc(x.L.name)+'</b> — '+revDayLabel(x.nextDue, today)+' · '+x.day+'일차 '+x.nextN+'단어</span><button class="rv-del" data-del="'+esc(x.lid)+'" aria-label="메모리 락에서 빼기">✕</button></div>').join('') : '')
     : '';
   if(!due.length){ el.innerHTML = '<div class="rv-nwrap">' + nextLine + '<button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'; return; }
-  el.innerHTML = '<div class="rv-h"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px;margin-right:4px;color:var(--red)"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>오늘의 메모리 락<span>1·3일차는 고르기 · 7일차부터는 쓰기 — 정답으로 꺼내야 잠겨요</span><button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'
+  el.innerHTML = '<div class="rv-h"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px;margin-right:4px;color:var(--red)"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>오늘의 메모리 락<span>1·3일차는 고르기 · 7일차부터는 쓰기 — 맞혀야 잠겨요</span><button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'
     + due.map(x=>{
         const late = today - x.minDue;
         return '<div class="rv-row"><div class="rv-info"><b>'+esc(x.L.name)+'</b><span>'
@@ -5375,7 +5375,7 @@ $('rev-card').addEventListener('click', e=>{
     const lid = d.dataset.del;
     const L = DB.lists.find(l=>l.id===lid);
     const nm = L ? L.name : '이 단어장';
-    if(!confirm('"'+nm+'" 메모리 락 기록을 지울까요?\n쌓아 온 일차 기록이 사라지고, 다시 공부하면 1일차부터 시작돼요.')) return;
+    if(!confirm('"'+nm+'" 메모리 락 기록을 지울까요?\n지금까지 쌓은 일차가 사라져요. 다시 공부하면 1일차부터 시작해요.')) return;
     const g = ensureGame();
     if(g.rev2) delete g.rev2[lid];
     if(g.review) delete g.review[lid];
@@ -6043,7 +6043,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-60';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-61'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-62'; });
 const WN_ITEMS = [
  ['🎯','셀프테스트 과제','선생님이 낸 시험을 집에서 쳐요. 문항 수·통과 점수·도전 기회가 정해져 있고, 통과하면 선생님께 바로 알림이 가요! 홈 과제 카드에서 시작'],
  ['🃏','카드로도 오답 탈출','오답 복습을 카드로 할 때 「이제 안다 ✓」를 누르면 그 단어가 오답 목록에서 바로 빠져요. 아직 헷갈리는 단어만 남겨 두고 다음에 다시 만나요'],
