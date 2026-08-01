@@ -1498,7 +1498,7 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
         </div>
       </div>
       <div class="fld"><label>과제 제목 — 비우면 단어장 이름으로</label><input type="text" id="as-title" placeholder="예) 3월 2주차 필수 어휘 과제"></div>
-      <div class="fld"><label>단어장</label><button type="button" class="as-list-btn ph" id="as-list-btn"><span id="as-list-name">단어장을 골라 주세요</span><i class="chev">▾</i></button><input type="hidden" id="as-list"></div>
+      <div class="fld"><label id="as-list-lb">단어장</label><button type="button" class="as-list-btn ph" id="as-list-btn"><span id="as-list-name">단어장을 골라 주세요</span><i class="chev">▾</i></button><input type="hidden" id="as-list"><div class="tchips" id="as-list-chips" style="display:none"></div></div>
       <div class="row" style="gap:8px">
         <div class="fld" style="flex:1;margin-bottom:0"><label>학습 모드</label><select id="as-mode"><option value="any">아무 모드나</option><option value="quiz">객관식 퀴즈</option><option value="spell">스펠링 쓰기</option><option value="listen">듣기</option><option value="flash">플래시카드</option></select></div>
         <div class="fld" style="flex:1;margin-bottom:0"><label id="as-acc-lb">기준 정답률(%)</label><input type="number" id="as-acc" min="1" max="100" placeholder="비우면 없음"></div>
@@ -1619,8 +1619,8 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
 </div>
 <div class="ovl" id="list-pick">
   <div class="card pick-modal">
-    <h3>단어장 고르기</h3>
-    <div class="desc">묶음을 누르면 안에 있는 단어장이 열려요</div>
+    <h3 id="lp-title">단어장 고르기</h3>
+    <div class="desc" id="lp-desc">묶음을 누르면 안에 있는 단어장이 열려요</div>
     <div class="lp-body" id="lp-body"></div>
     <button class="btn block" id="lp-close" style="flex:0 0 auto">닫기</button>
   </div>
@@ -2726,22 +2726,23 @@ const QZ_ELIG = {
   root: w=>!!w.group && rootPrefixes(w.group).length>0,
   ex:   w=>!!(w.ex && findToken(w.ex, w.word))
 };
-function buildQuestions(types, count, srcPool){
+function buildQuestions(types, count, srcPool, uniW){
   const L = activeList();
-  const pool = shuffleArr((srcPool || L.words).filter(w=>types.some(t=>QZ_ELIG[t](w)))).slice(0, count);
-  const allMeanings = Array.from(new Set(L.words.map(w=>w.meaning).filter(Boolean)));
-  const allWords = Array.from(new Set(L.words.map(w=>w.word)));
+  const uni = uniW || L.words;   /* 보기·오답을 길어 오는 단어 바다 — 🎯 복수 단어장 셀프테스트는 합친 단어를 받는다 */
+  const pool = shuffleArr((srcPool || uni).filter(w=>types.some(t=>QZ_ELIG[t](w)))).slice(0, count);
+  const allMeanings = Array.from(new Set(uni.map(w=>w.meaning).filter(Boolean)));
+  const allWords = Array.from(new Set(uni.map(w=>w.word)));
   const relPool = [];
-  L.words.forEach(w=>{ splitDot(w.syn).concat(splitDot(w.ant)).forEach(it=>{ const en=engPart(it).en; if(en) relPool.push({en, owner:w.word}); }); });
+  uni.forEach(w=>{ splitDot(w.syn).concat(splitDot(w.ant)).forEach(it=>{ const en=engPart(it).en; if(en) relPool.push({en, owner:w.word}); }); });
   const etymPool = [];
-  L.words.forEach(w=>{ etymPieces(w.etym).forEach(p=>etymPool.push({tok:p.tok, ko:p.ko, owner:w.word})); });
+  uni.forEach(w=>{ etymPieces(w.etym).forEach(p=>etymPool.push({tok:p.tok, ko:p.ko, owner:w.word})); });
   const make = {
     mean: w=>qMean(w, allMeanings),
     word: w=>qWord(w, allWords),
     rel:  w=>qRel(w, relPool, allMeanings),
     conf: w=>qConf(w, allWords),
     etym: w=>qEtym(w, etymPool),
-    root: w=>qRoot(w, L.words),
+    root: w=>qRoot(w, uni),
     ex:   w=>qEx(w, allWords)
   };
   const qs = [];
@@ -2782,7 +2783,7 @@ $('qz-opts').addEventListener('click', e=>{
   const b = e.target.closest('.opt'); if(!b || !QZ) return;
   const q = QZ.qs[QZ.i];
   const pick = parseInt(b.dataset.i,10);
-  const qlid = QZ.lid || DB.activeListId;   /* 문제를 뽑아 온 단어장 — 채점 도중 바뀌어도 흔들리지 않게 */
+  const qlid = (q.w && q.w._lid) || QZ.lid || DB.activeListId;   /* 문제를 뽑아 온 단어장 — 채점 도중 바뀌어도 흔들리지 않게. 🎯 복수 단어장은 단어에 붙은 _lid가 기준 */
   revTouch(qlid, q.w.word, pick===q.ans);
   if(!QZ.review) dayBump(1);   /* 메모리 락 복습 문항은 '오늘의 새 단어'에 안 센다 */
   if(!QZ.retry) sessBump(pick===q.ans);   /* 다시 도전 라운드는 점수·별·기록에서 뺀다 */
@@ -2825,7 +2826,7 @@ function startQuizRetry(){
      (메모리 락 복습 세션은 자체 재도전 흐름이 있으므로 여기서 제외) */
   const uniq = []; const seen = new Set();
   QZ.wrongL.forEach(w=>{ if(!seen.has(w.word)){ seen.add(w.word); uniq.push(w); } });
-  const rqs = buildQuestions(Array.from(qzSel), uniq.length, uniq);
+  const rqs = buildQuestions(Array.from(qzSel), uniq.length, uniq, QZ.uni);
   if(!rqs.length){ endQuiz(); return; }
   QZ.mainTotal = QZ.qs.length;
   QZ.retry = true;
@@ -4168,14 +4169,24 @@ $('goal-modal').addEventListener('click', e=>{
 /* ── 단어장 고르기 모달: 묶음은 접힌 채로, 누르면 열림 (홈·과제 겸용) ── */
 let lpMode = 'home';   /* 'home' 학습용 선택 | 'assign' 과제용 선택 */
 function renderListPick(){
+  const multi = (lpMode==='assign' && asKind==='test');   /* 🎯 셀프테스트만 여러 개를 담는다 */
   const cid = lpMode==='assign' ? $('as-list').value : DB.activeListId;
   const tag = lpMode==='assign' ? ' · 선택됨' : ' · 사용 중';
-  const row = l=>'<button type="button" class="lp-row'+(l.id===cid?' on':'')+'" data-pick="'+esc(l.id)+'">'
+  const row = l=>{
+    const k = multi ? asLists.indexOf(l.id) : -1;
+    const on = multi ? (k>=0) : (l.id===cid);
+    const mk = multi ? (' · '+(k===0?'대표':(k+1)+'번째')) : tag;
+    return '<button type="button" class="lp-row'+(on?' on':'')+'" data-pick="'+esc(l.id)+'">'
     +'<span class="lt">'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+'</span>'
-    +'<span class="lc">'+(l.words||[]).length+'개'+(l.id===cid?tag:'')+'</span></button>';
+    +'<span class="lc">'+(l.words||[]).length+'개'+(on?mk:'')+'</span></button>';
+  };
+  const lpT = $('lp-title'), lpD = $('lp-desc'), lpC = $('lp-close');
+  if(lpT) lpT.textContent = multi ? '단어장 고르기 — 여러 개' : '단어장 고르기';
+  if(lpD) lpD.textContent = multi ? '누를 때마다 담기고, 다시 누르면 빠져요. 처음 담은 단어장이 대표예요' : '묶음을 누르면 안에 있는 단어장이 열려요';
+  if(lpC) lpC.textContent = multi ? '선택 완료' : '닫기';
   const html = groupLists(DB.lists).map(it=>{
     if(it.one) return row(it.one);
-    const open = it.lists.some(l=>l.id===cid);
+    const open = multi ? it.lists.some(l=>asLists.indexOf(l.id)>=0) : it.lists.some(l=>l.id===cid);
     return '<div class="li-grp'+(open?' open':'')+'">'
       +'<button type="button" class="li-grp-h"><span class="gname"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;color:var(--amber)"><path d="M3.5 6.5a2 2 0 0 1 2-2H9l2 2.5h7.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"></path></svg>'+esc(it.grp)+'</span>'
       +'<span class="gmeta">'+it.lists.length+'개<i class="chev">▾</i></span></button>'
@@ -4197,6 +4208,11 @@ $('list-pick').addEventListener('click', e=>{
     const L = DB.lists.find(l=>l.id===r.dataset.pick); if(!L) return;
     if(lpMode === 'exam'){ examScopePick(L.name); return; }
     if(lpMode === 'assign'){   /* 과제용 — 학습 중인 단어장은 건드리지 않는다 */
+      if(asKind === 'test'){   /* 🎯 셀프테스트 — 담고 빼기를 반복하도록 모달은 열어 둔다 */
+        setAsLists(asLists.indexOf(L.id)>=0 ? asLists.filter(x=>x!==L.id) : asLists.concat([L.id]));
+        renderListPick();
+        return;
+      }
       setAsList(L);
       $('list-pick').classList.remove('on');
       lpMode = 'home';
@@ -4954,7 +4970,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.5.2';
+const APP_VERSION = '2.6.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -5654,6 +5670,19 @@ function assignDone(a){
   });
   return c >= need;
 }
+/* 🎯 과제가 가리키는 단어장들 — 복수 지정(list_ids)이면 담은 차례대로, 아니면 대표 하나 */
+function hwLists(a){
+  const ids = (a.list_ids && a.list_ids.length) ? a.list_ids : [a.list_id];
+  const names = a.list_names || [];
+  return ids.map((id, i)=>{
+    const L = DB.lists.find(l=>l.id===id) || null;
+    return {id, L, name: names[i] || (L ? L.name : null) || a.list_name};
+  });
+}
+function hwListLabel(a){
+  const xs = hwLists(a);
+  return xs.length>1 ? (xs[0].name+' 외 '+(xs.length-1)+'개') : (xs[0].name || a.list_name);
+}
 function hwCond(a){
   if(a.kind==='test') return '🎯 '+(MODE_KO_HW[a.mode]||'퀴즈')+' '+(a.q_count||'?')+'문항 · '+(a.min_acc||0)+'%↑'+(a.max_tries>0?' · '+a.max_tries+'회 안':'');
   return MODE_KO_HW[a.mode||'any'] + (a.min_acc?' · 정답률 '+a.min_acc+'%↑':'') + ((a.min_count||1)>1?' · '+a.min_count+'회':'');
@@ -5673,7 +5702,7 @@ function renderHW(){
   el.className = 'hw-card';
   el.innerHTML = '<div class="hw-h"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:2px;color:var(--amber)"><path d="M15 4h2a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="9" y="2.5" width="6" height="3.5" rx="1.2"></rect><path d="M9 12h6M9 16h4"></path></svg>과제<span>'+(leftN? leftN+'개 남음':'전부 완료 🎉')+'</span></div>'
     + rows.map(x=>{
-        const a = x.a; const L = DB.lists.find(l=>l.id===a.list_id);
+        const a = x.a;
         const test = a.kind==='test';
         const st = test ? hwTestState(a) : null;
         let ddTxt, dcls = '';
@@ -5688,15 +5717,15 @@ function renderHW(){
           else if(a.max_tries>0) my = ' · 기회 '+a.max_tries+'번';
         }
         const canGo = !x.done && !(test && (st.spent || x.due < now));
-        return '<div class="hw-row"><div class="hw-i"><b>'+esc(a.title||a.list_name)+'</b><span>'+esc(L?L.name:a.list_name)+' · '+hwCond(a)+esc(my)+'</span></div><span class="hw-dday'+dcls+'">'+ddTxt+'</span>'+(canGo?'<button type="button" class="hw-go" data-aid="'+esc(a.id)+'">지금 하기</button>':'')+'</div>';
+        return '<div class="hw-row"><div class="hw-i"><b>'+esc(a.title||a.list_name)+'</b><span>'+esc(hwListLabel(a))+' · '+hwCond(a)+esc(my)+'</span></div><span class="hw-dday'+dcls+'">'+ddTxt+'</span>'+(canGo?'<button type="button" class="hw-go" data-aid="'+esc(a.id)+'">지금 하기</button>':'')+'</div>';
       }).join('');
 }
 $('hw-card').addEventListener('click', e=>{
   const b = e.target.closest('.hw-go'); if(!b) return;
   const a = (DB.assigns||[]).find(x=>x.id===b.dataset.aid); if(!a) return;
+  if(a.kind==='test'){ startHwTest(a); return; }   /* 🎯 셀프테스트는 전용 흐름으로 — 단어장 확인도 그 안에서 */
   const L = DB.lists.find(l=>l.id===a.list_id);
   if(!L){ toast('이 단어장이 아직 내 목록에 없어요 — 선생님께 문의해 주세요'); return; }
-  if(a.kind==='test'){ startHwTest(a, L); return; }   /* 🎯 셀프테스트는 전용 흐름으로 */
   DB.activeListId = L.id; scheduleSave();
   const m = a.mode||'any';
   if(m==='flash'){ startFlash(L.words, false); go('scr-flash'); }
@@ -5727,24 +5756,39 @@ function hwTestState(a){
   const spent = !r.passed && a.max_tries>0 && r.n >= a.max_tries;
   return {n:r.n||0, passed:!!r.passed, best:r.best||0, spent};
 }
-function startHwTest(a, L){
+function startHwTest(a){
+  const xs = hwLists(a);
+  const miss = xs.filter(x=>!x.L || !Array.isArray(x.L.words));
+  if(miss.length){
+    toast(miss.length===xs.length
+      ? '이 단어장이 아직 내 목록에 없어요 — 선생님께 문의해 주세요'
+      : '「'+miss[0].name+'」'+(miss.length>1?' 외 '+(miss.length-1)+'개':'')+' 단어장이 아직 내 목록에 없어요 — 선생님께 문의해 주세요');
+    return;
+  }
+  const Ls = xs.map(x=>x.L), L = Ls[0];
+  /* 🎯 여러 단어장을 한 그릇에 섞는다. 단어마다 어느 단어장에서 왔는지 표를 붙여
+     오답·메모리 락이 제 단어장으로 적힌다 */
+  const words = [];
+  Ls.forEach(l=>{ (l.words||[]).forEach(w=>words.push(Object.assign({_lid:l.id, _lname:l.name}, w))); });
   const st = hwTestState(a);
   if(st.passed){ toast('이미 통과한 테스트예요 🎉'); return; }
   if(st.spent){ toast('도전 기회를 모두 썼어요'); return; }
   if((Date.parse(a.due_at)||0) < Date.now()){ toast('마감이 지난 테스트예요'); return; }
-  const n = Math.max(1, Math.min(a.q_count||10, (L.words||[]).length));
+  if(!words.length){ toast('이 단어장에 단어가 없어요 — 선생님께 알려 주세요'); return; }
+  const n = Math.max(1, Math.min(a.q_count||10, words.length));
   const tryNo = st.n + 1;
   const head = a.max_tries>0 ? tryNo+' / '+a.max_tries+'번째 도전' : tryNo+'번째 도전';
-  if(!confirm('🎯 셀프테스트 시작 — '+head+'\n\n'+(MODE_KO_HW[a.mode]||'퀴즈')+' '+n+'문항 · '+(a.min_acc||0)+'% 이상이면 통과!\n끝까지 풀어야 기록돼요. 중간에 나가면 이번 판은 기록되지 않아요.\n\n시작할까요?')) return;
+  const src = Ls.length>1 ? '\n단어장 '+Ls.length+'개에서 섞여 나와요 — '+Ls.map(l=>l.name).join(' · ') : '';
+  if(!confirm('🎯 셀프테스트 시작 — '+head+'\n\n'+(MODE_KO_HW[a.mode]||'퀴즈')+' '+n+'문항 · '+(a.min_acc||0)+'% 이상이면 통과!'+src+'\n끝까지 풀어야 기록돼요. 중간에 나가면 이번 판은 기록되지 않아요.\n\n시작할까요?')) return;
   DB.activeListId = L.id; scheduleSave();
   const hw = {aid:a.id, nn:'hw'+Date.now().toString(36)+Math.random().toString(36).slice(2,8), need:(a.min_acc||0)};
   if(a.mode==='quiz'){
-    const types = QZ_TYPES.map(t=>t.v).filter(v=>L.words.some(w=>QZ_ELIG[v](w)));
+    const types = QZ_TYPES.map(t=>t.v).filter(v=>words.some(w=>QZ_ELIG[v](w)));
     qzSel = new Set(types);   /* 다시 도전 라운드가 이 선택을 쓴다 */
     STUDY.mult = (TIERS[L.tier||1]||TIERS[1]).m;
-    const qs = buildQuestions(types, n);
+    const qs = buildQuestions(types, n, null, words);
     if(qs.length<1){ toast('이 단어장으로는 문제를 만들 수 없어요 — 선생님께 알려 주세요'); return; }
-    QZ = {qs, i:0, right:0, wrongL:[], combo:0, lid:L.id, hw}; resetSessXp();
+    QZ = {qs, i:0, right:0, wrongL:[], combo:0, lid:L.id, uni:words, hw}; resetSessXp();
     sessStart('quiz', L.id);
     $('qz-setup').style.display='none';
     $('qz-done').style.display='none';
@@ -5752,8 +5796,7 @@ function startHwTest(a, L){
     renderQ();
     go('scr-quiz');
   } else {
-    const ws = shuffleArr((L.words||[]).slice()).slice(0, n);
-    if(!ws.length){ toast('이 단어장에 단어가 없어요 — 선생님께 알려 주세요'); return; }
+    const ws = shuffleArr(words.slice()).slice(0, n);
     startSpell(ws, a.mode==='listen', false);
     if(SP && SP.deck && SP.deck.length) SP.hw = hw;
     go('scr-spell');
@@ -5859,6 +5902,27 @@ document.getElementById('as-target-chips').addEventListener('click', e=>{
 });
 /* ── 🎯 과제 종류: 학습 과제 | 셀프테스트 ── */
 let asKind = 'study';
+let asLists = [];   /* 🎯 셀프테스트에 담은 단어장 id — 담은 차례대로. 첫 번째가 대표다 */
+function asPickedLists(){ return asLists.map(id=>DB.lists.find(l=>l.id===id)).filter(Boolean); }
+function asWordCount(Ls){ return Ls.reduce((n, l)=>n + ((l.words||[]).length), 0); }
+function setAsLists(ids){
+  const seen = {};
+  asLists = (ids||[]).filter(id=>{ if(seen[id] || !DB.lists.some(l=>l.id===id)) return false; seen[id] = 1; return true; });
+  const Ls = asPickedLists();
+  $('as-list').value = Ls.length ? Ls[0].id : '';
+  $('as-list-name').textContent = Ls.length
+    ? (Ls.length===1
+        ? (TIERS[Ls[0].tier||1]||TIERS[1]).e+' '+Ls[0].name+' · '+(Ls[0].words||[]).length+'단어'
+        : '단어장 '+Ls.length+'개 · 모두 '+asWordCount(Ls)+'단어')
+    : (DB.lists.length ? '단어장을 골라 주세요 — 여러 개 가능' : '단어장이 없어요');
+  $('as-list-btn').classList.toggle('ph', !Ls.length);
+  $('as-list-chips').innerHTML = Ls.map((l, i)=>'<button type="button" class="tchip" data-lid="'+esc(l.id)+'">'+(i===0?'대표 ':'')+esc(l.name)+'</button>').join('')
+    + '<span class="hint">'+(Ls.length ? '맨 앞이 대표 단어장이에요. 태그를 누르면 빼요.' : '두 개 이상 담으면 한 시험에서 섞여 나와요.')+'</span>';
+}
+$('as-list-chips').addEventListener('click', e=>{
+  const ch = e.target.closest('.tchip'); if(!ch) return;
+  setAsLists(asLists.filter(x=>x!==ch.dataset.lid));
+});
 function setAsKind(k){
   asKind = (k === 'test') ? 'test' : 'study';
   $('ak-study').classList.toggle('on', asKind === 'study');
@@ -5867,10 +5931,15 @@ function setAsKind(k){
   $('as-count-wrap').style.display = asKind === 'test' ? 'none' : '';
   $('as-acc-lb').textContent = asKind === 'test' ? '통과 정답률(%)' : '기준 정답률(%)';
   $('as-acc').placeholder = asKind === 'test' ? '예: 90' : '비우면 없음';
+  $('as-list-chips').style.display = asKind === 'test' ? 'flex' : 'none';
+  $('as-list-lb').textContent = asKind === 'test' ? '단어장 — 여러 개를 한 시험에 담을 수 있어요' : '단어장';
   if(asKind === 'test'){
     if(!$('as-acc').value) $('as-acc').value = 90;
     const m = $('as-mode');
     if(m.value === 'any' || m.value === 'flash') m.value = 'quiz';
+    setAsLists(asLists.length ? asLists : ($('as-list').value ? [$('as-list').value] : []));
+  } else {
+    setAsList(DB.lists.find(l=>l.id===$('as-list').value) || null);
   }
 }
 $('ak-study').addEventListener('click', ()=>setAsKind('study'));
@@ -5888,7 +5957,8 @@ $('as-list-btn').addEventListener('click', ()=>{ lpMode = 'assign'; renderListPi
 function renderAssign(){
   const curId = $('as-list').value;
   const cur = DB.lists.find(l=>l.id===curId) || DB.lists.find(l=>l.id===DB.activeListId) || null;
-  setAsList(cur);
+  if(asKind === 'test') setAsLists(asLists.length ? asLists : (cur ? [cur.id] : []));
+  else setAsList(cur);
   if(!$('as-due').value){
     const d = new Date(Date.now()+3*86400000); d.setHours(22,0,0,0);
     const pad = n=>String(n).padStart(2,'0');
@@ -5913,7 +5983,7 @@ function renderAssignList(){
     const due = new Date(a.due_at);
     const tgt = (a.target_classes && a.target_classes.length) ? a.target_classes.join(', ') : '전체';
     const past = (Date.parse(a.due_at)||0) < Date.now();
-    return '<div class="as-item hw-card" style="margin-top:10px"><div class="hw-row" style="border-top:0;padding-top:0"><div class="hw-i"><b>'+esc(a.title||a.list_name)+'</b><span>'+esc(a.list_name)+' · '+hwCond(a)+'</span><span>~'+(due.getMonth()+1)+'/'+due.getDate()+' '+pad(due.getHours())+':'+pad(due.getMinutes())+(past?' · <b style="color:var(--red-deep)">마감됨</b>':'')+' · 대상: '+esc(tgt)+'</span></div><button type="button" class="grp-back as-del" data-aid="'+esc(a.id)+'">삭제</button></div><div class="as-status" data-aid="'+esc(a.id)+'">완료 현황 불러오는 중…</div></div>';
+    return '<div class="as-item hw-card" style="margin-top:10px"><div class="hw-row" style="border-top:0;padding-top:0"><div class="hw-i"><b>'+esc(a.title||a.list_name)+'</b><span>'+esc(hwListLabel(a))+' · '+hwCond(a)+'</span><span>~'+(due.getMonth()+1)+'/'+due.getDate()+' '+pad(due.getHours())+':'+pad(due.getMinutes())+(past?' · <b style="color:var(--red-deep)">마감됨</b>':'')+' · 대상: '+esc(tgt)+'</span></div><button type="button" class="grp-back as-del" data-aid="'+esc(a.id)+'">삭제</button></div><div class="as-status" data-aid="'+esc(a.id)+'">완료 현황 불러오는 중…</div></div>';
   }).join('');
   as.forEach(a=>{ if(a.kind==='test') loadHwStatus(a); else loadAssignStatus(a.id); });
 }
@@ -5935,6 +6005,7 @@ $('as-create').addEventListener('click', async ()=>{
   if(!isStaff()) return;
   const lid = $('as-list').value; const L = DB.lists.find(l=>l.id===lid);
   if(!L){ toast('단어장을 골라 주세요'); return; }
+  const Ls = (asKind==='test' && asLists.length) ? asPickedLists() : [L];   /* 🎯 첫 번째가 대표 */
   const mode = $('as-mode').value;
   const acc = parseInt($('as-acc').value, 10);
   if(mode==='flash' && acc>0){ toast('플래시카드는 정답률을 잴 수 없어요 — 기준을 비우거나 모드를 바꿔요'); return; }
@@ -5948,7 +6019,7 @@ $('as-create').addEventListener('click', async ()=>{
   if(!(due.getTime() > Date.now())){ toast('마감은 지금보다 뒤여야 해요'); return; }
   const targets = ($('as-target').value||'').split(',').map(x=>x.trim()).filter(Boolean);
   const body = {
-    title: $('as-title').value.trim() || (L.name+' 과제'),
+    title: $('as-title').value.trim() || (L.name+(Ls.length>1?' 외 '+(Ls.length-1)+'개':'')+' 과제'),
     list_id: lid, list_name: L.name, mode,
     min_acc: (acc>0 ? Math.min(100, acc) : null),
     min_count: parseInt($('as-count').value, 10)||1,
@@ -5959,16 +6030,19 @@ $('as-create').addEventListener('click', async ()=>{
   if(asKind==='test'){
     const qn = Math.max(5, Math.min(100, parseInt($('as-qn').value, 10) || 20));
     body.kind = 'test';
-    body.q_count = Math.min(qn, (L.words||[]).length || qn);
+    body.q_count = Math.min(qn, asWordCount(Ls) || qn);
     body.max_tries = parseInt($('as-tries').value, 10) || null;
     body.min_count = 1;
     body.min_acc = Math.min(100, Math.max(1, acc));
+    /* 단어장이 하나면 예전 모양 그대로 보낸다 — 복수단어장 SQL을 안 깐 서버에서도 등록된다 */
+    if(Ls.length > 1){ body.list_ids = Ls.map(l=>l.id); body.list_names = Ls.map(l=>l.name); }
   }
   /* 학습 과제는 kind를 보내지 않는다 — 셀프테스트 SQL을 아직 안 깐 서버에서도 예전 그대로 등록된다(서버 기본값이 'study') */
   const r = await api('/rest/v1/assignments', {method:'POST', headers:{Prefer:'return=minimal'}, body: JSON.stringify(body)});
   if(!r){ toast('네트워크가 불안정해요 — 잠시 후 다시'); return; }
   if(r.status===404){ noAssignFlag = true; renderAssignList(); return; }
   if(!r.ok){
+    if(r.status===400 && asKind==='test' && Ls.length>1){ toast('서버 준비가 필요해요 — 복수 단어장 SQL(기원T_VOCA_셀프테스트_복수단어장_패치.sql)을 먼저 실행해 주세요'); return; }
     if(r.status===400 && asKind==='test'){ toast('서버 준비가 필요해요 — 셀프테스트 SQL(voca_selftest.sql)을 먼저 실행해 주세요'); return; }
     toast('과제 등록 실패 ('+r.status+') — 서버 설정을 확인해 주세요'); return;
   }
@@ -6043,7 +6117,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-60';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-62'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-63'; });
 const WN_ITEMS = [
  ['🎯','셀프테스트 과제','선생님이 낸 시험을 집에서 쳐요. 문항 수·통과 점수·도전 기회가 정해져 있고, 통과하면 선생님께 바로 알림이 가요! 홈 과제 카드에서 시작'],
  ['🃏','카드로도 오답 탈출','오답 복습을 카드로 할 때 「이제 안다 ✓」를 누르면 그 단어가 오답 목록에서 바로 빠져요. 아직 헷갈리는 단어만 남겨 두고 다음에 다시 만나요'],
@@ -6073,6 +6147,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['🎯','셀프테스트 — 단어장 여러 개','과제 종류를 🎯 셀프테스트로 두면 단어장을 여러 개 담을 수 있어요. 담은 순서의 첫 번째가 대표고, 문항·보기는 담은 단어장 전체에서 섞여 나옵니다. 오답·메모리 락은 단어별로 제 단어장에 적혀요(서버 SQL 1회 설치 — 복수단어장 패치)'],
  ['🎯','셀프테스트 과제','과제 내기에서 과제 종류를 🎯 셀프테스트로 — 모드(퀴즈·스펠링·듣기)·문항 수·통과 정답률·도전 기회(예: 3회 안에)를 정하세요. 학생이 통과하면 쪽지로 알림이 오고, 낸 과제 카드에서 통과·미통과 명단을 봅니다(서버 SQL 1회 설치)'],
  ['🏫','관리자 담당 반','계정 관리에서 관리자에게도 담당 반을 배정할 수 있어요. 배정하면 학생 현황판의 「내 담당 반」 필터와 쪽지의 내 담당 반 우선 정렬이 관리자에게도 똑같이 켜져요'],
  ['🛍️','아레나 상점 접기','XP 상점을 기본 접힘으로 바꿨습니다. 아레나 진입 화면에 리그·성장 랭킹이 먼저 들어오도록 한 조치이며, 헤더에 보유 P와 구매 가능 개수를 남겨 열어 볼 동기는 유지했어요'],
