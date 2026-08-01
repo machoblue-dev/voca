@@ -550,6 +550,7 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
 .acc .blk.on{background:var(--red-soft);color:var(--red-deep)}
 .acc .del-user{font-size:12px;font-weight:800;padding:8px 11px;border-radius:10px;background:var(--card);border:1.5px solid var(--red-line);color:var(--red-deep)}
 .acc .pwrs{font-size:12px;font-weight:800;padding:8px 11px;border-radius:10px;background:var(--card2)}
+.acc .nmed{font-size:12px;font-weight:800;padding:8px 11px;border-radius:10px;background:var(--card2)}
 .ad-code-row{display:flex;gap:8px}
 .ad-code-row input{flex:1;padding:12px 13px;border:2px solid var(--line);border-radius:14px;background:var(--card)}
 
@@ -3904,6 +3905,7 @@ function drawAdmin(){
       +['student','teacher','admin'].map(rr=>'<option value="'+rr+'"'+(p.role===rr?' selected':'')+'>'+roleKo(rr)+'</option>').join('')
       +'</select>'
       +'<button class="blk'+(p.blocked?' on':'')+'" data-id="'+p.id+'" data-b="'+(!p.blocked)+'"'+(me?' disabled':'')+'>'+(p.blocked?'차단 해제':'차단')+'</button>'
+      +'<button class="nmed" data-id="'+p.id+'" data-name="'+esc(p.name)+'">이름 수정</button>'
       +'<button class="pwrs" data-id="'+p.id+'" data-name="'+esc(p.name)+'">비번 재설정</button>'
       +''+(p.role==='student' && !me ? '<button class="retire" data-id="'+p.id+'" data-name="'+esc(p.name)+'">퇴원</button>' : '')+'<button class="del-user" data-id="'+p.id+'" data-name="'+esc(p.name)+'"'+(me?' disabled':'')+'>삭제</button>'
       +(p.role!=='student' ? '<div class="mng-row" data-id="'+p.id+'"><select class="mng-school" style="flex:1.4;min-width:0"><option value="">학교 선택</option>'+SCHOOLS.map(sc=>'<option value="'+sc+'">'+sc+'</option>').join('')+'</select><select class="mng-grade" style="flex:.8;min-width:0"><option value="">학년</option><option value="1">1학년</option><option value="2">2학년</option></select><button type="button" class="grp-back mng-add" style="flex:0 0 auto">＋</button><button type="button" class="btn primary mng-save" data-id="'+p.id+'" style="flex:0 0 auto;padding:9px 14px">담당 저장</button></div><div class="tchips mng-chips" data-id="'+p.id+'">'+(p.managed_classes||[]).map(c=>'<button type="button" class="tchip" data-c="'+esc(c)+'">'+esc(c)+'</button>').join('')+'</div>' : '')
@@ -4004,6 +4006,22 @@ $('admin-body').addEventListener('change', async e=>{
   if(!r || !r.ok) renderAdmin();
 });
 $('admin-body').addEventListener('click', async e=>{
+  const nm = e.target.closest('.nmed');
+  if(nm){
+    const cur = nm.dataset.name, id = nm.dataset.id;
+    const inp = prompt('이름을 바르게 고쳐 주세요.\n(가입할 때 담임 선생님 이름이 섞여 들어간 계정을 바로잡는 자리예요)\n\n지금 이름: '+cur, cur);
+    if(inp === null) return;
+    const v = inp.trim().replace(/\s+/g, ' ');
+    if(v.length < 2){ toast('이름은 2자 이상으로 적어 주세요'); return; }
+    if(v.length > 20){ toast('이름은 20자까지 적을 수 있어요'); return; }
+    if(v === cur){ toast('이름이 그대로예요'); return; }
+    if(!confirm('"'+cur+'" → "'+v+'"\n\n이렇게 바꿀까요?\n\n· 명단·학생 현황·쪽지·과제 명단에 바로 반영돼요\n· 로그인 아이디와 학습 기록은 그대로예요')) return;
+    const r = await api('/rest/v1/rpc/admin_set_name', {method:'POST', body: JSON.stringify({target: id, new_name: v})});
+    if(!(r && r.ok)){ toast('실패 — 이름 수정 SQL 실행 여부와 관리자 권한을 확인해 주세요'); return; }
+    if(DB.profile && DB.profile.id === id){ DB.profile.name = v; scheduleSave(); }
+    toast('이름을 "'+v+'"(으)로 고쳤어요');
+    renderAdmin(); return;
+  }
   const pw = e.target.closest('.pwrs');
   if(pw){
     const nm = pw.dataset.name;
@@ -4970,7 +4988,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.6.0';
+const APP_VERSION = '2.7.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -6117,7 +6135,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-60';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-63'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-64'; });
 const WN_ITEMS = [
  ['🎯','셀프테스트 과제','선생님이 낸 시험을 집에서 쳐요. 문항 수·통과 점수·도전 기회가 정해져 있고, 통과하면 선생님께 바로 알림이 가요! 홈 과제 카드에서 시작'],
  ['🃏','카드로도 오답 탈출','오답 복습을 카드로 할 때 「이제 안다 ✓」를 누르면 그 단어가 오답 목록에서 바로 빠져요. 아직 헷갈리는 단어만 남겨 두고 다음에 다시 만나요'],
@@ -6147,6 +6165,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['✏️','학생 이름 고치기','계정 관리에서 이름 옆 [이름 수정]을 누르면 가입할 때 잘못 적힌 이름을 바로잡을 수 있어요. 담임 이름이 붙어 들어왔거나 담임 이름으로 가입한 계정을 고치는 자리예요. 로그인 아이디·비밀번호·학습 기록은 그대로 두고 이름 한 칸만 바뀝니다(서버 SQL 1회 설치 — 이름 수정 패치)'],
  ['🎯','셀프테스트 — 단어장 여러 개','과제 종류를 🎯 셀프테스트로 두면 단어장을 여러 개 담을 수 있어요. 담은 순서의 첫 번째가 대표고, 문항·보기는 담은 단어장 전체에서 섞여 나옵니다. 오답·메모리 락은 단어별로 제 단어장에 적혀요(서버 SQL 1회 설치 — 복수단어장 패치)'],
  ['🎯','셀프테스트 과제','과제 내기에서 과제 종류를 🎯 셀프테스트로 — 모드(퀴즈·스펠링·듣기)·문항 수·통과 정답률·도전 기회(예: 3회 안에)를 정하세요. 학생이 통과하면 쪽지로 알림이 오고, 낸 과제 카드에서 통과·미통과 명단을 봅니다(서버 SQL 1회 설치)'],
  ['🏫','관리자 담당 반','계정 관리에서 관리자에게도 담당 반을 배정할 수 있어요. 배정하면 학생 현황판의 「내 담당 반」 필터와 쪽지의 내 담당 반 우선 정렬이 관리자에게도 똑같이 켜져요'],
