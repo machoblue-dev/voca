@@ -1315,7 +1315,8 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
     <button class="btn primary block" id="btn-new-list">＋ 새 단어 리스트 만들기</button>
     <div id="list-form" style="display:none">
       <div class="hr"></div>
-      <div class="fld"><label>리스트 이름</label><input type="text" id="lf-name" placeholder="예) 어근 어휘 1강 contra·counter"></div>
+      <div class="fld"><label>리스트 이름</label><input type="text" id="lf-name" placeholder="예) 1강 · 어근 어휘 contra·counter"></div>
+        <div class="note" style="margin-top:6px">유닛을 앞에, 교재 이름을 뒤에 적고 가운뎃점(·)으로 이어 주세요. 앞이 길면 화면에서 유닛이 잘려요.</div>
       <div class="fld"><label>난이도 티어 — 높을수록 학생 경험치가 더 쌓인다</label>
       <select id="lf-tier"><option value="1">🌱 티어1 새싹 (기본 ×1.0)</option><option value="2">⚡ 티어2 도전 (×1.3)</option><option value="3">🔥 티어3 정예 (×1.6)</option><option value="4">👑 티어4 전설 (×2.0)</option></select>
     </div>
@@ -1332,7 +1333,7 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
       <div class="fld" id="lf-bulk-row">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:0"><input type="checkbox" id="lf-bulk" style="width:18px;height:18px;accent-color:var(--brand);flex:0 0 auto">🧩 유닛별로 나눠 올리기 — 단어장 전체를 한 번에</label>
         <div class="fmt-help" id="bulk-help">
-          <div class="note">단어장 전체를 한 번에 붙여넣으면, 유닛마다 리스트를 따로 만들어 드려요. 리스트 이름은 <b>리스트 이름 + 유닛 이름</b>으로 지어져요. 예) 리스트 이름 "워드마스터", 유닛 "Day 1" → <b>워드마스터 Day 1</b></div>
+          <div class="note">단어장 전체를 한 번에 붙여넣으면, 유닛마다 리스트를 따로 만들어 드려요. 리스트 이름은 <b>유닛 이름 · 리스트 이름</b> 차례로 지어져요. 유닛이 앞에 와야 화면에서 안 잘려요. 예) 리스트 이름 "워드마스터", 유닛 "Day 1" → <b>Day 1 · 워드마스터</b></div>
           <div class="note" style="margin-top:6px"><b>방법 1 · 유닛 열</b> — 엑셀 첫 줄 항목 이름에 <b>유닛</b>(단원·Day·Unit도 돼요) 열을 넣고, 각 줄에 유닛 이름을 적어요. 빈칸은 바로 위 유닛을 그대로 따라가요.</div>
           <div class="note" style="margin-top:6px"><b>방법 2 · 유닛 제목 줄</b> — 유닛이 시작되는 줄에 유닛 이름 <b>한 칸만</b> 적어요. (예: "Day 1"만 있는 줄) 그 아래 단어들이 그 유닛으로 들어가요.</div>
         </div>
@@ -2137,6 +2138,13 @@ let editListId = null;
 /* ── 단어장 시리즈 묶기 (Day 1·2·3 → 한 묶음) ── */
 function grpBaseOf(name){
   const s = String(name||'').trim();
+  /* ⓪ 새 형식(2026-08-05, -66) — "유닛 · 묶음". 첫 가운뎃점 뒤가 묶음이다.
+     아래 옛 규칙은 지우지 않는다 — 이관 전 화면, 그리고 손으로 지은 옛 이름을 위해 남긴다 */
+  const dotAt = s.indexOf(' · ');
+  if(dotAt > 0){
+    const nb = s.slice(dotAt + 3).trim();
+    if(nb.length >= 2) return nb;
+  }
   /* ① 단원 표식을 이름 어디서든 찾는다(맨 앞의 것): [구분자]+키워드 번호[~번호][단위] 또는 [구분자]+번호 단위
      — "HMD 수능 Unit 01. 부제", "학문당 수능 Day 3", "심화 5강 정리" 등. 표식 앞 문자열 '전체'가 시리즈 이름이
      되므로 "학문당 고교기본"과 "학문당 수능"은 절대 한 묶음으로 합쳐지지 않는다 */
@@ -2161,6 +2169,20 @@ function grpBaseOf(name){
   const base = s.slice(0, m.index).replace(/[\s\-–—·:~〜∼(\[]+$/,'').trim();
   if(base.length < 2 || /^(?:day|데이|chapter|챕터|unit|유닛|lesson|레슨|part|파트|step|스텝|set|세트|list|리스트|level|레벨|week|위크|round|라운드|test|테스트|stage|no|vol)$/i.test(base)) return null;
   return base;
+}
+/* 이름을 {유닛, 묶음} 둘로 가른다 (2026-08-05, -66).
+   "묶음 이름 길이만큼 앞을 잘라내면 유닛"이라는 가정이 세 곳에 흩어져 있었다.
+   새 형식은 묶음이 뒤에 오므로 그 가정이 뒤집힌다. 자르는 방식을 여기 하나에 가둔다.
+   묶음이 없으면 {unit: 이름 전체, base: null} */
+function grpSplit(name){
+  const s = String(name||'').trim();
+  const b = grpBaseOf(s);
+  if(!b) return {unit: s, base: null};
+  const dotAt = s.indexOf(' · ');
+  if(dotAt > 0 && s.slice(dotAt + 3).trim() === b) return {unit: s.slice(0, dotAt).trim() || s, base: b};
+  /* 옛 형식 — 묶음이 앞에 붙어 있다 */
+  const u = s.slice(b.length).replace(/^[\s\-–—·:~〜∼(\[]+/, '').trim();
+  return {unit: u || s, base: b};
 }
 function groupLists(arr){
   const bag = new Map();
@@ -2270,7 +2292,7 @@ async function bulkSaveLists(base){
   if(units.length < 2){ toast('유닛이 1개만 읽혔어요 — 유닛 열이나 유닛 제목 줄을 확인해 주세요. 하나만 올릴 땐 나눠 올리기를 꺼 주세요'); return; }
   const targets = $('lf-target').value.split(',').map(s=>s.trim()).filter(Boolean);
   const tier = parseInt($('lf-tier').value, 10) || 1;
-  const names = units.map(u=>(base+' '+u.label).replace(/\s+/g,' ').trim());
+  const names = units.map(u=>(u.label+' · '+base).replace(/\s+/g,' ').trim());
   const total = units.reduce((a,u)=>a+u.words.length, 0);
   const exist = new Set((DB.lists||[]).map(l=>String(l.name||'')));
   const dup = names.filter(n=>exist.has(n)).length;
@@ -3276,13 +3298,12 @@ function sheetKicker(parts, total){
   const full = p=>(p.from === 1 && p.to === (p.L.words||[]).length);
   const num = p=>full(p) ? '' : ' '+NB(p.from+'–'+p.to);
   if(same){
-    const tail = p=>{
-      const t = p.L.name.slice(b[0].length).replace(/^[\s\-–—·:~〜∼(\[]+/, '').trim();
-      return t || p.L.name;
-    };
+    const tail = p=>grpSplit(p.L.name).unit || p.L.name;
     return esc(b[0])+' '+parts.map(p=>esc(tail(p))+num(p)).join(' · ')+cnt;
   }
-  if(parts.length <= 3) return parts.map(p=>esc(p.L.name)+num(p)).join(' · ')+cnt;
+  /* 묶음이 섞이면 이름을 그대로 나열한다. 이름 안에 가운뎃점이 있으므로(유닛 · 묶음)
+     이름끼리는 빗금으로 갈라야 경계가 보인다 (2026-08-05, -66) */
+  if(parts.length <= 3) return parts.map(p=>esc(p.L.name)+num(p)).join(' / ')+cnt;
   return esc(parts[0].L.name)+' 외 '+(parts.length-1)+'권'+cnt;
 }
 function sheetHead(parts, total, set, isAns){
@@ -5176,7 +5197,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.8.0';
+const APP_VERSION = '2.8.1';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -6323,7 +6344,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-65';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-65'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-66'; });
 const WN_ITEMS = [
  ['📄','시험지에 여러 단어장 담기','시험지 출력에서 단어장을 여러 장 담을 수 있어요. 과마다 몇 번부터 몇 번까지 낼지 따로 정하고, 문항은 단어장 크기에 맞춰 골고루 섞여 나와요. 🎲 다시 뽑기를 누르면 같은 설정으로 새 문제를 뽑아요'],
  ['🎯','셀프테스트 과제','선생님이 낸 시험을 집에서 쳐요. 문항 수·통과 점수·도전 기회가 정해져 있고, 통과하면 선생님께 바로 알림이 가요! 홈 과제 카드에서 시작'],
