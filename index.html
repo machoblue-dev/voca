@@ -576,6 +576,18 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
 .avail{font-size:12px;color:var(--ink2);font-weight:700}
 .range-row{display:flex;gap:10px}
 .range-row input{width:100%;padding:12px 13px;border:2px solid var(--line);border-radius:14px;background:var(--card)}
+.as-list-btn.ph #t-pick-name{color:var(--ink2);font-weight:700}
+.tpick{margin-top:8px;padding:2px 12px;max-height:264px;overflow-y:auto}
+.tpick-row{padding:9px 0}
+.tpick-row + .tpick-row{border-top:2px dashed var(--line2)}
+.tpick-top{display:flex;align-items:center;gap:8px}
+.tpick-top .nm{flex:1;min-width:0;font-weight:800;font-size:14px;letter-spacing:-.01em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tpick-top .del{flex:0 0 auto;width:27px;height:27px;border-radius:9px;border:2px solid var(--line);background:var(--card2);color:var(--ink2);font-weight:900;font-size:15px;line-height:1}
+.tpick-bot{display:flex;align-items:center;gap:8px;margin-top:6px}
+.tpick-bot .range-row{flex:1;min-width:0}
+.tpick-bot .range-row input{padding:9px 6px;border-radius:11px;text-align:center;font-weight:700}
+.tpick-bot .tot{flex:0 0 auto;font-size:12px;color:var(--ink2);font-weight:700;white-space:nowrap}
+.tsum{margin-top:8px;font-size:12.5px;color:var(--ink2);font-weight:700;text-align:right;word-break:keep-all}
 
 /* ── 로그인 ── */
 .brand{padding:34px 4px 20px;text-align:center}
@@ -613,7 +625,8 @@ html[data-theme=dark] .lvhero .lbar{background:rgba(255,255,255,.09)}
 .sheet{background:#fff;color:#1A1A1A;border:1px solid #E7DECD;border-radius:10px;padding:30px 30px 26px;box-shadow:0 5px 18px rgba(120,80,40,.08);font-family:Pretendard,sans-serif}
 .sheet + .sheet{margin-top:18px}
 .sh-top{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.sh-kicker{font-size:10px;font-weight:800;letter-spacing:.14em;color:#9A8F80;text-transform:uppercase}
+.sh-kicker{font-size:10px;font-weight:800;letter-spacing:.14em;color:#9A8F80;text-transform:uppercase;flex:1 1 auto;min-width:0;line-height:1.5;word-break:keep-all}
+.sh-kicker .nb{white-space:nowrap}
 .sh-form{font-family:Paperlogy,Pretendard,sans-serif;font-weight:800;font-size:11px;color:#1A1A1A;border:1.3px solid #1A1A1A;border-radius:99px;padding:2.5px 12px;letter-spacing:.06em;flex:0 0 auto}
 .sh-form.ansform{color:#C22B23;border-color:#C22B23}
 .sheet h1{font-family:Paperlogy,Pretendard,sans-serif;font-weight:800;font-size:21px;letter-spacing:-.01em;margin:6px 0 1px}
@@ -1565,8 +1578,10 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
   <!-- ═══ 시험지 출력 ═══ -->
   <section class="scr" id="scr-test" data-screen-label="시험지 출력">
     <div class="fld"><label>시험지 제목</label><input type="text" id="t-title"></div>
-    <div class="fld"><label>범위 (번호)</label>
-      <div class="range-row"><input type="number" id="t-from" min="1" value="1"><input type="number" id="t-to" min="1" value="1"></div>
+    <div class="fld"><label>단어장 — 여러 장을 한 시험지에 담아요</label>
+      <button type="button" class="as-list-btn" id="t-pick-btn"><span id="t-pick-name">단어장을 골라 주세요</span><i class="chev">▾</i></button>
+      <div class="tset tpick" id="t-pick-body"></div>
+      <div class="tsum" id="t-pick-sum"></div>
     </div>
     <div class="fld"><label>문항 구성 — 넣을 유형을 켜고 개수를 정해요</label>
       <div class="tset">
@@ -1593,9 +1608,12 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
       </select></div>
     <div class="row" style="margin-top:12px">
       <button class="btn primary" id="btn-t-make">시험지 미리보기</button>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button class="btn ghost" id="btn-t-redraw" disabled>🎲 다시 뽑기</button>
       <button class="btn ghost" id="btn-t-print" disabled>인쇄 / PDF</button>
     </div>
-    <div class="note">미리보기를 만든 뒤 인쇄 버튼을 누르면 돼요. 폰에서는 인쇄 화면에서 "PDF로 저장"을 고르면 파일로 저장됩니다. 시험지는 A4 기준.</div>
+    <div class="note">미리보기를 만든 뒤 인쇄 버튼을 누르면 돼요. 🎲 다시 뽑기를 누르면 같은 설정으로 새 문제를 뽑아요. 폰에서는 인쇄 화면에서 "PDF로 저장"을 고르면 파일로 저장됩니다. 시험지는 A4 기준.</div>
   </section>
 
   <!-- ═══ 하단 탭 ═══ -->
@@ -3071,43 +3089,204 @@ const TTYPES = [
 ];
 const TNAMES = {A:'뜻 쓰기', B:'단어 쓰기', SYN:'유의어', ANT:'반의어', CONF:'혼동어', E:'예문 빈칸'};
 const ROMAN = ['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ'];
-function rangePool(){
-  const L = activeList(); if(!L || !L.words.length) return null;
-  const N = L.words.length;
-  let from = Math.max(1, Math.min(N, parseInt($('t-from').value,10)||1));
-  let to = Math.max(1, Math.min(N, parseInt($('t-to').value,10)||N));
-  if(from>to){ const t=from; from=to; to=t; }
-  return {L, from, to, pool:L.words.slice(from-1, to)};
+/* 시험지에 담은 단어장 — 담은 차례대로. 화면 안에서만 사는 상태라 저장하지 않는다 */
+let tLists = [];
+let tRange = {};       /* { listId: {from, to} } — 담는 순간 전체 범위로 채운다 */
+let tNonce = 0;        /* [다시 뽑기]를 누른 횟수. 시드 끝에 붙는다 */
+let tTitleAuto = '';   /* 자동으로 넣어 준 제목 — 사람이 고쳤는지 판정한다 */
+function tPicked(){ return tLists.map(id=>DB.lists.find(l=>l.id===id)).filter(Boolean); }
+function tSetLists(ids){
+  const seen = {};
+  tLists = (ids||[]).filter(id=>{ if(seen[id] || !DB.lists.some(l=>l.id===id)) return false; seen[id] = 1; return true; });
+  Object.keys(tRange).forEach(id=>{ if(tLists.indexOf(id) < 0) delete tRange[id]; });
+  tPicked().forEach(l=>{ if(!tRange[l.id]) tRange[l.id] = {from:1, to:(l.words||[]).length}; });
+  renderTestPick();
+}
+function tTitleDefault(){
+  const Ls = tPicked();
+  if(!Ls.length) return '단어 시험';
+  if(Ls.length === 1) return Ls[0].name + ' 단어 시험';
+  const b = Ls.map(l=>grpBaseOf(l.name));
+  if(b[0] && b.every(x=>x === b[0])) return b[0] + ' 단어 시험';
+  return Ls[0].name + ' 외 ' + (Ls.length-1) + '권 단어 시험';
+}
+function tSyncTitle(){
+  const el = $('t-title'); if(!el) return;
+  if(el.value && el.value !== tTitleAuto) return;   /* 사람이 고친 제목은 덮어쓰지 않는다 */
+  tTitleAuto = tTitleDefault();
+  el.value = tTitleAuto;
+}
+function renderTestPick(){
+  const Ls = tPicked();
+  const nm = $('t-pick-name');
+  if(nm) nm.textContent = Ls.length
+    ? (Ls.length === 1
+        ? (TIERS[Ls[0].tier||1]||TIERS[1]).e+' '+Ls[0].name+' · '+(Ls[0].words||[]).length+'단어'
+        : Ls.length+'장 담김 · 모두 '+Ls.reduce((n,l)=>n+((l.words||[]).length), 0)+'단어')
+    : (DB.lists.length ? '단어장을 골라 주세요 — 여러 장 가능' : '단어장이 없어요');
+  const btn = $('t-pick-btn'); if(btn) btn.classList.toggle('ph', !Ls.length);
+  $('t-pick-body').innerHTML = Ls.map(l=>{
+    const n = (l.words||[]).length;
+    const r = tRange[l.id] || {from:1, to:n};
+    return '<div class="tpick-row">'
+      +'<div class="tpick-top"><span class="nm">'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+'</span>'
+      +'<button type="button" class="del" data-tdel="'+esc(l.id)+'">×</button></div>'
+      +'<div class="tpick-bot"><div class="range-row">'
+      +'<input type="number" class="t-rf" data-tlid="'+esc(l.id)+'" min="1" max="'+n+'" value="'+r.from+'">'
+      +'<input type="number" class="t-rt" data-tlid="'+esc(l.id)+'" min="1" max="'+n+'" value="'+r.to+'"></div>'
+      +'<span class="tot">전체 '+n+'개</span></div></div>';
+  }).join('') || '<div class="note" style="padding:9px 0">담은 단어장이 없어요</div>';
+  tSyncTitle();
+  updateAvail();
+}
+/* 담은 단어장을 담은 차례대로 잘라 한 통에 붓는다 — 겹친 단어는 앞선 단어장 것만 남긴다 */
+function testPool(){
+  const Ls = tPicked();
+  if(!Ls.length) return null;
+  const parts = [], seen = {}, pool = [];
+  let dup = 0;
+  Ls.forEach(l=>{
+    const N = (l.words||[]).length;
+    const r = tRange[l.id] || {from:1, to:N};
+    let from = Math.max(1, Math.min(N, parseInt(r.from,10)||1));
+    let to = Math.max(1, Math.min(N, parseInt(r.to,10)||N));
+    if(from>to){ const t=from; from=to; to=t; }
+    const words = [];
+    (l.words||[]).slice(from-1, to).forEach(w=>{
+      const k = String(w.word||'').trim().toLowerCase();
+      if(!k) return;
+      if(seen[k]){ dup++; return; }
+      seen[k] = 1;
+      const c = Object.assign({_lid:l.id, _lname:l.name}, w);
+      words.push(c); pool.push(c);
+    });
+    parts.push({L:l, from, to, words});
+  });
+  return {parts, pool, dup};
+}
+/* 최대잉여법 — n을 sizes 비율로 나눈다. 합이 정확히 n이고, 같은 입력이면 언제나 같은 결과다 */
+function quotaSplit(n, sizes){
+  const N = sizes.reduce((a,b)=>a+b, 0);
+  const q = sizes.map(()=>0);
+  if(!N || n<=0) return q;
+  const rest = [];
+  let sum = 0;
+  sizes.forEach((s,i)=>{
+    const e = n*s/N, f = Math.floor(e);
+    q[i] = f; sum += f;
+    if(s > 0) rest.push({i, r: e-f, s});
+  });
+  let R = n - sum;
+  /* 소수부가 큰 쪽부터. 같으면 어휘가 많은 쪽, 그것도 같으면 담은 차례 */
+  rest.sort((a,b)=> (b.r - a.r) || (b.s - a.s) || (a.i - b.i));
+  for(let k=0; k<rest.length && R>0; k++, R--) q[rest[k].i]++;
+  return q;
+}
+/* 유형 하나를 과별 비례로 채운다 — 모자란 과의 몫은 여유 있는 과가 돌아가며 메운다 */
+function pickByQuota(parts, order, n, elig, used){
+  const idx = {};
+  parts.forEach((p,i)=>{ idx[p.L.id] = i; });
+  const cand = parts.map(()=>[]);
+  order.forEach(w=>{
+    const i = idx[w._lid];
+    if(i != null && !used.has(w.word) && elig(w)) cand[i].push(w);
+  });
+  const q = quotaSplit(n, parts.map(p=>p.words.length));
+  const at = parts.map(()=>0);
+  const got = [];
+  parts.forEach((p,i)=>{
+    const take = Math.min(q[i], cand[i].length);
+    for(let k=0; k<take; k++){ const w = cand[i][at[i]++]; used.add(w.word); got.push(w); }
+  });
+  let D = n - got.length;
+  if(D > 0){
+    /* 도는 차례는 여기서 한 번만 정한다. 라운드마다 다시 정렬하면 재현성이 깨진다 */
+    const room = parts.map((p,i)=>({i, s: cand[i].length - at[i]})).filter(x=>x.s > 0)
+                      .sort((a,b)=> (b.s - a.s) || (a.i - b.i));
+    let moved = true;
+    while(D > 0 && moved){
+      moved = false;
+      for(let k=0; k<room.length && D>0; k++){
+        const i = room[k].i;
+        if(at[i] >= cand[i].length) continue;
+        const w = cand[i][at[i]++];
+        used.add(w.word); got.push(w); D--; moved = true;
+      }
+    }
+  }
+  return got;
 }
 function updateAvail(){
-  const r = rangePool(); if(!r) return;
+  const r = testPool();
   TTYPES.forEach(t=>{
     const el = $('t-av-'+t.k);
-    if(el) el.textContent = '(가능 '+r.pool.filter(t.elig).length+')';
+    if(el) el.textContent = '(가능 '+(r ? r.pool.filter(t.elig).length : 0)+')';
   });
+  const s = $('t-pick-sum');
+  if(s) s.textContent = (r && r.pool.length)
+    ? ('범위 안 '+r.pool.length+'단어'+(r.dup ? ' · 겹친 단어 '+r.dup+'개 제외' : ''))
+    : '범위 안에 단어가 없어요';
 }
 function initTestForm(){
   const L = activeList(); if(!L) return;
-  $('t-title').value = L.name + ' 단어 시험';
-  $('t-from').value = 1; $('t-from').max = L.words.length;
-  $('t-to').value = L.words.length; $('t-to').max = L.words.length;
+  tNonce = 0; tRange = {}; tTitleAuto = '';
+  $('t-title').value = '';
+  tSetLists([L.id]);
+  const r = testPool();
   const def = {A:10, B:10, SYN:5, ANT:5, CONF:5, E:5};
   TTYPES.forEach(t=>{
-    const n = L.words.filter(t.elig).length;
+    const n = r ? r.pool.filter(t.elig).length : 0;
     $('t-n-'+t.k).value = Math.max(1, Math.min(def[t.k], n||1));
   });
   updateAvail();
   $('btn-t-print').disabled = true;
+  $('btn-t-redraw').disabled = true;
   $('print-area').classList.remove('preview');
 }
-$('t-from').addEventListener('input', updateAvail);
-$('t-to').addEventListener('input', updateAvail);
+$('t-pick-btn').addEventListener('click', ()=>{ lpMode = 'test'; renderListPick(); $('list-pick').classList.add('on'); });
+$('t-pick-body').addEventListener('click', e=>{
+  const d = e.target.closest('[data-tdel]'); if(!d) return;
+  if(tLists.length <= 1){ toast('단어장은 하나 이상 담아야 해요'); return; }
+  tSetLists(tLists.filter(x=>x !== d.dataset.tdel));
+});
+$('t-pick-body').addEventListener('input', e=>{
+  const el = e.target.closest('[data-tlid]'); if(!el) return;
+  const id = el.dataset.tlid;
+  const L = DB.lists.find(l=>l.id===id); if(!L) return;
+  const N = (L.words||[]).length;
+  if(!tRange[id]) tRange[id] = {from:1, to:N};
+  const v = Math.max(1, Math.min(N, parseInt(el.value,10)||1));
+  if(el.classList.contains('t-rf')) tRange[id].from = v; else tRange[id].to = v;
+  updateAvail();
+});
 function blankHTML(word, hint){
   const w = Math.min(9, Math.max(3.2, word.length*0.72));
   return (hint?'<span class="fl">'+esc(word[0])+'</span> ':'')+'<span class="blank" style="min-width:'+w+'em"></span>';
 }
-function sheetHead(L, from, to, total, set, isAns){
-  return '<div class="sh-top"><span class="sh-kicker">'+esc(L.name)+' · '+from+'–'+to+'번 · 총 '+total+'문항</span>'
+/* 머리말 한 줄 — 담은 장수와 묶음에 따라 표기를 줄인다 */
+function sheetKicker(parts, total){
+  const NB = s=>'<span class="nb">'+s+'</span>';
+  const cnt = ' · 총 '+total+'문항';
+  if(parts.length === 1){
+    const p = parts[0];
+    return esc(p.L.name)+' · '+NB(p.from+'–'+p.to+'번')+cnt;
+  }
+  const b = parts.map(p=>grpBaseOf(p.L.name));
+  const same = !!b[0] && b.every(x=>x === b[0]);
+  const full = p=>(p.from === 1 && p.to === (p.L.words||[]).length);
+  const num = p=>full(p) ? '' : ' '+NB(p.from+'–'+p.to);
+  if(same){
+    const tail = p=>{
+      const t = p.L.name.slice(b[0].length).replace(/^[\s\-–—·:~〜∼(\[]+/, '').trim();
+      return t || p.L.name;
+    };
+    return esc(b[0])+' '+parts.map(p=>esc(tail(p))+num(p)).join(' · ')+cnt;
+  }
+  if(parts.length <= 3) return parts.map(p=>esc(p.L.name)+num(p)).join(' · ')+cnt;
+  return esc(parts[0].L.name)+' 외 '+(parts.length-1)+'권'+cnt;
+}
+function sheetHead(parts, total, set, isAns){
+  return '<div class="sh-top"><span class="sh-kicker">'+sheetKicker(parts, total)+'</span>'
     +'<span class="sh-form'+(isAns?' ansform':'')+'">'+set+'형'+(isAns?' · 정답':'')+'</span></div>'
     +'<h1>'+esc($('t-title').value||'단어 시험')+'</h1>'
     +(isAns
@@ -3115,8 +3294,9 @@ function sheetHead(L, from, to, total, set, isAns){
       : '<div class="sh-info"><div>이름 <i></i></div><div>날짜 <i></i>/</div><div>점수 <i></i>/ '+total+'</div></div>');
 }
 function buildTest(){
-  const r = rangePool(); if(!r) return;
-  const {L, from, to} = r;
+  const r = testPool();
+  if(!r || !r.pool.length){ toast('담은 단어장의 범위 안에 단어가 없어요'); return; }
+  const parts = r.parts;
   const hint = $('t-hint').checked;
   const exko = $('t-exko').checked;
   const ansMode = $('t-ans-mode').value;
@@ -3125,21 +3305,17 @@ function buildTest(){
   const req = TTYPES.filter(t=>$('t-on-'+t.k).checked)
                     .map(t=>({t, n: Math.max(1, parseInt($('t-n-'+t.k).value,10)||1)}));
   if(!req.length){ toast('넣을 유형을 하나 이상 켜 주세요'); return; }
-  const seedStr = L.id+'|'+set+'|'+from+'-'+to+'|'+req.map(x=>x.t.k+':'+x.n).join(',');
+  const seedStr = parts.map(p=>p.L.id+':'+p.from+'-'+p.to).join('|')
+                + '|'+set+'|'+req.map(x=>x.t.k+':'+x.n).join(',')+'|'+tNonce;
   const rng = mulberry32(strHash(seedStr));
   let pool = r.pool.slice();
   if(doShuffle) pool = shuffleArr(pool, rng);
   const used = new Set();
   const alloc = {};
   const shorts = [];
-  req.slice().sort((a,b)=>pool.filter(a.t.elig).length - pool.filter(b.t.elig).length)
+  req.slice().sort((a,b)=>r.pool.filter(a.t.elig).length - r.pool.filter(b.t.elig).length)
      .forEach(({t,n})=>{
-        const got = [];
-        for(const w of pool){
-          if(got.length>=n) break;
-          if(used.has(w.word)) continue;
-          if(t.elig(w)){ got.push(w); used.add(w.word); }
-        }
+        const got = pickByQuota(parts, pool, n, t.elig, used);
         alloc[t.k] = got;
         if(got.length<n) shorts.push(t.k);
      });
@@ -3205,23 +3381,25 @@ function buildTest(){
     si++; total += items.length;
   });
   if(!total){ toast('이 범위에서 만들 수 있는 문항이 없어요. 범위나 유형을 바꿔 보세요'); return; }
-  let html = '<div class="sheet">' + sheetHead(L, from, to, total, set, false) + secStu;
+  let html = '<div class="sheet">' + sheetHead(parts, total, set, false) + secStu;
   if(ansMode === 'key'){
     html += '<div class="anskey"><h2>정답 — '+esc($('t-title').value||'단어 시험')+' ('+set+'형)</h2><ol>'
       + ans.map((a,i)=>'<li><b>'+(i+1)+'.</b>'+esc(a)+'</li>').join('') + '</ol></div>';
   }
   html += '</div>';
   if(ansMode === 'filled'){
-    html += '<div class="sheet">' + sheetHead(L, from, to, total, set, true) + secAns + '</div>';
+    html += '<div class="sheet">' + sheetHead(parts, total, set, true) + secAns + '</div>';
   }
   const pa = $('print-area');
   pa.innerHTML = html;
   pa.classList.add('preview');
   $('btn-t-print').disabled = false;
+  $('btn-t-redraw').disabled = false;
   if(shorts.length) toast('일부 유형은 출제 가능한 단어 수만큼만 담았어요: '+shorts.map(k=>TNAMES[k]).join(' · '));
   window.scrollTo({top: pa.getBoundingClientRect().top + window.scrollY - 10, behavior:'smooth'});
 }
 $('btn-t-make').addEventListener('click', buildTest);
+$('btn-t-redraw').addEventListener('click', ()=>{ tNonce++; buildTest(); });
 $('btn-t-print').addEventListener('click', ()=>window.print());
 
 
@@ -4187,24 +4365,27 @@ $('goal-modal').addEventListener('click', e=>{
 /* ── 단어장 고르기 모달: 묶음은 접힌 채로, 누르면 열림 (홈·과제 겸용) ── */
 let lpMode = 'home';   /* 'home' 학습용 선택 | 'assign' 과제용 선택 */
 function renderListPick(){
-  const multi = (lpMode==='assign' && asKind==='test');   /* 🎯 셀프테스트만 여러 개를 담는다 */
+  const isT = (lpMode==='test');                                          /* 시험지 — 대표 개념이 없다 */
+  const multi = isT || (lpMode==='assign' && asKind==='test');           /* 셀프테스트·시험지가 여러 개를 담는다 */
+  const bag = isT ? tLists : asLists;
   const cid = lpMode==='assign' ? $('as-list').value : DB.activeListId;
   const tag = lpMode==='assign' ? ' · 선택됨' : ' · 사용 중';
   const row = l=>{
-    const k = multi ? asLists.indexOf(l.id) : -1;
+    const k = multi ? bag.indexOf(l.id) : -1;
     const on = multi ? (k>=0) : (l.id===cid);
-    const mk = multi ? (' · '+(k===0?'대표':(k+1)+'번째')) : tag;
+    const mk = multi ? (' · '+((isT || k>0) ? (k+1)+'번째' : '대표')) : tag;
     return '<button type="button" class="lp-row'+(on?' on':'')+'" data-pick="'+esc(l.id)+'">'
     +'<span class="lt">'+(TIERS[l.tier||1]||TIERS[1]).e+' '+esc(l.name)+'</span>'
     +'<span class="lc">'+(l.words||[]).length+'개'+(on?mk:'')+'</span></button>';
   };
   const lpT = $('lp-title'), lpD = $('lp-desc'), lpC = $('lp-close');
   if(lpT) lpT.textContent = multi ? '단어장 고르기 — 여러 개' : '단어장 고르기';
-  if(lpD) lpD.textContent = multi ? '누를 때마다 담기고, 다시 누르면 빠져요. 처음 담은 단어장이 대표예요' : '묶음을 누르면 안에 있는 단어장이 열려요';
+  if(lpD) lpD.textContent = isT ? '누를 때마다 담기고, 다시 누르면 빠져요. 담은 차례대로 시험지에 섞여요'
+    : (multi ? '누를 때마다 담기고, 다시 누르면 빠져요. 처음 담은 단어장이 대표예요' : '묶음을 누르면 안에 있는 단어장이 열려요');
   if(lpC) lpC.textContent = multi ? '선택 완료' : '닫기';
   const html = groupLists(DB.lists).map(it=>{
     if(it.one) return row(it.one);
-    const open = multi ? it.lists.some(l=>asLists.indexOf(l.id)>=0) : it.lists.some(l=>l.id===cid);
+    const open = multi ? it.lists.some(l=>bag.indexOf(l.id)>=0) : it.lists.some(l=>l.id===cid);
     return '<div class="li-grp'+(open?' open':'')+'">'
       +'<button type="button" class="li-grp-h"><span class="gname"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;color:var(--amber)"><path d="M3.5 6.5a2 2 0 0 1 2-2H9l2 2.5h7.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"></path></svg>'+esc(it.grp)+'</span>'
       +'<span class="gmeta">'+it.lists.length+'개<i class="chev">▾</i></span></button>'
@@ -4225,6 +4406,13 @@ $('list-pick').addEventListener('click', e=>{
   if(r){
     const L = DB.lists.find(l=>l.id===r.dataset.pick); if(!L) return;
     if(lpMode === 'exam'){ examScopePick(L.name); return; }
+    if(lpMode === 'test'){     /* 시험지용 — 담고 빼기를 반복하도록 모달은 열어 둔다 */
+      const has = tLists.indexOf(L.id) >= 0;
+      if(has && tLists.length <= 1){ toast('단어장은 하나 이상 담아야 해요'); return; }
+      tSetLists(has ? tLists.filter(x=>x!==L.id) : tLists.concat([L.id]));
+      renderListPick();
+      return;
+    }
     if(lpMode === 'assign'){   /* 과제용 — 학습 중인 단어장은 건드리지 않는다 */
       if(asKind === 'test'){   /* 🎯 셀프테스트 — 담고 빼기를 반복하도록 모달은 열어 둔다 */
         setAsLists(asLists.indexOf(L.id)>=0 ? asLists.filter(x=>x!==L.id) : asLists.concat([L.id]));
@@ -4988,7 +5176,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.7.0';
+const APP_VERSION = '2.8.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -6134,9 +6322,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-60';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-64'; });
+const APP_VER = '2026.07.27-65';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-65'; });
 const WN_ITEMS = [
+ ['📄','시험지에 여러 단어장 담기','시험지 출력에서 단어장을 여러 장 담을 수 있어요. 과마다 몇 번부터 몇 번까지 낼지 따로 정하고, 문항은 단어장 크기에 맞춰 골고루 섞여 나와요. 🎲 다시 뽑기를 누르면 같은 설정으로 새 문제를 뽑아요'],
  ['🎯','셀프테스트 과제','선생님이 낸 시험을 집에서 쳐요. 문항 수·통과 점수·도전 기회가 정해져 있고, 통과하면 선생님께 바로 알림이 가요! 홈 과제 카드에서 시작'],
  ['🃏','카드로도 오답 탈출','오답 복습을 카드로 할 때 「이제 안다 ✓」를 누르면 그 단어가 오답 목록에서 바로 빠져요. 아직 헷갈리는 단어만 남겨 두고 다음에 다시 만나요'],
  ['🛍️','상점은 눌러서 열어요','아레나를 열면 리그 순위가 바로 보여요. XP 상점은 접혀 있다가 줄을 톡 누르면 열려요 — 지금 살 수 있는 상품이 몇 개인지도 함께 알려줘요'],
@@ -6165,6 +6354,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['📄','시험지 — 단어장 여러 개','시험지 출력에서 단어장을 여러 장 담습니다. 단어장마다 번호 범위를 따로 지정하고, 문항은 단어장별 어휘 수에 비례해 배분됩니다. 유형마다 비례를 지키므로 한 과에 쏠리지 않아요. 🎲 다시 뽑기로 같은 설정의 다른 벌을 뽑습니다(서버 SQL 설치 불필요)'],
  ['✏️','학생 이름 고치기','계정 관리에서 이름 옆 [이름 수정]을 누르면 가입할 때 잘못 적힌 이름을 바로잡을 수 있어요. 담임 이름이 붙어 들어왔거나 담임 이름으로 가입한 계정을 고치는 자리예요. 로그인 아이디·비밀번호·학습 기록은 그대로 두고 이름 한 칸만 바뀝니다(서버 SQL 1회 설치 — 이름 수정 패치)'],
  ['🎯','셀프테스트 — 단어장 여러 개','과제 종류를 🎯 셀프테스트로 두면 단어장을 여러 개 담을 수 있어요. 담은 순서의 첫 번째가 대표고, 문항·보기는 담은 단어장 전체에서 섞여 나옵니다. 오답·메모리 락은 단어별로 제 단어장에 적혀요(서버 SQL 1회 설치 — 복수단어장 패치)'],
  ['🎯','셀프테스트 과제','과제 내기에서 과제 종류를 🎯 셀프테스트로 — 모드(퀴즈·스펠링·듣기)·문항 수·통과 정답률·도전 기회(예: 3회 안에)를 정하세요. 학생이 통과하면 쪽지로 알림이 오고, 낸 과제 카드에서 통과·미통과 명단을 봅니다(서버 SQL 1회 설치)'],
