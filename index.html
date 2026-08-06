@@ -1010,6 +1010,13 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
 .rv-snz{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:9px;padding:10px;border-radius:13px;border:2px dashed var(--line);background:var(--card2);font-size:12.5px;font-weight:800;color:var(--ink2)}
 .rv-snz i{font-style:normal;font-weight:900;color:var(--amber)}
 .rv-snz.done{border-style:solid;opacity:.7;font-weight:700}
+/* 📣 응원·🏫 반 부스트 (-69) */
+.ch-row{display:flex;align-items:center;gap:10px;width:100%;padding:11px 12px;border-radius:14px;border:2px solid var(--line);background:var(--card);margin-bottom:7px;text-align:left}
+.ch-row .cn{flex:1;min-width:0;font-weight:800;font-size:13.5px;word-break:keep-all}
+.ch-row .ce{font-size:20px;flex:0 0 auto}
+.lg-cheer{flex:0 0 auto;width:28px;height:28px;border-radius:9px;border:2px solid var(--line);background:var(--card2);font-size:13px;line-height:1}
+.lg-cheer:disabled{opacity:.35}
+.cls-boost{display:flex;align-items:center;gap:8px;margin-top:9px;padding:10px 12px;border-radius:13px;background:var(--yellow-soft,#FFF6DF);border:2px solid var(--yellow,#F5B841);font-size:12.5px;font-weight:800;word-break:keep-all;line-break:strict}
 /* 움직임을 싫어하는 기기에서는 멈춘다 */
 @media (prefers-reduced-motion:reduce){.avt.fr-breath,.pfa.fr-breath{animation:none}.lg-row.pl-aurora::before{animation:none}}
 /* 리그 기간 토글 */
@@ -1252,6 +1259,7 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
       </div>
     </div>
     <div class="greet" id="home-greet"></div>
+    <div id="cls-boost-card"></div>
     <div id="rev-card" class="hcard" style="display:none"></div>
     <div id="exam-card" style="display:none"></div>
     <div id="hw-card" style="display:none"></div>
@@ -1670,6 +1678,14 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
     <div class="desc" id="lp-desc">묶음을 누르면 안에 있는 단어장이 열려요</div>
     <div class="lp-body" id="lp-body"></div>
     <button class="btn block" id="lp-close" style="flex:0 0 auto">닫기</button>
+  </div>
+</div>
+<div class="ovl" id="cheer-pick">
+  <div class="card pick-modal">
+    <h3 id="ch-title">응원 보내기</h3>
+    <div class="desc" id="ch-desc">같은 조 친구를 골라요</div>
+    <div class="lp-body" id="ch-body"></div>
+    <button class="btn block" id="ch-close" style="flex:0 0 auto">닫기</button>
   </div>
 </div>
 <div class="ovl" id="ml-guide">
@@ -4349,6 +4365,10 @@ function dayBump(n){
   checkDailyGoal();
 }
 function renderHome(){
+  /* 🏫 오늘 반 부스트 — 받아 두고, 오면 그 자리만 다시 그린다.
+     복습 카드에 얹으면 메모리 락 기록이 없는 학생에게는 안 보인다 */
+  fetchClsBoost().then(()=>{ const c = document.getElementById('cls-boost-card'); if(c) c.innerHTML = clsBoostHTML(); });
+  { const c = document.getElementById('cls-boost-card'); if(c) c.innerHTML = clsBoostHTML(); }
   const curL = DB.lists.find(l=>l.id===DB.activeListId);
   $('home-list-cur').textContent = curL ? ((TIERS[curL.tier||1]||TIERS[1]).e+' '+curL.name+' ('+(curL.words||[]).length+')')
     : (DB.lists.length ? '단어장을 골라 주세요' : '배포된 리스트 대기 중');
@@ -4727,7 +4747,27 @@ function resetSessXp(){ sessXp = 0; }
 function endOfToday(){ const d = new Date(); d.setHours(24,0,0,0); return d.getTime(); }
 function isWeekend(){ const w = new Date().getDay(); return w === 0 || w === 6; }
 /* 켜져 있으면 그 배수, 아니면 1. 리그 순위는 서버가 따로 세므로 순위에는 영향이 없다 */
-function boostMult(){ const b = ensureGame().boost; return (b && b.until > Date.now()) ? (b.x || 1) : 1; }
+/* 🏫 오늘 우리 반 부스트 — 홈을 열 때 서버에 물어 둔다. 없으면 조용히 꺼진 상태로 본다 */
+let clsBoost = null, clsBoostMissing = false;
+async function fetchClsBoost(force){
+  if(clsBoostMissing) return null;
+  const now = Date.now();
+  if(!force && clsBoost && (now - clsBoost.t) < 5*60*1000) return clsBoost.d;
+  const r = await api('/rest/v1/rpc/class_boost_today', {method:'POST', body:'{}'});
+  if(!r) return clsBoost ? clsBoost.d : null;
+  if(r.status === 404){ clsBoostMissing = true; return null; }
+  if(!r.ok) return clsBoost ? clsBoost.d : null;
+  const d = await r.json().catch(()=>null);
+  clsBoost = {t: now, d};
+  return d;
+}
+function clsBoostOn(){ return !!(clsBoost && clsBoost.d && clsBoost.d.on); }
+function boostMult(){
+  const b = ensureGame().boost;
+  let m = (b && b.until > Date.now()) ? (b.x || 1) : 1;
+  if(clsBoostOn()) m *= 1.2;   /* 반 부스트는 배율권과 곱해진다 — 2배권 + 반 = 2.4배 */
+  return m;
+}
 function freezeCap(){ const g = ensureGame(); return (g.items && g.items.freeze_cap) ? 4 : 2; }
 function awardXp(n){
   n = Math.round(n * (STUDY.mult || 1) * boostMult());
@@ -5001,11 +5041,17 @@ async function renderLeagueGroup(){
       +'<span class="avt'+frameCls(r)+'">'+esc(r.avatar||'🙂')+'</span>'
       +'<span class="who"><span class="nk">'+esc(r.nick||'')+(r.me?' <span class="mebadge">나</span>':'')+'</span>'
       +'<span class="sg">'+titleHTML(r)+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span>'
-      +'<span class="wxp">'+Number(r.score||0).toLocaleString('ko-KR')+'점'+(up?' ↑':dn?' ↓':'')+'</span></div>';
+      +'<span class="wxp">'+Number(r.score||0).toLocaleString('ko-KR')+'점'+(up?' ↑':dn?' ↓':'')+'</span>'
+      +(r.me ? '' : '<button type="button" class="lg-cheer" data-cheer="'+esc(r.nick||'')+'" aria-label="응원 보내기">📣</button>')
+      +'</div>';
   }).join('')
   + '<div class="lg-gap">'+(t.tier===2 ? '👑 최상위 골드 — 자리를 지켜라!' : '월요일 새벽에 판이 다시 짜여요 — 이번 주 안에 순위를 끌어올리자')+'</div>';
 }
 
+document.addEventListener('click', e=>{
+  const c = e.target.closest('[data-cheer]');
+  if(c && c.dataset.cheer) openCheerPick(c.dataset.cheer);
+});
 /* ── 성장 랭킹 — 지난주보다 더 푼 문항 수로 겨루는 판 (서버 함수 league_growth, 미설치 시 조용히 접힘) ── */
 let growthCache = null, growthMissing = false;
 async function fetchGrowth(){
@@ -5045,6 +5091,8 @@ const SHOP = [
   {c:'오늘',   k:'boost_x2',      e:'⚡', n:'XP 2배권 — 오늘 하루',  d:'오늘 자정까지 얻는 XP가 두 배가 돼요 · 순위 점수와는 상관없어요', cost:500, type:'boost', x:2},
   {c:'오늘',   k:'boost_x3we',    e:'🎉', n:'주말 3배권 — 오늘 하루', d:'토·일에만 살 수 있어요. 오늘 자정까지 XP가 세 배!', cost:1200, type:'boost', x:3, we:true},
   {c:'오늘',   k:'snooze',        e:'😴', n:'복습 미루기권',        d:'오늘 할 메모리 락을 내일로 미뤄요 · 단계는 그대로 · 하루에 한 장만', cost:200, type:'stock'},
+  {c:'친구',   k:'cheer',         e:'📣', n:'응원 보내기',        d:'같은 조 친구에게 응원 한 장 · 하루 3장까지 · 같은 친구에게는 하루 한 번', cost:100, type:'cheer'},
+  {c:'친구',   k:'class_boost',   e:'🏫', n:'우리 반 전체 부스트', d:'오늘 우리 반 모두의 XP가 20% 올라요 · 반마다 하루 한 번뿐이에요', cost:5000, type:'classboost'},
   {c:'칭호',   k:'title_pack',    e:'🏷️', n:'칭호 다섯 묶음',        d:'아래 칭호 다섯을 한 번에 — 낱개로 사는 것보다 1,000P 싸요', cost:3000, type:'bundle', give:['title_hunter','title_dawn','title_crusher','title_nonstop','title_quiet']},
   {c:'칭호',   k:'title_hunter',  e:'🎯', n:'칭호 — 단어 사냥꾼',     d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
   {c:'칭호',   k:'title_dawn',    e:'🌅', n:'칭호 — 새벽형 인간',     d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
@@ -5095,6 +5143,10 @@ function shopRowHTML(it){
   } else if(it.type==='boost'){
     right = boostMult()>1 ? '<span class="shop-own">오늘 켜짐</span>'
       : ((it.we && !isWeekend()) ? '<span class="shop-own">토·일에만</span>' : BUYBTN);
+  } else if(it.type==='cheer'){
+    right = '<button type="button" class="btn primary shop-buy" data-k="'+it.k+'">보내기</button>';
+  } else if(it.type==='classboost'){
+    right = clsBoostOn() ? '<span class="shop-own">오늘 켜짐</span>' : BUYBTN;
   } else if(it.type==='stock'){
     const have = g.snooze||0;
     right = (have?'<span class="shop-own">'+have+'장</span>':'')+BUYBTN;
@@ -5127,7 +5179,8 @@ function shopAvail(){
   SHOP.forEach(it=>{
     const owned = (it.type==='consume') ? ((g.freezeExtra||0) >= freezeCap())
                 : (it.type==='boost') ? (boostMult() > 1 || (it.we && !isWeekend()))
-                : (it.type==='stock') ? false
+                : (it.type==='stock' || it.type==='cheer') ? false
+                : (it.type==='classboost') ? clsBoostOn()
                 : !!(g.items && g.items[it.k]);
     if(owned) return;
     left++;
@@ -5170,6 +5223,8 @@ document.addEventListener('click', e=>{
       if(boostMult()>1){ toast('오늘은 이미 배율권이 켜져 있어요 — 내일 다시 쓸 수 있어요'); return; }
     }
     if(wallet() < it.cost){ toast('포인트가 부족해요 — '+fmtXp(it.cost - wallet())+' P 더 모으면 살 수 있어요!'); return; }
+    if(it.type === 'cheer'){ openCheerPick(null); return; }
+    if(it.type === 'classboost'){ buyClassBoost(it.cost); return; }
     if(it.k === 'nick_reroll'){
       if(!confirm('🎲 닉네임 다시 뽑기를 시작할까요?\n확정하는 순간에만 '+fmtXp(it.cost)+' P가 사용돼요. 그 전엔 무료!')) return;
       openNickReroll();
@@ -5207,6 +5262,111 @@ document.addEventListener('click', e=>{
     toast('적용했어요');
   }
 });
+
+/* ════════ 📣 응원 보내기 (-69) ════════
+   문구는 서버 함수 안에도 같은 차례로 박혀 있다(cheer_send). 여기 순서를 바꾸면 SQL도 함께 고친다.
+   자유 입력은 없다 — 학생끼리 자유 쪽지를 열면 관리할 것이 생긴다. */
+const CHEERS = [
+  '오늘도 한 판 하자! 💪',
+  '단어 몇 개 남았어? 같이 끝내자',
+  '어제보다 나아졌네, 멋지다 ✨',
+  '연속 기록 지켜라! 🔥',
+  '오답 복습 잊지 마 🧐',
+  '조금만 더! 곧 레벨업이야 ⚡',
+  '오늘 복습 끝냈어? 나는 했다 😎',
+  '같이 골드 가자 🏆'
+];
+const CHEER_COST = 100;
+let cheerTo = null;      /* 고른 친구 닉네임. 없으면 친구 고르는 화면 */
+let cheerSending = false;
+async function openCheerPick(nick){
+  cheerTo = nick || null;
+  if(!cheerTo && !lgGroupCache) await fetchGroup();
+  renderCheerPick();
+  $('cheer-pick').classList.add('on');
+}
+function renderCheerPick(){
+  const t = $('ch-title'), d = $('ch-desc'), b = $('ch-body');
+  if(!cheerTo){
+    const g = ensureGame();
+    const rows = ((lgGroupCache && lgGroupCache.d) || []).filter(r=>!r.me && r.nick);
+    t.textContent = '응원 보내기';
+    d.textContent = '같은 조 친구를 골라요 · 한 장에 '+fmtXp(CHEER_COST)+' P';
+    b.innerHTML = rows.length
+      ? rows.map(r=>'<button type="button" class="ch-row" data-nick="'+esc(r.nick)+'">'
+          +'<span class="ce">'+esc(r.avatar||'🙂')+'</span><span class="cn">'+esc(r.nick)+'</span></button>').join('')
+      : '<div class="note">같은 조에 아직 친구가 없어요. 월요일 새벽에 조가 새로 짜여요.</div>';
+    return;
+  }
+  t.textContent = esc(cheerTo)+'에게';   /* 조사는 붙여 쓴다 */
+  d.textContent = '보낼 말을 골라요 · '+fmtXp(CHEER_COST)+' P';
+  b.innerHTML = CHEERS.map((c,i)=>'<button type="button" class="ch-row" data-code="'+(i+1)+'">'
+    +'<span class="cn">'+esc(c)+'</span></button>').join('')
+    + '<button type="button" class="ch-row" data-back="1"><span class="cn">← 다른 친구 고르기</span></button>';
+}
+async function sendCheer(code){
+  if(cheerSending) return;
+  const g = ensureGame();
+  if(wallet() < CHEER_COST){ toast('포인트가 부족해요 — '+fmtXp(CHEER_COST - wallet())+' P 더 모으면 보낼 수 있어요'); return; }
+  cheerSending = true;
+  const r = await api('/rest/v1/rpc/cheer_send', {method:'POST',
+    body: JSON.stringify({to_nick: cheerTo, code: code})});
+  cheerSending = false;
+  if(!r || r.status === 404){ toast('아직 준비 중인 기능이에요 — 선생님께 알려 주세요'); return; }
+  const d = await r.json().catch(()=>null);
+  if(!d || !d.ok){
+    const e = d && d.err;
+    toast(e==='daylimit' ? '오늘은 응원 3장을 다 썼어요 — 내일 또 보내요'
+        : e==='samelimit' ? '그 친구에게는 오늘 이미 보냈어요'
+        : e==='self' ? '나에게는 못 보내요'
+        : e==='notfound' ? '그 친구를 못 찾았어요'
+        : e==='nonick' ? '닉네임을 먼저 정해 주세요'
+        : '보내지 못했어요. 잠시 후 다시 해 주세요');
+    return;
+  }
+  /* 서버가 받아 준 뒤에 값을 치른다 — 실패했는데 깎이는 일이 없게 */
+  g.spent = (g.spent||0) + CHEER_COST;
+  scheduleSave(); fxRight();
+  $('cheer-pick').classList.remove('on');
+  cheerTo = null;
+  toast('📣 응원을 보냈어요! 오늘 '+(d.left||0)+'장 남았어요');
+  if(curScr==='scr-stats') renderStats();
+}
+$('ch-close').addEventListener('click', ()=>{ $('cheer-pick').classList.remove('on'); cheerTo = null; });
+$('cheer-pick').addEventListener('click', e=>{
+  if(e.target === $('cheer-pick')){ $('cheer-pick').classList.remove('on'); cheerTo = null; return; }
+  const back = e.target.closest('[data-back]');
+  if(back){ cheerTo = null; renderCheerPick(); return; }
+  const who = e.target.closest('[data-nick]');
+  if(who){ cheerTo = who.dataset.nick; renderCheerPick(); return; }
+  const c = e.target.closest('[data-code]');
+  if(c) sendCheer(parseInt(c.dataset.code, 10));
+});
+/* 🏫 반 전체 부스트 사기 */
+async function buyClassBoost(cost){
+  const g = ensureGame();
+  const cls = (DB.profile && DB.profile.class_name) || '';
+  if(!cls){ toast('반이 정해져야 살 수 있어요 — 선생님께 반 배정을 부탁해요'); return; }
+  if(wallet() < cost){ toast('포인트가 부족해요 — '+fmtXp(cost - wallet())+' P 더 모으면 살 수 있어요'); return; }
+  if(!confirm('🏫 오늘 하루 우리 반(' + cls + ') 모두의 XP를 20% 올려요.\n'+fmtXp(cost)+' P가 쓰여요. 살까요?')) return;
+  const r = await api('/rest/v1/rpc/class_boost_buy', {method:'POST', body: JSON.stringify({p_cls: cls})});
+  if(!r || r.status === 404){ toast('아직 준비 중인 기능이에요 — 선생님께 알려 주세요'); return; }
+  const d = await r.json().catch(()=>null);
+  if(!d || !d.ok){
+    toast(d && d.err==='taken' ? '오늘은 '+((d.by||'다른 친구'))+' 님이 이미 걸었어요 — 내일 다시 해요'
+        : d && d.err==='notmine' ? '우리 반에만 걸 수 있어요'
+        : '걸지 못했어요. 잠시 후 다시 해 주세요');
+    await fetchClsBoost(true);
+    if(curScr==='scr-stats') renderStats();
+    return;
+  }
+  g.spent = (g.spent||0) + cost;
+  scheduleSave(); fxRight();
+  await fetchClsBoost(true);
+  toast('🏫 오늘 우리 반 전체 XP가 20% 올라요!');
+  if(curScr==='scr-stats') renderStats();
+  if(curScr==='scr-home') renderHome();
+}
 
 /* ════════ 아레나 화면 ════════ */
 function renderStats(){
@@ -5310,7 +5470,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.10.0';
+const APP_VERSION = '2.11.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -5620,6 +5780,13 @@ function revNextLine(){
 /* 😴 복습 미루기권 — 오늘 할 메모리 락을 통째로 내일로 민다.
    값은 단계*100000 + 만기일 꼴이다. **단계는 그대로 두고 만기일만 내일로 바꾼다.**
    밀려 있던 단어도 함께 내일로 맞춘다 — '오늘 할 것'을 비우는 것이 이 표의 뜻이다 */
+/* 🏫 오늘 우리 반 부스트가 켜졌으면 홈에 한 줄 남긴다 — 산 사람 이름이 이 아이템의 값어치다 */
+function clsBoostHTML(){
+  if(!clsBoostOn()) return '';
+  const by = (clsBoost.d && clsBoost.d.by) || '';
+  return '<div class="cls-boost">🏫 <span>오늘 우리 반 XP <b>+20%</b>'
+    + (by ? ' — <b>'+esc(by)+'</b> 님이 쐈어요!' : '') + '</span></div>';
+}
 function snoozeBtnHTML(hasDue){
   const g = ensureGame();
   /* 이미 미뤘으면 만기가 비어 있어도 알려 준다 — 안 그러면 눌렀더니 다 사라진 것으로 보인다 */
@@ -6490,9 +6657,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-68';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-68'; });
+const APP_VER = '2026.07.27-69';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-69'; });
 const WN_ITEMS = [
+ ['📣','친구에게 응원 보내기','상점에 <b>📣 응원 보내기</b>(100 P)가 생겼어요. 아레나 승강 리그에서 친구 줄 끝의 📣를 누르거나 상점에서 열면, 정해진 말 8가지 중에 골라 쪽지로 보내요. 하루 3장까지예요. <b>🏫 우리 반 전체 부스트</b>(5,000 P)를 사면 오늘 하루 우리 반 모두의 XP가 20% 올라요 — 반마다 하루 한 번뿐이에요'],
  ['⚡','오늘 하루만 쓰는 것들','상점에 <b>XP 2배권</b>(500 P)과 <b>주말 3배권</b>(토·일, 1,200 P)이 생겼어요. 산 날 자정까지 얻는 XP가 곱해져요 — 아레나 순위 점수와는 상관없으니 마음 놓고 쓰세요. <b>😴 복습 미루기권</b>(200 P)은 오늘 할 메모리 락을 통째로 내일로 미뤄요. 단계는 그대로예요'],
  ['🏷️','칭호·이름표가 생겼어요','상점에 칭호 5종·이름표 배경 4종·새 테두리 6종이 들어왔어요. 지금까지는 꾸며도 나만 봤는데, 이제 아레나 순위표와 명예의 전당에서 <b>친구들에게도 보여요</b>! 아바타 팩(사계절·전설)도 새로 열렸어요'],
  ['📄','시험지에 여러 단어장 담기','시험지 출력에서 단어장을 여러 장 담을 수 있어요. 과마다 몇 번부터 몇 번까지 낼지 따로 정하고, 문항은 단어장 크기에 맞춰 골고루 섞여 나와요. 🎲 다시 뽑기를 누르면 같은 설정으로 새 문제를 뽑아요'],
