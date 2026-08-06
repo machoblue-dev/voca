@@ -4932,8 +4932,8 @@ $('nk-confirm').addEventListener('click', async ()=>{
   if(!ok){ toast('아깝게 다른 친구가 먼저 가져갔어요! 다시 뽑아 주세요'); rollNick(); return; }
   const g=ensureGame();
   if(nickRerollMode){
-    if(wallet() < NICK_REROLL_COST){ toast('포인트가 부족해요'); nickRerollMode=false; $('nick-modal').classList.remove('on'); return; }
-    g.spent = (g.spent||0) + NICK_REROLL_COST;   /* 🎲 확정하는 순간에만 결제 */
+    if(!shopFree() && wallet() < NICK_REROLL_COST){ toast('포인트가 부족해요'); nickRerollMode=false; $('nick-modal').classList.remove('on'); return; }
+    if(!shopFree()) g.spent = (g.spent||0) + NICK_REROLL_COST;   /* 🎲 확정하는 순간에만 결제 */
   }
   g.nickname=nickDraft.name; g.avatar=nickDraft.avatar; g.nickTs=Date.now();
   scheduleSave();
@@ -5132,6 +5132,11 @@ function frameCls(r){ const f = dressOf(r).frame; return f ? ' fr-'+f : ''; }
 function plateCls(r){ const p = dressOf(r).plate; return p ? ' pl-'+p : ''; }
 function titleHTML(r){ const t = SHOP_TITLES[dressOf(r).title]; return t ? '<b class="ttl">'+esc(t)+'</b> · ' : ''; }
 function wallet(){ const g = ensureGame(); return Math.max(0, (g.xp||0) - (g.spent||0)); }
+/* 🛍️ 상점 무제한 (-70) — 서버가 켜 준 계정 하나만이다(`profiles.shop_free`).
+   `pullProfile()`이 select=* 로 통째로 받아 오므로 따로 물어볼 것이 없다.
+   값을 안 치르고 spent 를 안 늘린다 — 늘리면 지갑이 음수가 되어 화면이 이상해진다.
+   누구에게 줄지는 서버에서 한 줄로 바꾼다. 앱은 표식만 본다. */
+function shopFree(){ return !!(DB.profile && DB.profile.shop_free === true); }
 function shopRowHTML(it){
   const g = ensureGame();
   let right;
@@ -5184,21 +5189,23 @@ function shopAvail(){
                 : !!(g.items && g.items[it.k]);
     if(owned) return;
     left++;
-    if(it.cost <= w) can++;
+    if(shopFree() || it.cost <= w) can++;   /* 표식이 있으면 값을 안 본다 */
     else if(!cheapest || it.cost < cheapest) cheapest = it.cost;
   });
   return {can:can, left:left, need: cheapest ? Math.max(0, cheapest - w) : 0};
 }
 function shopSectionHTML(){
   const a = shopAvail();
-  const sub = a.can ? '살 수 있는 게 '+a.can+'개 있어요 — 눌러서 열어 봐요'
+  const free = shopFree();
+  const sub = free ? '무제한 계정이에요 — 값 없이 다 써 봐요'
+    : (a.can ? '살 수 있는 게 '+a.can+'개 있어요 — 눌러서 열어 봐요'
     : (a.left ? fmtXp(a.need)+' P만 더 모으면 살 수 있어요'
-              : '다 모았어요 — 테두리·테마를 바꿔 봐요');
+              : '다 모았어요 — 테두리·테마를 바꿔 봐요'));
   return '<div class="shop-sec'+(a.can?' hot':'')+(shopOpen?' open':'')+'" id="shop-sec">'
     +'<button type="button" class="shop-h" id="shop-toggle" aria-expanded="'+(shopOpen?'true':'false')+'" aria-controls="shop-body">'
       +'<span class="shx-top"><span class="shx-e">🛍️</span>'
         +'<span class="shx-ttl">XP 상점'+(a.can?'<i class="shx-n">'+a.can+'</i>':'')+'</span>'
-        +'<span class="shx-p">'+fmtXp(wallet())+' P</span><i class="shx-c">▾</i></span>'
+        +'<span class="shx-p">'+(free ? '무제한' : fmtXp(wallet())+' P')+'</span><i class="shx-c">▾</i></span>'
       +'<span class="shx-sub">'+sub+'</span>'
     +'</button>'
     +'<div class="shop-wrap"><div class="shop-note">모은 XP로 사요. 포인트를 써도 레벨은 안 내려가요 — 레벨은 그동안 모은 XP 전체로 정해지니까요.</div>'
@@ -5222,7 +5229,7 @@ document.addEventListener('click', e=>{
       if(it.we && !isWeekend()){ toast('주말 3배권은 토·일에만 살 수 있어요'); return; }
       if(boostMult()>1){ toast('오늘은 이미 배율권이 켜져 있어요 — 내일 다시 쓸 수 있어요'); return; }
     }
-    if(wallet() < it.cost){ toast('포인트가 부족해요 — '+fmtXp(it.cost - wallet())+' P 더 모으면 살 수 있어요!'); return; }
+    if(!shopFree() && wallet() < it.cost){ toast('포인트가 부족해요 — '+fmtXp(it.cost - wallet())+' P 더 모으면 살 수 있어요!'); return; }
     if(it.type === 'cheer'){ openCheerPick(null); return; }
     if(it.type === 'classboost'){ buyClassBoost(it.cost); return; }
     if(it.k === 'nick_reroll'){
@@ -5231,7 +5238,7 @@ document.addEventListener('click', e=>{
       return;
     }
     if(!confirm('"'+it.n+'"을(를) '+fmtXp(it.cost)+' P로 살까요?')) return;
-    g.spent = (g.spent||0) + it.cost;
+    if(!shopFree()) g.spent = (g.spent||0) + it.cost;
     if(it.type==='consume') g.freezeExtra = (g.freezeExtra||0) + 1;
     else if(it.type==='boost') g.boost = {until: endOfToday(), x: it.x};
     else if(it.type==='stock') g.snooze = (g.snooze||0) + 1;
@@ -5307,7 +5314,7 @@ function renderCheerPick(){
 async function sendCheer(code){
   if(cheerSending) return;
   const g = ensureGame();
-  if(wallet() < CHEER_COST){ toast('포인트가 부족해요 — '+fmtXp(CHEER_COST - wallet())+' P 더 모으면 보낼 수 있어요'); return; }
+  if(!shopFree() && wallet() < CHEER_COST){ toast('포인트가 부족해요 — '+fmtXp(CHEER_COST - wallet())+' P 더 모으면 보낼 수 있어요'); return; }
   cheerSending = true;
   const r = await api('/rest/v1/rpc/cheer_send', {method:'POST',
     body: JSON.stringify({to_nick: cheerTo, code: code})});
@@ -5325,7 +5332,7 @@ async function sendCheer(code){
     return;
   }
   /* 서버가 받아 준 뒤에 값을 치른다 — 실패했는데 깎이는 일이 없게 */
-  g.spent = (g.spent||0) + CHEER_COST;
+  if(!shopFree()) g.spent = (g.spent||0) + CHEER_COST;
   scheduleSave(); fxRight();
   $('cheer-pick').classList.remove('on');
   cheerTo = null;
@@ -5346,8 +5353,9 @@ $('cheer-pick').addEventListener('click', e=>{
 async function buyClassBoost(cost){
   const g = ensureGame();
   const cls = (DB.profile && DB.profile.class_name) || '';
-  if(!cls){ toast('반이 정해져야 살 수 있어요 — 선생님께 반 배정을 부탁해요'); return; }
-  if(wallet() < cost){ toast('포인트가 부족해요 — '+fmtXp(cost - wallet())+' P 더 모으면 살 수 있어요'); return; }
+  /* 표식 있는 계정은 반이 없어도 된다 — 서버가 담당 반에서 찾는다 */
+  if(!cls && !shopFree()){ toast('반이 정해져야 살 수 있어요 — 선생님께 반 배정을 부탁해요'); return; }
+  if(!shopFree() && wallet() < cost){ toast('포인트가 부족해요 — '+fmtXp(cost - wallet())+' P 더 모으면 살 수 있어요'); return; }
   if(!confirm('🏫 오늘 하루 우리 반(' + cls + ') 모두의 XP를 20% 올려요.\n'+fmtXp(cost)+' P가 쓰여요. 살까요?')) return;
   const r = await api('/rest/v1/rpc/class_boost_buy', {method:'POST', body: JSON.stringify({p_cls: cls})});
   if(!r || r.status === 404){ toast('아직 준비 중인 기능이에요 — 선생님께 알려 주세요'); return; }
@@ -5360,7 +5368,7 @@ async function buyClassBoost(cost){
     if(curScr==='scr-stats') renderStats();
     return;
   }
-  g.spent = (g.spent||0) + cost;
+  if(!shopFree()) g.spent = (g.spent||0) + cost;
   scheduleSave(); fxRight();
   await fetchClsBoost(true);
   toast('🏫 오늘 우리 반 전체 XP가 20% 올라요!');
@@ -5470,7 +5478,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.11.0';
+const APP_VERSION = '2.11.1';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -6658,7 +6666,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-69';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-69'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-70'; });
 const WN_ITEMS = [
  ['📣','친구에게 응원 보내기','상점에 <b>📣 응원 보내기</b>(100 P)가 생겼어요. 아레나 승강 리그에서 친구 줄 끝의 📣를 누르거나 상점에서 열면, 정해진 말 8가지 중에 골라 쪽지로 보내요. 하루 3장까지예요. <b>🏫 우리 반 전체 부스트</b>(5,000 P)를 사면 오늘 하루 우리 반 모두의 XP가 20% 올라요 — 반마다 하루 한 번뿐이에요'],
  ['⚡','오늘 하루만 쓰는 것들','상점에 <b>XP 2배권</b>(500 P)과 <b>주말 3배권</b>(토·일, 1,200 P)이 생겼어요. 산 날 자정까지 얻는 XP가 곱해져요 — 아레나 순위 점수와는 상관없으니 마음 놓고 쓰세요. <b>😴 복습 미루기권</b>(200 P)은 오늘 할 메모리 락을 통째로 내일로 미뤄요. 단계는 그대로예요'],
