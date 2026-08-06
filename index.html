@@ -985,6 +985,28 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
 /* 아바타 테두리 */
 .pfa.fr-gold,.avt.fr-gold{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(240,177,0,.25)}
 .pfa.fr-fire,.avt.fr-fire{box-shadow:0 0 0 3px var(--red),0 0 0 6px rgba(255,75,62,.28)}
+/* 🛍️ 상점 확장 (-67) — 테두리 여섯 · 이름표 넷 · 칭호 */
+.avt.fr-ice,.pfa.fr-ice{box-shadow:0 0 0 3px #7FD8FF,0 0 0 6px rgba(127,216,255,.28)}
+.avt.fr-sakura,.pfa.fr-sakura{box-shadow:0 0 0 3px #FFB7D5,0 0 0 6px rgba(255,183,213,.30)}
+.avt.fr-bolt,.pfa.fr-bolt{box-shadow:0 0 0 3px #FFE44D,0 0 0 7px rgba(255,228,77,.32)}
+.avt.fr-breath,.pfa.fr-breath{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(240,177,0,.20);animation:frBreath 3.2s ease-in-out infinite}
+@keyframes frBreath{0%,100%{box-shadow:0 0 0 3px var(--gold),0 0 0 6px rgba(240,177,0,.18)}50%{box-shadow:0 0 0 3px #FFE9A8,0 0 0 9px rgba(240,177,0,.36)}}
+.avt.fr-rainbow,.pfa.fr-rainbow,.avt.fr-hall,.pfa.fr-hall{position:relative}
+.avt.fr-rainbow::after,.pfa.fr-rainbow::after,.avt.fr-hall::after,.pfa.fr-hall::after{content:'';position:absolute;inset:-3px;border-radius:50%;padding:3px;pointer-events:none;-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);mask-composite:exclude}
+.avt.fr-rainbow::after,.pfa.fr-rainbow::after{background:conic-gradient(#FF4B3E,#F5B841,#3DD68C,#3AA0FF,#9B6BFF,#FF4B3E)}
+.avt.fr-hall::after,.pfa.fr-hall::after{background:conic-gradient(#FFF3C4,#F5B841,#8A6508,#FFF3C4,#F5B841)}
+.lg-row.pl-dawn,.lg-row.pl-dusk,.lg-row.pl-ink,.lg-row.pl-aurora{position:relative}
+.lg-row.pl-dawn::before,.lg-row.pl-dusk::before,.lg-row.pl-ink::before,.lg-row.pl-aurora::before{content:'';position:absolute;inset:0;pointer-events:none;border-radius:8px}
+.lg-row.pl-dawn::before{background:linear-gradient(90deg,rgba(255,168,76,.20),transparent 68%)}
+.lg-row.pl-dusk::before{background:linear-gradient(90deg,rgba(229,72,77,.18),rgba(155,107,255,.12) 45%,transparent 76%)}
+.lg-row.pl-ink::before{background:linear-gradient(90deg,rgba(31,32,51,.24),rgba(31,32,51,.07) 52%,transparent 80%)}
+.lg-row.pl-aurora::before{background:linear-gradient(100deg,rgba(61,214,140,.20),rgba(58,160,255,.18) 38%,rgba(155,107,255,.18) 66%,transparent 88%);background-size:220% 100%;animation:plAur 9s ease-in-out infinite}
+@keyframes plAur{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.lg-row .who .sg .ttl{color:var(--amber);font-weight:900}
+.shop-cat{font-size:11.5px;font-weight:900;color:var(--ink2);letter-spacing:.05em;margin:13px 2px 3px}
+.shop-cat:first-child{margin-top:1px}
+/* 움직임을 싫어하는 기기에서는 멈춘다 */
+@media (prefers-reduced-motion:reduce){.avt.fr-breath,.pfa.fr-breath{animation:none}.lg-row.pl-aurora::before{animation:none}}
 /* 리그 기간 토글 */
 .lg-per{margin-top:7px}
 /* 과제 카드(학생 홈) */
@@ -1668,7 +1690,7 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
 <div class="ovl" id="lv-guide">
   <div class="card">
     <h3>레벨은 이렇게 오른다</h3>
-    <div class="desc">공부할수록 경험치(XP)가 쌓이고, 레벨과 칭호가 오른다.<br>최고 레벨 <b>Lv.40 어휘의 신</b>은 매일 꾸준히 해도 <b>반년</b>이 걸리는 자리다.</div>
+    <div class="desc">공부할수록 경험치(XP)가 쌓이고, 레벨과 등급 이름이 오른다.<br>최고 레벨 <b>Lv.40 어휘의 신</b>은 매일 꾸준히 해도 <b>반년</b>이 걸리는 자리다.</div>
     <div id="lvg-body" style="margin:12px 0"></div>
     <div class="desc" style="text-align:left">
       <b>XP 쌓는 법</b><br>
@@ -1702,7 +1724,7 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
 <div class="ovl" id="avatar-pick">
   <div class="card">
     <h3>🧸 아바타 고르기</h3>
-    <div class="desc">61종 동물 중 마음대로! 언제든 다시 바꿀 수 있어요.</div>
+    <div class="desc">동물 62종 중 마음대로! 상점에서 아바타 팩을 사면 더 늘어나요.</div>
     <div class="av-grid" id="av-grid"></div>
     <div class="row" style="margin-top:14px"><button class="btn primary" id="av-close" style="flex:1">닫기</button></div>
   </div>
@@ -4489,7 +4511,7 @@ function renderProfile(){
 /* ── 🧸 아바타 자유 이용권 — 61종 도감에서 골라 끼기 ── */
 function openAvatarPick(){
   const g = ensureGame();
-  $('av-grid').innerHTML = NICK_ANI.map(p=>'<button type="button" data-av="'+p[1]+'" class="'+(g.avatar===p[1]?'on':'')+'" title="'+esc(p[0])+'">'+p[1]+'</button>').join('');
+  $('av-grid').innerHTML = avatarChoices().map(p=>'<button type="button" data-av="'+p[1]+'" class="'+(g.avatar===p[1]?'on':'')+'" title="'+esc(p[0])+'">'+p[1]+'</button>').join('');
   $('avatar-pick').classList.add('on');
 }
 $('pf-avatar').addEventListener('click', ()=>{
@@ -4785,6 +4807,16 @@ $('lvup-ok').addEventListener('click', ()=>$('lvup-modal').classList.remove('on'
 
 /* ════════ 닉네임 ════════ */
 const NICK_ADJ = ['새벽의','겁없는','조용한','번개','불꽃','유쾌한','성실한','비밀스런','용감한','재빠른','느긋한','반짝이는','단단한','엉뚱한','신중한','명랑한','끈질긴','바람의','호기심','폭풍의','달빛의','새침한','우아한','장난꾸러기','씩씩한','수줍은','당당한','똑똑한','졸린','배고픈','춤추는','노래하는','질주하는','은빛','금빛','무지개','한밤의','정오의','안개속','천둥','서리','이슬맺힌','활활타는','미소짓는','비상하는','잠입한','전설의','꼬마','대장','수수께끼','명탐정','거침없는','살금살금','반전의','최강','행운의','집중한','각성한','유유자적','묵묵한'];
+/* 🛍️ 상점 아바타 팩 (-67) — 산 사람에게만 격자에 더 열린다 */
+const AV_SEASON = [['벚꽃','🌸'],['해바라기','🌻'],['단풍','🍁'],['눈사람','⛄'],['파도','🌊'],['수박','🍉'],['호박','🎃'],['트리','🎄'],['무지개','🌈'],['해','☀️'],['달','🌙'],['눈송이','❄️']];
+const AV_LEGEND = [['용','🐲'],['왕관','👑'],['번개','⚡'],['불꽃','🔥'],['별','🌟'],['모아이','🗿'],['전갈','🦂'],['거미','🕷️'],['도마뱀','🦎'],['뱀','🐍'],['오랑우탄','🦧'],['매머드','🦣']];
+function avatarChoices(){
+  const it = (ensureGame().items) || {};
+  let a = NICK_ANI.slice();
+  if(it.av_season) a = a.concat(AV_SEASON);
+  if(it.av_legend) a = a.concat(AV_LEGEND);
+  return a;
+}
 const NICK_ANI = [['호랑이','🐯'],['여우','🦊'],['부엉이','🦉'],['판다','🐼'],['늑대','🐺'],['고래','🐳'],['수달','🦦'],['토끼','🐰'],['펭귄','🐧'],['사자','🦁'],['다람쥐','🐿️'],['독수리','🦅'],['거북이','🐢'],['돌고래','🐬'],['치타','🐆'],['고슴도치','🦔'],['코알라','🐨'],['곰','🐻'],['북극곰','🐻‍❄️'],['하마','🦛'],['코뿔소','🦏'],['기린','🦒'],['얼룩말','🦓'],['캥거루','🦘'],['라마','🦙'],['나무늘보','🦥'],['스컹크','🦨'],['오소리','🦡'],['비버','🦫'],['공룡','🦖'],['용','🐉'],['유니콘','🦄'],['강아지','🐶'],['고양이','🐱'],['햄스터','🐹'],['병아리','🐤'],['오리','🦆'],['백조','🦢'],['공작','🦚'],['앵무새','🦜'],['플라밍고','🦩'],['비둘기','🕊️'],['문어','🐙'],['오징어','🦑'],['새우','🦐'],['게','🦀'],['복어','🐡'],['상어','🦈'],['물개','🦭'],['개구리','🐸'],['달팽이','🐌'],['나비','🦋'],['꿀벌','🐝'],['무당벌레','🐞'],['원숭이','🐵'],['고릴라','🦍'],['말','🐴'],['젖소','🐮'],['양','🐑'],['염소','🐐'],['수탉','🐓'],['박쥐','🦇']];
 const NICK_SPECIAL = [['1등급 성민이','👑']];   /* 👑 희귀 통짜 닉네임 — 뽑기마다 2% 확률로 그대로 등장 (숫자 변형 허용) */
 const NICK_SPECIAL_RATE = 0.02;
@@ -4936,7 +4968,6 @@ async function renderLeagueGroup(){
     return;
   }
   const g = ensureGame();
-  const frCls = g.frame ? ' fr-'+g.frame : '';
   const t = rows[0], zone = t.zone||1, gsize = t.gsize||rows.length;
   const upN = (t.tier < 2) ? zone : 0, dnN = (t.tier > 0) ? zone : 0;
   const T = TIER_L[t.tier] || TIER_L[0];
@@ -4945,11 +4976,11 @@ async function renderLeagueGroup(){
     + (dnN? ' · 하위 '+dnN+' <b style="color:var(--red)">↓강등</b>':'')+'</span></div>';
   el.innerHTML = head + rows.map(r=>{
     const up = upN && r.rn <= upN, dn = dnN && r.rn > gsize - dnN;
-    return '<div class="lg-row r'+r.rn+(r.me?' me':'')+(up?' zup':'')+(dn?' zdn':'')+'">'
+    return '<div class="lg-row r'+r.rn+(r.me?' me':'')+(up?' zup':'')+(dn?' zdn':'')+plateCls(r)+'">'
       +'<span class="rank">'+r.rn+'</span>'
-      +'<span class="avt'+(r.me?frCls:'')+'">'+esc(r.avatar||'🙂')+'</span>'
+      +'<span class="avt'+frameCls(r)+'">'+esc(r.avatar||'🙂')+'</span>'
       +'<span class="who"><span class="nk">'+esc(r.nick||'')+(r.me?' <span class="mebadge">나</span>':'')+'</span>'
-      +'<span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span>'
+      +'<span class="sg">'+titleHTML(r)+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span>'
       +'<span class="wxp">'+Number(r.score||0).toLocaleString('ko-KR')+'점'+(up?' ↑':dn?' ↓':'')+'</span></div>';
   }).join('')
   + '<div class="lg-gap">'+(t.tier===2 ? '👑 최상위 골드 — 자리를 지켜라!' : '월요일 새벽에 판이 다시 짜여요 — 이번 주 안에 순위를 끌어올리자')+'</div>';
@@ -4976,11 +5007,10 @@ async function renderGrowth(){
   if(!rows){ el.innerHTML = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">불러오지 못했어요. 잠시 후 다시 열어 보세요.</span></span></div>'; return; }
   if(!rows.length){ el.innerHTML = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">아직 아무도 지난주의 자신을 넘지 못했어요. 첫 성장왕이 되어 보자!</span></span></div>'; return; }
   const g = ensureGame();
-  const frCls = g.frame ? ' fr-'+g.frame : '';
   let meIn = false;
   const line = r=>{
     if(r.me) meIn = true;
-    return '<div class="lg-row r'+r.rn+(r.me?' me':'')+'"><span class="rank">'+r.rn+'</span><span class="avt'+(r.me?frCls:'')+'">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nick||'')+(r.me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span><span class="wxp">+'+Number(r.delta||0).toLocaleString('ko-KR')+' 문항</span></div>';
+    return '<div class="lg-row r'+r.rn+(r.me?' me':'')+plateCls(r)+'"><span class="rank">'+r.rn+'</span><span class="avt'+frameCls(r)+'">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nick||'')+(r.me?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+titleHTML(r)+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span><span class="wxp">+'+Number(r.delta||0).toLocaleString('ko-KR')+' 문항</span></div>';
   };
   const top = rows.filter(r=>r.rn <= 10).map(line).join('');
   const mineRow = rows.find(r=>r.me && r.rn > 10);
@@ -4990,16 +5020,45 @@ async function renderGrowth(){
 }
 
 /* ════════ XP 상점 (v2.2) — 재화는 '누적 XP − 사용'. 써도 레벨은 내려가지 않는다 ════════ */
+const SHOP_TITLES = {hunter:'단어 사냥꾼', dawn:'새벽형 인간', crusher:'오답 파괴자', nonstop:'한 번도 안 쉰 사람', quiet:'조용한 1등'};
 const SHOP = [
-  {k:'nick_reroll', e:'🎲', n:'닉네임 재추첨권', d:'닉네임을 새로 뽑는다 — 확정하는 순간에만 결제, 그 전엔 몇 번이든 무료', cost:NICK_REROLL_COST, type:'ticket'},
-  {k:'avatar_pass', e:'🧸', n:'아바타 자유 이용권', d:'내 정보에서 아바타를 61종 동물 중 마음대로, 몇 번이든', cost:1200, type:'own'},
-  {k:'freeze',      e:'🧊', n:'스트릭 프리즈 +1',   d:'하루 빠져도 자동으로 연속 기록을 지켜요 · 최대 2개 보관', cost:300, type:'consume'},
-  {k:'frame_gold',  e:'🥇', n:'황금 테두리',        d:'프로필 아바타에 금빛 테두리', cost:500, type:'frame'},
-  {k:'frame_fire',  e:'🔥', n:'불꽃 테두리',        d:'프로필 아바타에 불꽃 테두리', cost:800, type:'frame'},
-  {k:'theme_night', e:'🌌', n:'카드 테마 — 밤하늘', d:'플래시카드 앞면이 밤하늘로 바뀌어요', cost:600, type:'theme'},
-  {k:'theme_mint',  e:'🍃', n:'카드 테마 — 민트',   d:'플래시카드 앞면이 딥민트빛으로 바뀌어요', cost:600, type:'theme'},
-  {k:'greet_hype',  e:'📣', n:'인사말 팩 — 응원 폭발', d:'홈 인사말 12종이 추가돼요', cost:400, type:'own'}
+  {c:'칭호',   k:'title_pack',    e:'🏷️', n:'칭호 다섯 묶음',        d:'아래 칭호 다섯을 한 번에 — 낱개로 사는 것보다 1,000P 싸요', cost:3000, type:'bundle', give:['title_hunter','title_dawn','title_crusher','title_nonstop','title_quiet']},
+  {c:'칭호',   k:'title_hunter',  e:'🎯', n:'칭호 — 단어 사냥꾼',     d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
+  {c:'칭호',   k:'title_dawn',    e:'🌅', n:'칭호 — 새벽형 인간',     d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
+  {c:'칭호',   k:'title_crusher', e:'💥', n:'칭호 — 오답 파괴자',     d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
+  {c:'칭호',   k:'title_nonstop', e:'🔁', n:'칭호 — 한 번도 안 쉰 사람', d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
+  {c:'칭호',   k:'title_quiet',   e:'🤫', n:'칭호 — 조용한 1등',      d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
+  {c:'테두리', k:'frame_gold',    e:'🥇', n:'황금 테두리',   d:'아바타에 금빛 테두리 — 이제 친구들 순위표에도 보여요', cost:500, type:'frame'},
+  {c:'테두리', k:'frame_rainbow', e:'🌈', n:'무지개 테두리', d:'일곱 빛깔이 아바타를 둘러싸요', cost:800, type:'frame'},
+  {c:'테두리', k:'frame_fire',    e:'🔥', n:'불꽃 테두리',   d:'아바타에 붉은 불꽃 테두리', cost:800, type:'frame'},
+  {c:'테두리', k:'frame_ice',     e:'🧊', n:'얼음 테두리',   d:'아바타에 시린 하늘빛 테두리', cost:1000, type:'frame'},
+  {c:'테두리', k:'frame_sakura',  e:'🌸', n:'벚꽃 테두리',   d:'아바타에 연분홍 테두리', cost:1200, type:'frame'},
+  {c:'테두리', k:'frame_bolt',    e:'⚡', n:'번개 테두리',   d:'아바타에 노란 번갯빛 테두리', cost:1500, type:'frame'},
+  {c:'테두리', k:'frame_breath',  e:'✨', n:'숨 쉬는 금빛',  d:'천천히 밝아졌다 어두워져요 — 움직이는 테두리', cost:3000, type:'frame'},
+  {c:'테두리', k:'frame_hall',    e:'👑', n:'명예의 금테',   d:'상점에서 가장 귀한 테두리 — 순위표와 명예의 전당 어디에서나 보여요', cost:15000, type:'frame'},
+  {c:'이름표', k:'plate_dawn',    e:'🌄', n:'이름표 — 새벽',   d:'순위표에서 내 줄 전체에 빛이 깔려요', cost:2000, type:'plate'},
+  {c:'이름표', k:'plate_dusk',    e:'🌇', n:'이름표 — 노을',   d:'붉은빛에서 보랏빛으로 번져요', cost:2500, type:'plate'},
+  {c:'이름표', k:'plate_ink',     e:'🖋️', n:'이름표 — 먹빛',   d:'짙은 먹빛이 조용히 깔려요', cost:4000, type:'plate'},
+  {c:'이름표', k:'plate_aurora',  e:'🌠', n:'이름표 — 오로라', d:'초록에서 보라로 빛이 천천히 흘러요 — 움직이는 이름표', cost:6000, type:'plate'},
+  {c:'아바타', k:'avatar_pass',   e:'🧸', n:'아바타 자유 이용권', d:'내 정보에서 아바타를 동물 62종 중 마음대로, 몇 번이든', cost:1200, type:'own'},
+  {c:'아바타', k:'av_season',     e:'🍁', n:'아바타 팩 — 사계절', d:'벚꽃·해바라기·단풍·눈사람 등 12종이 더 열려요', cost:1000, type:'own'},
+  {c:'아바타', k:'av_legend',     e:'🐲', n:'아바타 팩 — 전설',   d:'용·왕관·번개·매머드 등 12종이 더 열려요', cost:1500, type:'own'},
+  {c:'카드',   k:'theme_night',   e:'🌌', n:'카드 테마 — 밤하늘', d:'플래시카드 앞면이 밤하늘로 바뀌어요', cost:600, type:'theme'},
+  {c:'카드',   k:'theme_mint',    e:'🍃', n:'카드 테마 — 민트',   d:'플래시카드 앞면이 딥민트빛으로 바뀌어요', cost:600, type:'theme'},
+  {c:'그 밖',  k:'nick_reroll',   e:'🎲', n:'닉네임 재추첨권', d:'닉네임을 새로 뽑아요 — 확정하는 순간에만 결제, 그 전엔 몇 번이든 무료', cost:NICK_REROLL_COST, type:'ticket'},
+  {c:'그 밖',  k:'freeze',        e:'🧊', n:'스트릭 프리즈 +1', d:'하루 빠져도 자동으로 연속 기록을 지켜요 · 최대 2개 보관', cost:300, type:'consume'},
+  {c:'그 밖',  k:'greet_hype',    e:'📣', n:'인사말 팩 — 응원 폭발', d:'홈 인사말 12종이 추가돼요', cost:400, type:'own'}
 ];
+/* 🛍️ 꾸밈을 읽는 자리 — 내 줄은 기기 값, 남의 줄은 서버가 준 값.
+   방금 바꿔 낀 것이 서버에 올라가기 전이라도 내 화면에는 곧바로 보여야 한다 */
+function dressOf(r){
+  const g = ensureGame();
+  if(r && r.me) return {title:g.title||null, frame:g.frame||null, plate:g.plate||null};
+  return {title:(r&&r.title)||null, frame:(r&&r.frame)||null, plate:(r&&r.plate)||null};
+}
+function frameCls(r){ const f = dressOf(r).frame; return f ? ' fr-'+f : ''; }
+function plateCls(r){ const p = dressOf(r).plate; return p ? ' pl-'+p : ''; }
+function titleHTML(r){ const t = SHOP_TITLES[dressOf(r).title]; return t ? '<b class="ttl">'+esc(t)+'</b> · ' : ''; }
 function wallet(){ const g = ensureGame(); return Math.max(0, (g.xp||0) - (g.spent||0)); }
 function shopRowHTML(it){
   const g = ensureGame();
@@ -5009,15 +5068,25 @@ function shopRowHTML(it){
     right = have>=2 ? '<span class="shop-own">보유 2/2</span>'
       : ((have?'<span class="shop-own">보유 '+have+'</span>':'')+'<button type="button" class="btn primary shop-buy" data-k="'+it.k+'">'+fmtXp(it.cost)+' P</button>');
   } else if(g.items && g.items[it.k]){
-    if(it.type==='own') right = '<span class="shop-own">보유 중</span>';
+    if(it.type==='own' || it.type==='bundle') right = '<span class="shop-own">보유 중</span>';
     else{
-      const eq = (it.type==='frame' && g.frame===it.k.slice(6)) || (it.type==='theme' && g.cardTheme===it.k.slice(6));
+      const eq = (it.type==='frame' && g.frame===it.k.slice(6)) || (it.type==='theme' && g.cardTheme===it.k.slice(6))
+        || (it.type==='title' && g.title===it.k.slice(6)) || (it.type==='plate' && g.plate===it.k.slice(6));
       right = '<button type="button" class="btn '+(eq?'primary':'ghost')+' shop-eq" data-k="'+it.k+'">'+(eq?'장착 중':'장착')+'</button>';
     }
   } else {
     right = '<button type="button" class="btn primary shop-buy" data-k="'+it.k+'">'+fmtXp(it.cost)+' P</button>';
   }
   return '<div class="shop-row"><span class="sh-e">'+it.e+'</span><div class="sh-i"><b>'+it.n+'</b><span>'+it.d+'</span></div>'+right+'</div>';
+}
+/* 갈래마다 머리를 얹는다 — 낱줄이 스물여섯이라 그냥 늘어놓으면 폰에서 못 읽는다 */
+function shopBodyHTML(){
+  let out = '', cur = null;
+  SHOP.forEach(it=>{
+    if(it.c && it.c !== cur){ cur = it.c; out += '<div class="shop-cat">'+esc(cur)+'</div>'; }
+    out += shopRowHTML(it);
+  });
+  return out;
 }
 /* 아레나에 들어오면 리그 순위가 먼저 눈에 들어와야 한다 — 상점은 접어 두고, 눌러야 열린다 */
 let shopOpen = false;
@@ -5046,7 +5115,7 @@ function shopSectionHTML(){
       +'<span class="shx-sub">'+sub+'</span>'
     +'</button>'
     +'<div class="shop-wrap"><div class="shop-note">모은 XP로 사요. 포인트를 써도 레벨은 안 내려가요 — 레벨은 그동안 모은 XP 전체로 정해지니까요.</div>'
-      +'<div class="shop" id="shop-body">'+SHOP.map(shopRowHTML).join('')+'</div></div>'
+      +'<div class="shop" id="shop-body">'+shopBodyHTML()+'</div></div>'
     +'</div>';
 }
 document.addEventListener('click', e=>{
@@ -5076,6 +5145,9 @@ document.addEventListener('click', e=>{
       g.items[it.k] = 1;
       if(it.type==='frame') g.frame = it.k.slice(6);
       if(it.type==='theme') g.cardTheme = it.k.slice(6);
+      if(it.type==='title') g.title = it.k.slice(6);
+      if(it.type==='plate') g.plate = it.k.slice(6);
+      if(it.type==='bundle') (it.give||[]).forEach(x=>{ g.items[x] = 1; });
     }
     scheduleSave(); fxRight();
     toast('구매 완료! 🛍️');
@@ -5088,6 +5160,8 @@ document.addEventListener('click', e=>{
     const g = ensureGame(); const key = it.k.slice(6);
     if(it.type==='frame') g.frame = (g.frame===key ? null : key);
     if(it.type==='theme') g.cardTheme = (g.cardTheme===key ? null : key);
+    if(it.type==='title') g.title = (g.title===key ? null : key);
+    if(it.type==='plate') g.plate = (g.plate===key ? null : key);
     scheduleSave();
     if(curScr==='scr-stats') renderStats();
     toast('적용했어요');
@@ -5160,11 +5234,10 @@ let classLgCache = null;
 async function renderLeaguePersonal(){
   const el = document.getElementById('lg-body'); if(!el) return;
   const g = ensureGame();
-  const frCls = g.frame ? ' fr-'+g.frame : '';
   const cls = (DB.profile && DB.profile.class_name) || '';
   const ghost = !!(DB.profile && DB.profile.hidden);
   const ghostNote = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">\uD83D\uDD4A\uFE0F 이 계정은 순위표에 오르지 않아요. 순위 걱정 없이 편하게 공부해요!</span></span></div>';
-  const meRow = '<div class="lg-row me"><span class="rank">—</span><span class="avt'+frCls+'">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'닉네임 미정')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+cls)+'</span></span><span class="wxp">'+fmtXp(0)+' XP</span></div>';
+  const meRow = '<div class="lg-row me'+plateCls({me:true})+'"><span class="rank">—</span><span class="avt'+frameCls({me:true})+'">'+(g.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(g.nickname||'닉네임 미정')+' <span class="mebadge">나</span></span><span class="sg">'+esc((maskName(DB.profile && DB.profile.name)? maskName(DB.profile && DB.profile.name)+' · ':'')+cls)+'</span></span><span class="wxp">'+fmtXp(0)+' XP</span></div>';
   const per = lgPeriod;
   const rows = await fetchLeague(per);
   if(per==='w' && lgWeekMissing){ lgPeriod = 'm'; if(curScr==='scr-stats') renderStats(); return; }   /* 서버 미설치 — 조용히 월간으로 */
@@ -5197,7 +5270,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.8.1';
+const APP_VERSION = '2.9.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -5311,7 +5384,7 @@ async function renderHall(){
     el.innerHTML = '<div class="lg-row"><span class="who" style="flex:1"><span class="sg">첫 명예의 전당은 이번 달이 끝나면 새겨져요. 지금부터 점수를 쌓아 두자!</span></span></div>';
     return;
   }
-  const line = (r, i, xp)=>'<div class="lg-row r'+i+'"><span class="rank">'+i+'</span><span class="avt">'+esc(r.avatar||'👑')+'</span><span class="who"><span class="nk">'+esc(r.nick||'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span><span class="wxp">'+xp+'</span></div>';
+  const line = (r, i, xp)=>'<div class="lg-row r'+i+plateCls(r)+'"><span class="rank">'+i+'</span><span class="avt'+frameCls(r)+'">'+esc(r.avatar||'👑')+'</span><span class="who"><span class="nk">'+esc(r.nick||'')+'</span><span class="sg">'+titleHTML(r)+esc((r.mname? r.mname+' · ':'')+(r.cls||''))+'</span></span><span class="wxp">'+xp+'</span></div>';
   let h = '';
   if(wins.length){
     h += '<div class="hall-sub">👑 누적 우승 TOP '+wins.length+'</div>';
@@ -6343,9 +6416,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-65';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-66'; });
+const APP_VER = '2026.07.27-67';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-67'; });
 const WN_ITEMS = [
+ ['🏷️','칭호·이름표가 생겼어요','상점에 칭호 5종·이름표 배경 4종·새 테두리 6종이 들어왔어요. 지금까지는 꾸며도 나만 봤는데, 이제 아레나 순위표와 명예의 전당에서 <b>친구들에게도 보여요</b>! 아바타 팩(사계절·전설)도 새로 열렸어요'],
  ['📄','시험지에 여러 단어장 담기','시험지 출력에서 단어장을 여러 장 담을 수 있어요. 과마다 몇 번부터 몇 번까지 낼지 따로 정하고, 문항은 단어장 크기에 맞춰 골고루 섞여 나와요. 🎲 다시 뽑기를 누르면 같은 설정으로 새 문제를 뽑아요'],
  ['🎯','셀프테스트 과제','선생님이 낸 시험을 집에서 쳐요. 문항 수·통과 점수·도전 기회가 정해져 있고, 통과하면 선생님께 바로 알림이 가요! 홈 과제 카드에서 시작'],
  ['🃏','카드로도 오답 탈출','오답 복습을 카드로 할 때 「이제 안다 ✓」를 누르면 그 단어가 오답 목록에서 바로 빠져요. 아직 헷갈리는 단어만 남겨 두고 다음에 다시 만나요'],
