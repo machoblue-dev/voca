@@ -47,7 +47,7 @@
 .rv-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1.5px dashed var(--line,#EAE3D6)}
 .rv-row .rv-info{flex:1;min-width:0}
 .rv-row .rv-info b{font-size:14.5px}
-.rv-row .rv-info span{display:block;font-size:12px;color:var(--ink2,#8A8175)}
+.rv-row .rv-info span{display:block;font-size:12px;color:var(--ink2,#8A8175);word-break:keep-all;line-break:strict}
 .rv-go{flex:0 0 auto;padding:8px 13px}
 .qt-row{display:flex;align-items:center;gap:9px;padding:7px 2px;font-size:14px}
 .qt-row .qt-e{font-size:18px}
@@ -970,8 +970,9 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
 .shop-row{display:flex;align-items:center;gap:11px;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:11px 12px}
 .shop-row .sh-e{font-size:24px}
 .shop-row .sh-i{flex:1;min-width:0}
-.shop-row .sh-i b{display:block;font-size:13.5px;font-weight:900}
-.shop-row .sh-i span{display:block;font-size:11.5px;font-weight:700;color:var(--ink2);margin-top:1px}
+.shop-row .sh-i b{display:block;font-size:13.5px;font-weight:900;word-break:keep-all;line-break:strict}
+.shop-row .sh-i span{display:block;font-size:11.5px;font-weight:700;color:var(--ink2);margin-top:1px;word-break:keep-all;line-break:strict}
+.shop-row .shop-own,.shop-row .btn{white-space:nowrap}
 .shop-row .btn{padding:8px 12px;font-size:12.5px;white-space:nowrap}
 .shop-own{font-size:11.5px;font-weight:900;color:var(--teal-deep);white-space:nowrap}
 /* 카드 테마 */
@@ -1005,6 +1006,10 @@ html[data-theme=dark] .hd .logo em{background:var(--red);box-shadow:0 0 10px rgb
 .lg-row .who .sg .ttl{color:var(--amber);font-weight:900}
 .shop-cat{font-size:11.5px;font-weight:900;color:var(--ink2);letter-spacing:.05em;margin:13px 2px 3px}
 .shop-cat:first-child{margin-top:1px}
+/* 😴 복습 미루기 (-68) */
+.rv-snz{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:9px;padding:10px;border-radius:13px;border:2px dashed var(--line);background:var(--card2);font-size:12.5px;font-weight:800;color:var(--ink2)}
+.rv-snz i{font-style:normal;font-weight:900;color:var(--amber)}
+.rv-snz.done{border-style:solid;opacity:.7;font-weight:700}
 /* 움직임을 싫어하는 기기에서는 멈춘다 */
 @media (prefers-reduced-motion:reduce){.avt.fr-breath,.pfa.fr-breath{animation:none}.lg-row.pl-aurora::before{animation:none}}
 /* 리그 기간 토글 */
@@ -4703,14 +4708,29 @@ function mergeGame(a,b){
   }
   g.spent = Math.max(a.spent||0, b.spent||0);
   g.freezeExtra = Math.max(a.freezeExtra||0, b.freezeExtra||0);
+  g.snooze = Math.max(a.snooze||0, b.snooze||0);
+  { /* 배율권은 만료가 늦은 쪽, 미룬 날은 오늘 쓴 기기가 있으면 오늘로 */
+    const ua = (a.boost && a.boost.until) || 0, ub = (b.boost && b.boost.until) || 0;
+    if(ua || ub) g.boost = (ua >= ub) ? a.boost : b.boost;
+    const dk = dayKeyOf(Date.now());
+    g.snoozeDay = (a.snoozeDay === dk || b.snoozeDay === dk) ? dk : (a.snoozeDay || b.snoozeDay);
+    if(!g.snoozeDay) delete g.snoozeDay;
+  }
   if(a.items || b.items) g.items = Object.assign({}, b.items||{}, a.items||{});
   return g;
 }
 let STUDY = {mult: 1};
 let sessXp = 0;
 function resetSessXp(){ sessXp = 0; }
+/* 🛍️ 상점 2차 (-68) — 배율권·미루기권·프리즈 상한 */
+/* 오늘 끝(기기 자정). 스트릭·일일 퀘스트가 모두 기기 시각으로 하루를 세므로 여기도 맞춘다 */
+function endOfToday(){ const d = new Date(); d.setHours(24,0,0,0); return d.getTime(); }
+function isWeekend(){ const w = new Date().getDay(); return w === 0 || w === 6; }
+/* 켜져 있으면 그 배수, 아니면 1. 리그 순위는 서버가 따로 세므로 순위에는 영향이 없다 */
+function boostMult(){ const b = ensureGame().boost; return (b && b.until > Date.now()) ? (b.x || 1) : 1; }
+function freezeCap(){ const g = ensureGame(); return (g.items && g.items.freeze_cap) ? 4 : 2; }
 function awardXp(n){
-  n = Math.round(n * (STUDY.mult || 1));
+  n = Math.round(n * (STUDY.mult || 1) * boostMult());
   const g = ensureGame();
   const before = levelInfo(g.xp).level;
   g.xp += n; g.weekXp += n; g.dayXp += n; sessXp += n;
@@ -5022,6 +5042,9 @@ async function renderGrowth(){
 /* ════════ XP 상점 (v2.2) — 재화는 '누적 XP − 사용'. 써도 레벨은 내려가지 않는다 ════════ */
 const SHOP_TITLES = {hunter:'단어 사냥꾼', dawn:'새벽형 인간', crusher:'오답 파괴자', nonstop:'한 번도 안 쉰 사람', quiet:'조용한 1등'};
 const SHOP = [
+  {c:'오늘',   k:'boost_x2',      e:'⚡', n:'XP 2배권 — 오늘 하루',  d:'오늘 자정까지 얻는 XP가 두 배가 돼요 · 순위 점수와는 상관없어요', cost:500, type:'boost', x:2},
+  {c:'오늘',   k:'boost_x3we',    e:'🎉', n:'주말 3배권 — 오늘 하루', d:'토·일에만 살 수 있어요. 오늘 자정까지 XP가 세 배!', cost:1200, type:'boost', x:3, we:true},
+  {c:'오늘',   k:'snooze',        e:'😴', n:'복습 미루기권',        d:'오늘 할 메모리 락을 내일로 미뤄요 · 단계는 그대로 · 하루에 한 장만', cost:200, type:'stock'},
   {c:'칭호',   k:'title_pack',    e:'🏷️', n:'칭호 다섯 묶음',        d:'아래 칭호 다섯을 한 번에 — 낱개로 사는 것보다 1,000P 싸요', cost:3000, type:'bundle', give:['title_hunter','title_dawn','title_crusher','title_nonstop','title_quiet']},
   {c:'칭호',   k:'title_hunter',  e:'🎯', n:'칭호 — 단어 사냥꾼',     d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
   {c:'칭호',   k:'title_dawn',    e:'🌅', n:'칭호 — 새벽형 인간',     d:'순위표에서 내 이름 아래에 붙어요', cost:800, type:'title'},
@@ -5046,7 +5069,8 @@ const SHOP = [
   {c:'카드',   k:'theme_night',   e:'🌌', n:'카드 테마 — 밤하늘', d:'플래시카드 앞면이 밤하늘로 바뀌어요', cost:600, type:'theme'},
   {c:'카드',   k:'theme_mint',    e:'🍃', n:'카드 테마 — 민트',   d:'플래시카드 앞면이 딥민트빛으로 바뀌어요', cost:600, type:'theme'},
   {c:'그 밖',  k:'nick_reroll',   e:'🎲', n:'닉네임 재추첨권', d:'닉네임을 새로 뽑아요 — 확정하는 순간에만 결제, 그 전엔 몇 번이든 무료', cost:NICK_REROLL_COST, type:'ticket'},
-  {c:'그 밖',  k:'freeze',        e:'🧊', n:'스트릭 프리즈 +1', d:'하루 빠져도 자동으로 연속 기록을 지켜요 · 최대 2개 보관', cost:300, type:'consume'},
+  {c:'그 밖',  k:'freeze',        e:'🧊', n:'스트릭 프리즈 +1', d:'하루 빠져도 자동으로 연속 기록을 지켜요', cost:300, type:'consume'},
+  {c:'그 밖',  k:'freeze_cap',    e:'📦', n:'프리즈 보관 확장', d:'스트릭 프리즈를 2개 → 4개까지 모아 둘 수 있어요', cost:300, type:'own'},
   {c:'그 밖',  k:'greet_hype',    e:'📣', n:'인사말 팩 — 응원 폭발', d:'홈 인사말 12종이 추가돼요', cost:400, type:'own'}
 ];
 /* 🛍️ 꾸밈을 읽는 자리 — 내 줄은 기기 값, 남의 줄은 서버가 준 값.
@@ -5063,10 +5087,17 @@ function wallet(){ const g = ensureGame(); return Math.max(0, (g.xp||0) - (g.spe
 function shopRowHTML(it){
   const g = ensureGame();
   let right;
+  const BUYBTN = '<button type="button" class="btn primary shop-buy" data-k="'+it.k+'">'+fmtXp(it.cost)+' P</button>';
   if(it.type==='consume'){
-    const have = g.freezeExtra||0;
-    right = have>=2 ? '<span class="shop-own">보유 2/2</span>'
-      : ((have?'<span class="shop-own">보유 '+have+'</span>':'')+'<button type="button" class="btn primary shop-buy" data-k="'+it.k+'">'+fmtXp(it.cost)+' P</button>');
+    const have = g.freezeExtra||0, cap = freezeCap();
+    right = have>=cap ? '<span class="shop-own">보유 '+have+'/'+cap+'</span>'
+      : ((have?'<span class="shop-own">보유 '+have+'/'+cap+'</span>':'')+BUYBTN);
+  } else if(it.type==='boost'){
+    right = boostMult()>1 ? '<span class="shop-own">오늘 켜짐</span>'
+      : ((it.we && !isWeekend()) ? '<span class="shop-own">토·일에만</span>' : BUYBTN);
+  } else if(it.type==='stock'){
+    const have = g.snooze||0;
+    right = (have?'<span class="shop-own">'+have+'장</span>':'')+BUYBTN;
   } else if(g.items && g.items[it.k]){
     if(it.type==='own' || it.type==='bundle') right = '<span class="shop-own">보유 중</span>';
     else{
@@ -5094,7 +5125,10 @@ function shopAvail(){
   const g = ensureGame(), w = wallet();
   let can = 0, left = 0, cheapest = 0;
   SHOP.forEach(it=>{
-    const owned = (it.type==='consume') ? ((g.freezeExtra||0) >= 2) : !!(g.items && g.items[it.k]);
+    const owned = (it.type==='consume') ? ((g.freezeExtra||0) >= freezeCap())
+                : (it.type==='boost') ? (boostMult() > 1 || (it.we && !isWeekend()))
+                : (it.type==='stock') ? false
+                : !!(g.items && g.items[it.k]);
     if(owned) return;
     left++;
     if(it.cost <= w) can++;
@@ -5130,7 +5164,11 @@ document.addEventListener('click', e=>{
   if(bb){
     const it = SHOP.find(x=>x.k===bb.dataset.k); if(!it) return;
     const g = ensureGame();
-    if(it.type==='consume' && (g.freezeExtra||0)>=2){ toast('프리즈는 2개까지만 보관돼요'); return; }
+    if(it.type==='consume' && (g.freezeExtra||0)>=freezeCap()){ toast('프리즈는 '+freezeCap()+'개까지만 보관돼요'); return; }
+    if(it.type==='boost'){
+      if(it.we && !isWeekend()){ toast('주말 3배권은 토·일에만 살 수 있어요'); return; }
+      if(boostMult()>1){ toast('오늘은 이미 배율권이 켜져 있어요 — 내일 다시 쓸 수 있어요'); return; }
+    }
     if(wallet() < it.cost){ toast('포인트가 부족해요 — '+fmtXp(it.cost - wallet())+' P 더 모으면 살 수 있어요!'); return; }
     if(it.k === 'nick_reroll'){
       if(!confirm('🎲 닉네임 다시 뽑기를 시작할까요?\n확정하는 순간에만 '+fmtXp(it.cost)+' P가 사용돼요. 그 전엔 무료!')) return;
@@ -5140,6 +5178,8 @@ document.addEventListener('click', e=>{
     if(!confirm('"'+it.n+'"을(를) '+fmtXp(it.cost)+' P로 살까요?')) return;
     g.spent = (g.spent||0) + it.cost;
     if(it.type==='consume') g.freezeExtra = (g.freezeExtra||0) + 1;
+    else if(it.type==='boost') g.boost = {until: endOfToday(), x: it.x};
+    else if(it.type==='stock') g.snooze = (g.snooze||0) + 1;
     else{
       if(!g.items) g.items = {};
       g.items[it.k] = 1;
@@ -5270,7 +5310,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.9.0';
+const APP_VERSION = '2.10.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -5577,6 +5617,38 @@ function revNextLine(){
   const when = revDayLabel(best, today);
   return '<div class="rv-soon">🔒 '+(when === '오늘' ? '오늘 안에' : when)+' '+REV_GAPS[bestSt]+'일차 메모리 락으로 다시 만나요</div>';
 }
+/* 😴 복습 미루기권 — 오늘 할 메모리 락을 통째로 내일로 민다.
+   값은 단계*100000 + 만기일 꼴이다. **단계는 그대로 두고 만기일만 내일로 바꾼다.**
+   밀려 있던 단어도 함께 내일로 맞춘다 — '오늘 할 것'을 비우는 것이 이 표의 뜻이다 */
+function snoozeBtnHTML(hasDue){
+  const g = ensureGame();
+  /* 이미 미뤘으면 만기가 비어 있어도 알려 준다 — 안 그러면 눌렀더니 다 사라진 것으로 보인다 */
+  if(g.snoozeDay === dayKeyOf(Date.now()))
+    return '<div class="rv-snz done">😴 오늘 복습은 내일로 미뤘어요 — 내일 다시 만나요</div>';
+  if(!hasDue || !(g.snooze > 0)) return '';
+  return '<button type="button" class="rv-snz" data-act="rv-snooze">😴 오늘 복습 미루기 <i>남은 '+g.snooze+'장</i></button>';
+}
+function doSnooze(){
+  const g = ensureGame();
+  if(!(g.snooze > 0)) return;
+  const dk = dayKeyOf(Date.now());
+  if(g.snoozeDay === dk){ toast('오늘은 이미 미뤘어요'); return; }
+  const today = revDayNum(Date.now());
+  let n = 0;
+  Object.keys(g.rev2 || {}).forEach(lid=>{
+    const m = g.rev2[lid]; let touched = 0;
+    Object.keys(m).forEach(w=>{
+      const v = m[w];
+      if(v % 100000 <= today){ m[w] = (v - v % 100000) + (today + 1); n++; touched++; }
+    });
+    if(touched) revStamp(g, lid);
+  });
+  if(!n){ toast('오늘 미룰 복습이 없어요'); return; }
+  g.snooze--; g.snoozeDay = dk;
+  scheduleSave();
+  renderHome();
+  toast('😴 오늘 복습 '+n+'단어를 내일로 미뤘어요 — 남은 표 '+g.snooze+'장');
+}
 function revDueWords(lid){
   const g = ensureGame();
   const m = (g.rev2 && g.rev2[lid]) || {};
@@ -5669,7 +5741,7 @@ function renderReview(){
     ? '<div class="rv-next tap" data-act="rv-toggle">🔒 다음 메모리 락 '+(revExpand?'▴':'▾')+' — '+up.slice(0,2).map(x=>revDayLabel(x.nextDue, today)+' '+x.day+'일차 '+(TIERS[x.L.tier||1]||TIERS[1]).e+' '+esc(x.L.name)+' '+x.nextN+'단어').join(' · ')+(up.length>2?' 외 '+(up.length-2)+'개':'')+'</div>'
       + (revExpand ? up.map(x=>'<div class="rv-up-row"><span class="sp">'+(TIERS[x.L.tier||1]||TIERS[1]).e+' <b>'+esc(x.L.name)+'</b> — '+revDayLabel(x.nextDue, today)+' · '+x.day+'일차 '+x.nextN+'단어</span><button class="rv-del" data-del="'+esc(x.lid)+'" aria-label="메모리 락에서 빼기">✕</button></div>').join('') : '')
     : '';
-  if(!due.length){ el.innerHTML = '<div class="rv-nwrap">' + nextLine + '<button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'; return; }
+  if(!due.length){ el.innerHTML = '<div class="rv-nwrap">' + snoozeBtnHTML(false) + nextLine + '<button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'; return; }
   el.innerHTML = '<div class="rv-h"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1.5px;margin-right:4px;color:var(--red)"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"></rect><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"></path></svg>오늘의 메모리 락<span>1·3일차는 고르기 · 7일차부터는 쓰기 — 맞혀야 잠겨요</span><button class="rv-info-btn" data-act="ml-info" aria-label="메모리 락 안내">?</button></div>'
     + due.map(x=>{
         const late = today - x.minDue;
@@ -5681,11 +5753,13 @@ function renderReview(){
           +'<button class="btn primary rv-go" data-id="'+esc(x.lid)+'">지금 복습</button>'
           +'<button class="rv-del" data-del="'+esc(x.lid)+'" aria-label="메모리 락에서 빼기">✕</button></div>';
       }).join('')
+    + snoozeBtnHTML(true)
     + nextLine;
 }
 let revExpand = false;
 $('rev-card').addEventListener('click', e=>{
   if(e.target.closest('[data-act="ml-info"]')){ $('ml-guide').classList.add('on'); return; }
+  if(e.target.closest('[data-act="rv-snooze"]')){ doSnooze(); return; }
   const d = e.target.closest('.rv-del');
   if(d){
     const lid = d.dataset.del;
@@ -6416,9 +6490,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-67';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-67'; });
+const APP_VER = '2026.07.27-68';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-68'; });
 const WN_ITEMS = [
+ ['⚡','오늘 하루만 쓰는 것들','상점에 <b>XP 2배권</b>(500 P)과 <b>주말 3배권</b>(토·일, 1,200 P)이 생겼어요. 산 날 자정까지 얻는 XP가 곱해져요 — 아레나 순위 점수와는 상관없으니 마음 놓고 쓰세요. <b>😴 복습 미루기권</b>(200 P)은 오늘 할 메모리 락을 통째로 내일로 미뤄요. 단계는 그대로예요'],
  ['🏷️','칭호·이름표가 생겼어요','상점에 칭호 5종·이름표 배경 4종·새 테두리 6종이 들어왔어요. 지금까지는 꾸며도 나만 봤는데, 이제 아레나 순위표와 명예의 전당에서 <b>친구들에게도 보여요</b>! 아바타 팩(사계절·전설)도 새로 열렸어요'],
  ['📄','시험지에 여러 단어장 담기','시험지 출력에서 단어장을 여러 장 담을 수 있어요. 과마다 몇 번부터 몇 번까지 낼지 따로 정하고, 문항은 단어장 크기에 맞춰 골고루 섞여 나와요. 🎲 다시 뽑기를 누르면 같은 설정으로 새 문제를 뽑아요'],
  ['🎯','셀프테스트 과제','선생님이 낸 시험을 집에서 쳐요. 문항 수·통과 점수·도전 기회가 정해져 있고, 통과하면 선생님께 바로 알림이 가요! 홈 과제 카드에서 시작'],
