@@ -447,13 +447,13 @@ html[data-theme=dark] .pbar i{background:var(--red);box-shadow:0 0 10px rgba(255
 .fmt-help th,.fmt-help td{border:1px solid var(--line);padding:5px 7px;text-align:left}
 .fmt-help th{background:var(--card2);font-weight:800}
 .li-grp{margin-bottom:10px}
-.li-grp-h{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:13px 14px;font-weight:900;font-size:14.5px;text-align:left}
+.li-grp-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;width:100%;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:13px 14px;font-weight:900;font-size:14.5px;text-align:left}
 .li-grp-h .gname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .li-grp-h .gmeta{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--ink2);flex:0 0 auto}
 .li-grp-h .chev{font-style:normal;display:inline-block;transition:transform .18s}
 /* 📁 묶음 통째 보관·삭제 (-71) — 머리가 통짜 버튼이던 것을 갈라, 펼치기와 단추를 나란히 둔다 */
-.grp-tog{flex:1;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
-.li-grp-h .grp-acts{flex:0 0 auto}
+.grp-tog{flex:1 1 150px;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:8px;background:none;border:0;padding:0;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.li-grp-h .grp-acts{flex:0 0 auto;margin-left:auto}
 .li-grp-h .grp-acts button{padding:7px 10px;font-size:12px}
 .li-grp.open .li-grp-h{border-bottom-left-radius:0;border-bottom-right-radius:0}
 .li-grp.open .li-grp-h .chev{transform:rotate(180deg)}
@@ -1684,6 +1684,30 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
     <button class="btn block" id="lp-close" style="flex:0 0 auto">닫기</button>
   </div>
 </div>
+<div class="ovl" id="grp-set">
+  <div class="card">
+    <h3 id="gs-title">묶음 설정</h3>
+    <div class="desc" id="gs-info"></div>
+    <div class="fld" style="text-align:left;margin-top:12px"><label>배포 대상</label>
+      <select id="gs-tmode"><option value="keep">그대로 두기</option><option value="all">전체 배포로 바꾸기</option><option value="pick">반 지정으로 바꾸기</option></select>
+    </div>
+    <div class="fld" id="gs-pick-row" style="display:none;text-align:left"><label>대상 반 — 학교·학년을 골라 [추가]. 아무것도 안 담으면 전체 배포</label>
+      <div class="row" style="gap:8px">
+        <select id="gs-school" style="flex:1.6"><option value="">학교 선택</option></select>
+        <select id="gs-grade" style="flex:1"><option value="">학년</option><option value="1">1학년</option><option value="2">2학년</option></select>
+        <button type="button" class="grp-back" id="gs-add" style="flex:0 0 auto">＋ 추가</button>
+      </div>
+      <div class="tchips" id="gs-chips"></div>
+    </div>
+    <div class="fld" style="text-align:left"><label>난이도 티어</label>
+      <select id="gs-tier"><option value="keep">그대로 두기</option><option value="1">🌱 티어1 새싹 (기본 ×1.0)</option><option value="2">⚡ 티어2 도전 (×1.3)</option><option value="3">🔥 티어3 정예 (×1.6)</option><option value="4">👑 티어4 전설 (×2.0)</option></select>
+    </div>
+    <div class="row" style="gap:8px;margin-top:14px">
+      <button class="btn ghost" id="gs-close" style="flex:1">닫기</button>
+      <button class="btn primary" id="gs-save" style="flex:1">적용</button>
+    </div>
+  </div>
+</div>
 <div class="ovl" id="cheer-pick">
   <div class="card pick-modal">
     <h3 id="ch-title">응원 보내기</h3>
@@ -2295,6 +2319,78 @@ async function grpDelete(grp){
   toast(r.err === null ? '「'+grp+'」 '+r.done+'개를 지웠어요'
                        : r.done+'개까지만 지워졌어요 (오류 '+r.err+') — 권한·연결 확인');
 }
+/* ⚙️ 묶음 설정 (-72) — 배포 대상 반·티어를 묶음 전체에 한 번에.
+   범위는 grpMembers 전부(배포 중 + 보관함) — 보관된 것을 빼면 복원할 때 옛 대상이 되살아난다.
+   수정 정책(lists_update)이 is_staff 그대로라 서버 변경 없음 */
+let gsGrp = null, gsTargets = [];
+function gsRenderChips(){
+  const box = $('gs-chips'); if(!box) return;
+  box.innerHTML = gsTargets.map(c=>'<button type="button" class="tchip" data-c="'+esc(c)+'">'+esc(c)+'</button>').join('')
+    + '<span class="hint">'+(gsTargets.length ? '위 반에만 배포된다. 태그를 누르면 뺀다.' : '담긴 반 없음 — 전체 학생에게 배포된다.')+'</span>';
+}
+function openGrpSet(grp){
+  const all = grpMembers(grp);
+  if(!all.length) return;
+  const live = all.filter(l=>l.published!==false).length;
+  const arch = all.length - live;
+  /* 대상이 하나로 같으면 그 값을 미리 채워 준다. 서로 다르면 비워 두고 덮어쓰기임을 알린다 */
+  const keys = new Set(all.map(l=>(l.target_classes||[]).slice().sort().join('|')));
+  const mixed = keys.size > 1;
+  gsGrp = grp;
+  gsTargets = mixed ? [] : (all[0].target_classes||[]).slice();
+  $('gs-title').textContent = '「'+grp+'」 묶음 설정';
+  $('gs-info').innerHTML = '배포 중 '+live+'개'+(arch?' + 보관함 '+arch+'개':'')+' — 묶음 전체에 한 번에 적용돼요'
+    +(mixed?'<br><b>지금은 단어장마다 대상이 서로 달라요.</b> 대상을 바꾸면 전부 같은 값으로 덮어써요':'');
+  $('gs-tmode').value = 'keep';
+  $('gs-pick-row').style.display = 'none';
+  $('gs-school').value = ''; $('gs-grade').value = '';
+  $('gs-tier').value = 'keep';
+  gsRenderChips();
+  $('grp-set').classList.add('on');
+}
+$('gs-tmode').addEventListener('change', ()=>{ $('gs-pick-row').style.display = ($('gs-tmode').value==='pick') ? '' : 'none'; });
+$('gs-add').addEventListener('click', ()=>{
+  const sc = $('gs-school').value, g = $('gs-grade').value;
+  if(!sc || !g){ toast('학교와 학년을 먼저 골라 주세요'); return; }
+  const c = (sc === '__ALL') ? (g + '학년전체') : (sc + g);
+  if(!gsTargets.includes(c)) gsTargets.push(c);
+  gsRenderChips();
+});
+$('gs-chips').addEventListener('click', e=>{
+  const ch = e.target.closest('.tchip'); if(!ch) return;
+  gsTargets = gsTargets.filter(x=>x!==ch.dataset.c);
+  gsRenderChips();
+});
+$('gs-close').addEventListener('click', ()=>{ $('grp-set').classList.remove('on'); });
+$('grp-set').addEventListener('click', e=>{ if(e.target === $('grp-set')) $('grp-set').classList.remove('on'); });
+$('gs-save').addEventListener('click', async ()=>{
+  const grp = gsGrp; if(!grp) return;
+  const all = grpMembers(grp);
+  if(!all.length){ $('grp-set').classList.remove('on'); return; }
+  const tmode = $('gs-tmode').value, tier = $('gs-tier').value;
+  const patch = {};
+  if(tmode === 'all') patch.target_classes = null;
+  else if(tmode === 'pick') patch.target_classes = gsTargets.length ? gsTargets.slice() : null;
+  if(tier !== 'keep') patch.tier = parseInt(tier, 10) || 1;
+  if(!Object.keys(patch).length){ toast('바꿀 것을 골라 주세요 — 지금은 둘 다 「그대로 두기」예요'); return; }
+  const live = all.filter(l=>l.published!==false).length;
+  const arch = all.length - live;
+  const tx = TIERS[patch.tier] || TIERS[1];
+  const msg = '「'+grp+'」 '+all.length+'개에 한 번에 적용해요.\n\n  배포 중 '+live+'개'+(arch?' + 보관함 '+arch+'개':'')
+    +(('target_classes' in patch) ? '\n  대상: '+(patch.target_classes ? patch.target_classes.join(', ') : '전체 배포') : '')
+    +(('tier' in patch) ? '\n  티어: '+tx.e+' '+tx.n : '')
+    +'\n\n적용할까요?';
+  if(!confirm(msg)) return;
+  const btn = $('gs-save'); btn.disabled = true;
+  const r = await grpSend(all.map(l=>l.id), part =>
+    api('/rest/v1/word_lists?id=in.('+part.join(',')+')',
+        {method:'PATCH', headers:{'Prefer':'return=minimal'}, body: JSON.stringify(patch)}));
+  btn.disabled = false;
+  $('grp-set').classList.remove('on');
+  await pullLists(); renderLists(); renderHome();
+  toast(r.err === null ? '「'+grp+'」 '+r.done+'개에 적용했어요'
+                       : r.done+'개까지만 바뀌었어요 (오류 '+r.err+') — 권한·연결 확인');
+});
 const listGrpState = new Map();
 function renderLists(){
   const box = $('list-cards');
@@ -2331,6 +2427,7 @@ function renderLists(){
       +'<button type="button" class="grp-tog"><span class="gname"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;margin-right:5px;color:var(--amber)"><path d="M3.5 6.5a2 2 0 0 1 2-2H9l2 2.5h7.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z"></path></svg>'+esc(it.grp)+'</span>'
       +'<span class="gmeta">'+it.lists.length+'개<i class="chev">▾</i></span></button>'
       +'<span class="li-act grp-acts">'
+        +'<button data-gact="set" data-grp="'+esc(it.grp)+'">묶음 설정</button>'
         +'<button data-gact="arch" data-grp="'+esc(it.grp)+'">묶음 보관</button>'
         +(canDelLists() ? '<button class="del" data-gact="del" data-grp="'+esc(it.grp)+'">묶음 삭제</button>' : '')
       +'</span></div>'
@@ -2344,7 +2441,8 @@ $('list-cards').addEventListener('click', async e=>{
   const ga = e.target.closest('[data-gact]');
   if(ga){
     const grp = ga.dataset.grp;
-    if(ga.dataset.gact === 'arch') await grpArchive(grp);
+    if(ga.dataset.gact === 'set') openGrpSet(grp);
+    else if(ga.dataset.gact === 'arch') await grpArchive(grp);
     else if(ga.dataset.gact === 'del') await grpDelete(grp);
     return;
   }
@@ -5544,7 +5642,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.12.0';
+const APP_VERSION = '2.13.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -5607,6 +5705,8 @@ const SCHOOLS = ['강동고','경명여고','경북고','경북여고','경북�
   if(lf) lf.innerHTML = '<option value="">학교 선택</option><option value="__ALL">🏫 전체학교</option>' + base;
   const asS = document.getElementById('as-school');
   if(asS) asS.innerHTML = '<option value="">학교 선택</option><option value="__ALL">🏫 전체학교</option>' + base;
+  const gsS = document.getElementById('gs-school');
+  if(gsS) gsS.innerHTML = '<option value="">학교 선택</option><option value="__ALL">🏫 전체학교</option>' + base;
 })();
 function renderTargetChips(){
   const box = document.getElementById('lf-target-chips');
@@ -6732,7 +6832,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-69';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-71'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-72'; });
 const WN_ITEMS = [
  ['📣','친구에게 응원 보내기','상점에 <b>📣 응원 보내기</b>(100 P)가 생겼어요. 아레나 승강 리그에서 친구 줄 끝의 📣를 누르거나 상점에서 열면, 정해진 말 8가지 중에 골라 쪽지로 보내요. 하루 3장까지예요. <b>🏫 우리 반 전체 부스트</b>(5,000 P)를 사면 오늘 하루 우리 반 모두의 XP가 20% 올라요 — 반마다 하루 한 번뿐이에요'],
  ['⚡','오늘 하루만 쓰는 것들','상점에 <b>XP 2배권</b>(500 P)과 <b>주말 3배권</b>(토·일, 1,200 P)이 생겼어요. 산 날 자정까지 얻는 XP가 곱해져요 — 아레나 순위 점수와는 상관없으니 마음 놓고 쓰세요. <b>😴 복습 미루기권</b>(200 P)은 오늘 할 메모리 락을 통째로 내일로 미뤄요. 단계는 그대로예요'],
@@ -6766,6 +6866,7 @@ const WN_ITEMS = [
  ['📲','홈 화면 설치','내 정보 → 홈 화면에 설치. 앱처럼 열리고, 복습 알림도 받을 수 있어요']
 ];
 const WN_STAFF = [
+ ['⚙️','묶음 설정 — 대상·티어 한 번에','리스트 관리에서 묶음 머리에 <b>[묶음 설정]</b>이 생겼습니다. 배포 대상 반과 난이도 티어를 묶음 전체에 한 번에 바꿔요. 전체 배포로 올라간 교재를 특정 반으로 좁힐 때 단어장을 하나하나 고치지 않아도 됩니다. 보관함에 있는 것도 함께 바뀌어 복원할 때 옛 대상이 되살아나지 않아요(서버 SQL 설치 불필요)'],
  ['📁','묶음을 통째로 보관해요','리스트 관리에서 묶음 머리에 <b>[묶음 보관]</b>이 생겼습니다. 40개짜리 교재를 하나하나 누르지 않고 한 번에 보관함으로 내립니다. 학생 앱에서는 사라지고 기록은 남으며 언제든 되돌릴 수 있어요. 배포 중인 것만 옮기고 이미 보관된 것은 그대로 둡니다. <b>삭제는 관리자 한 사람에게만 열려 있습니다</b>(서버 SQL 1회 설치 — 단어장 삭제 권한)'],
  ['📄','시험지 — 단어장 여러 개','시험지 출력에서 단어장을 여러 장 담습니다. 단어장마다 번호 범위를 따로 지정하고, 문항은 단어장별 어휘 수에 비례해 배분됩니다. 유형마다 비례를 지키므로 한 과에 쏠리지 않아요. 🎲 다시 뽑기로 같은 설정의 다른 벌을 뽑습니다(서버 SQL 설치 불필요)'],
  ['✏️','학생 이름 고치기','계정 관리에서 이름 옆 [이름 수정]을 누르면 가입할 때 잘못 적힌 이름을 바로잡을 수 있어요. 담임 이름이 붙어 들어왔거나 담임 이름으로 가입한 계정을 고치는 자리예요. 로그인 아이디·비밀번호·학습 기록은 그대로 두고 이름 한 칸만 바뀝니다(서버 SQL 1회 설치 — 이름 수정 패치)'],
