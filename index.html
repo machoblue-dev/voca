@@ -1319,6 +1319,10 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 13.5a8 8 0 0 1 16 0"></path><path d="M4 13.5h2.5a1.5 1.5 0 0 1 1.5 1.5v3.5a1.5 1.5 0 0 1-1.5 1.5H5.5A1.5 1.5 0 0 1 4 18.5Z"></path><path d="M20 13.5h-2.5a1.5 1.5 0 0 0-1.5 1.5v3.5a1.5 1.5 0 0 0 1.5 1.5h.5a2 2 0 0 0 2-2Z"></path></svg>
         <b>듣기</b><span class="d">발음 듣고 철자 쓰기</span>
       </button>
+      <button class="mode c-teal" id="m-mean">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>
+        <b>뜻 쓰기</b><span class="d">단어 보고 뜻 입력</span>
+      </button>
       <button class="mode c-plum" id="m-wrong">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.4"></path><path d="M3.5 3.5v5h5"></path></svg>
         <span class="badge" id="wrong-badge" style="display:none">0</span>
@@ -1754,7 +1758,7 @@ html[data-theme=dark] .kkuk{background:var(--red);color:var(--on-red);box-shadow
     <div id="lvg-body" style="margin:12px 0"></div>
     <div class="desc" style="text-align:left">
       <b>XP 쌓는 법</b><br>
-      · 퀴즈 정답 +10(콤보 5부터 1.5배) · 스펠링 정답 +15(오타 하나는 격려 +3) · 카드 "알아요" +2<br>
+      · 퀴즈 정답 +10(콤보 5부터 1.5배) · 스펠링·뜻 쓰기 정답 +15(아깝게 틀리면 격려 +3) · 카드 "알아요" +2<br>
       · 오답 단어를 퀴즈·스펠링으로 맞히면 <b>탈출 보너스 +20</b><br>
       · 일일 퀘스트 +150 · 하루 목표 +50 · 7일 연속마다 +100<br>
       · <b>티어 보너스</b> — 🌱×1.0 · ⚡×1.3 · 🔥×1.6 · 👑×2.0<br>
@@ -3127,13 +3131,42 @@ function endQuiz(){
 }
 
 
+/* ── 뜻 쓰기 채점 — 뜻에서 정답 후보를 만들고, 후보와 학생 답을 같은 규칙으로 어간화해 대조한다.
+   글자 유사도 봐주기는 없다(한국어는 한 글자가 다른 낱말이 되는 일이 많다). 양쪽에 같은 함수를
+   걸므로 어간화가 다소 거칠어도 판정은 어긋나지 않는다 ── */
+const MEAN_SUFF = ['스러운','스럽다','시키다','뜨리다','하다','하는','하게','하기','되다','되는','지다','이다','하','한','함','된','됨','진','짐','인','임','음','다','게','기'];
+function meanStem(s){
+  let t = String(s||'').replace(/\([^)]*\)/g,'').replace(/[~〜]\s*(에게|에|을|를|와|과|로|의|이|가)?/g,'').replace(/[\s.,!?·'"’]/g,'');
+  for(let k=0;k<2;k++){
+    for(const sf of MEAN_SUFF){
+      if(t.length - sf.length >= 1 && t.endsWith(sf)){ t = t.slice(0, -sf.length); break; }
+    }
+  }
+  return t;
+}
+function meanCands(m){
+  const body = String(m||'').trim()
+    .replace(/^\[?[명동형부전접감대수](?:·[명동형부전접감대수])*\]?\s+/,'')
+    .replace(/^숙어\s+/,'')
+    .replace(/\d+\.\s*/g, ',');
+  const out = [];
+  body.split(/[,;/·]/).forEach(p=>{
+    const s = meanStem(p);
+    if(s && out.indexOf(s) < 0) out.push(s);
+  });
+  return out;
+}
+/* 후보가 전부 긴 구절(어간 12자 초과)인 단어는 뜻 쓰기 출제에서 뺀다 — 주로 숙어 뜻풀이 */
+function meanEligible(m){ return meanCands(m).some(s=>s.length<=12); }
+
 /* ════════ 스펠링 쓰기 ════════ */
 let SP = null;
-function startSpell(words, listen, fromWrong){
+function startSpell(words, listen, fromWrong, mean){
+  if(mean) words = (words||[]).filter(w=>meanEligible(w.meaning));
   if(!words || !words.length){ go('scr-home'); return; }
   { const aL = activeList(); STUDY.mult = fromWrong ? 1 : (TIERS[(aL && aL.tier) || 1] || TIERS[1]).m; }
-  SP = {deck: shuffleArr(words), i:0, right:0, answered:false, listen: !!listen, fromWrong: !!fromWrong}; resetSessXp();
-  sessStart(listen ? 'listen' : 'spell', DB.activeListId);
+  SP = {deck: shuffleArr(words), i:0, right:0, answered:false, listen: !!listen, fromWrong: !!fromWrong, mean: !!mean}; resetSessXp();
+  sessStart(mean ? 'mean' : (listen ? 'listen' : 'spell'), DB.activeListId);
   $('sp-done').style.display='none';
   $('sp-play').style.display='block';
   renderSpell();
@@ -3145,10 +3178,14 @@ function renderSpell(){
   $('sp-score').textContent = '맞힌 개수 '+SP.right;
   /* 메모리 락 쓰기 인출 — 일차 표시 + 14·30일차는 첫 글자 힌트 봉인. 다시 도전 라운드도 표시 */
   const kEl = $('sp-kind');
-  if(kEl) kEl.textContent = SP.retry ? '다시 도전 — 뜻 보고 철자 쓰기'
+  if(kEl) kEl.textContent = SP.mean ? (SP.retry ? '다시 도전 — 단어 보고 뜻 쓰기' : '단어 보고 뜻 쓰기')
+    : SP.retry ? '다시 도전 — 뜻 보고 철자 쓰기'
     : ((SP.review && w._st != null) ? REV_GAPS[w._st]+'일차 메모리 락 — 뜻 보고 철자 쓰기' : '뜻 보고 철자 쓰기');
-  $('btn-sp-first').style.display = (SP.review && w._st >= 3) ? 'none' : '';
-  if(SP.listen){
+  $('btn-sp-first').style.display = (SP.mean || (SP.review && w._st >= 3)) ? 'none' : '';
+  if(SP.mean){
+    $('sp-mean').innerHTML = '<b style="font-size:26px;letter-spacing:.01em">'+esc(w.word)+'</b>'
+      +(w.pron?'<span style="display:block;margin-top:3px;color:var(--ink2);font-size:13px;font-weight:600">'+esc(w.pron)+'</span>':'');
+  } else if(SP.listen){
     $('sp-mean').innerHTML = '<div class="lsn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2.5px;margin-right:4px;color:var(--amber)"><path d="M4 13.5a8 8 0 0 1 16 0"></path><path d="M4 13.5h2.5a1.5 1.5 0 0 1 1.5 1.5v3.5a1.5 1.5 0 0 1-1.5 1.5H5.5A1.5 1.5 0 0 1 4 18.5Z"></path><path d="M20 13.5h-2.5a1.5 1.5 0 0 0-1.5 1.5v3.5a1.5 1.5 0 0 0 1.5 1.5h.5a2 2 0 0 0 2-2Z"></path></svg>발음을 듣고 철자를 쓰자</div><button type="button" class="btn" id="sp-say"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px"><path d="M11 5 6.5 9H3v6h3.5L11 19V5Z"></path><path d="M15 9a4.2 4.2 0 0 1 0 6"></path><path d="M17.5 6.5a7.5 7.5 0 0 1 0 11"></path></svg>다시 듣기</button>';
     setTimeout(()=>speak(w.word), 300);
   } else {
@@ -3157,6 +3194,7 @@ function renderSpell(){
   $('sp-hint').textContent = '';
   const fb = $('sp-fb'); fb.className='sp-fb'; fb.innerHTML='';
   const inp = $('sp-in'); inp.value=''; inp.disabled=false;
+  inp.placeholder = SP.mean ? '우리말 뜻 입력' : '영어 단어 입력';
   SP.answered = false;
   $('btn-sp-check').style.display='block';
   $('btn-sp-next').style.display='none';
@@ -3173,11 +3211,17 @@ function checkSpell(){
   if(!SP || SP.answered) return;
   const w = SP.deck[SP.i];
   const inp = $('sp-in').value;
-  const sIn = normSpell(inp), sAns = normSpell(w.word);
-  if(!sIn){ toast('철자를 입력해 주세요'); return; }
-  const exact = sIn === sAns;
-  const near = !exact && sAns.length >= 5 && levOps(sIn, sAns).dist === 1;   /* v2.3.1 — 오타 한 글자: 격려·소량 XP만. 채점(정답 수·별점·오답 탈출·메모리 락)은 오답 */
-  const ok = exact;
+  let ok, near = false;
+  if(SP.mean){
+    if(!meanStem(inp)){ toast('뜻을 입력해 주세요'); return; }
+    ok = meanCands(w.meaning).indexOf(meanStem(inp)) >= 0;
+  } else {
+    const sIn = normSpell(inp), sAns = normSpell(w.word);
+    if(!sIn){ toast('철자를 입력해 주세요'); return; }
+    const exact = sIn === sAns;
+    near = !exact && sAns.length >= 5 && levOps(sIn, sAns).dist === 1;   /* v2.3.1 — 오타 한 글자: 격려·소량 XP만. 채점(정답 수·별점·오답 탈출·메모리 락)은 오답 */
+    ok = exact;
+  }
   const lid = w._lid || DB.activeListId;
   SP.answered = true;
   if(!SP.review) dayBump(1);   /* 메모리 락 복습 문항은 '오늘의 새 단어'에 안 센다 */
@@ -3199,14 +3243,22 @@ function checkSpell(){
       awardXp(gain);
       fb.className='sp-fb ok';
       fb.innerHTML = '정답 ✓'
-        + (SP.listen ? '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>' : '');
+        + ((SP.listen || SP.mean) ? '<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span>' : '');
       fxRight();
     }
   }
   else{
     if(near) awardXp(3);   /* 아깝다 격려 — 기록은 오답, 다시 정확히 쓰면 진짜 정답 */
     fb.className='sp-fb no';
-    fb.innerHTML=(near?'아깝다! 오타 하나 ✗ — 시험은 한 글자도 정확해야 해요':'아쉬워요 ✗')+'<div>'+spellDiffHTML(inp, w.word)+'</div><span class="ans">'+esc(w.word)+((SP.listen && w.meaning)?' — '+esc(w.meaning):'')+'</span><span class="myans">내 답: '+esc(inp)+'</span>';
+    if(SP.mean){
+      /* 동의어로 쓴 답은 기계가 못 받는다 — 자기 확인은 격려 XP만, 채점 기록(정답 수·별점·오답 탈출·메모리 락)에는 안 센다. 플래시 '알아요'와 같은 결 */
+      fb.innerHTML='아쉬워요 ✗<span class="ans">'+esc(w.word)+(w.meaning?' — '+esc(w.meaning):'')+'</span><span class="myans">내 답: '+esc(inp)+'</span>'
+        +'<button type="button" class="btn soft block" id="sp-claim" style="margin-top:10px">뜻은 맞게 썼어요</button>';
+      const cb = $('sp-claim');
+      if(cb) cb.addEventListener('click', ()=>{ cb.disabled=true; cb.textContent='격려 +3 XP — 위의 표준 뜻도 같이 외워 두자'; awardXp(3); });
+    } else {
+      fb.innerHTML=(near?'아깝다! 오타 하나 ✗ — 시험은 한 글자도 정확해야 해요':'아쉬워요 ✗')+'<div>'+spellDiffHTML(inp, w.word)+'</div><span class="ans">'+esc(w.word)+((SP.listen && w.meaning)?' — '+esc(w.meaning):'')+'</span><span class="myans">내 답: '+esc(inp)+'</span>';
+    }
     addWrong(w.word, lid); fxWrong();
     if(!SP.retry && !SP.fromWrong && !SP.review) (SP.retryL || (SP.retryL = [])).push(w);
   }
@@ -3241,7 +3293,7 @@ function startSpellRetry(){
 }
 function endSpell(){
   const total = SP.mainTotal || SP.deck.length;   /* 다시 도전 라운드는 총계에서 뺀다 */
-  logSession(SP.listen?'listen':'spell', total, SP.right, !!SP.review);
+  logSession(SP.mean?'mean':(SP.listen?'listen':'spell'), total, SP.right, !!SP.review);
   $('sp-play').style.display='none';
   const box = $('sp-done');
   box.style.display='block';
@@ -3256,13 +3308,13 @@ function endSpell(){
     return;
   }
   const wn = wrongWords().length;
-  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars(SP.listen?'listen':'spell', SP.right, total))+'<div class="sc"><em>'+SP.right+'</em> / '+total+'</div><p>'+(SP.right===total?'철자까지 완벽해요!':'틀린 단어는 오답 목록에 저장했어요.'+(SP.retry?' 다시 도전에서 맞힌 단어는 1일차에 등록됐어요.':''))+'</p>'+xpLineHTML()+revNextLine()+'</div>'
+  box.innerHTML = '<div class="result-big">'+starsHTML(awardStars(SP.mean?'mean':(SP.listen?'listen':'spell'), SP.right, total))+'<div class="sc"><em>'+SP.right+'</em> / '+total+'</div><p>'+(SP.right===total?(SP.mean?'뜻까지 완벽해요!':'철자까지 완벽해요!'):'틀린 단어는 오답 목록에 저장했어요.'+(SP.retry?' 다시 도전에서 맞힌 단어는 1일차에 등록됐어요.':''))+'</p>'+xpLineHTML()+revNextLine()+'</div>'
     +'<div class="row"><button class="btn ghost" id="sp-again">다시</button><button class="btn primary" id="sp-home">홈으로</button></div>'
     +(wn?'<button class="btn soft block" id="sp-gowrong" style="margin-top:10px">오답 복습 하러 가기</button>':'');
   if(SP.hw) hwFinish(SP.hw, SP.right, total, box);   /* 🎯 셀프테스트 채점 */
   $('sp-again').addEventListener('click', ()=>{
     if(SP.fromWrong){ const ws = (wrScope==='all'?wrongWordsAll():wrongWords()).map(x=>x.w); if(ws.length){ startSpell(ws, SP.listen, true); return; } }
-    startSpell(activeList().words, SP.listen);
+    startSpell(activeList().words, SP.listen, false, SP.mean);
   });
   $('sp-home').addEventListener('click', ()=>go('scr-home'));
   const g = $('sp-gowrong');
@@ -3292,12 +3344,12 @@ function renderWrong(){
   const bindScope = ()=>{ box.querySelectorAll('[data-wrsc]').forEach(b=>b.addEventListener('click', ()=>{ wrScope = b.dataset.wrsc; renderWrong(); })); };
   const tabs = '<div class="lg-tabs" style="margin-top:0"><button type="button" class="lgt'+(wrScope==='cur'?' on':'')+'" data-wrsc="cur">이 단어장 ('+curItems.length+')</button><button type="button" class="lgt'+(wrScope==='all'?' on':'')+'" data-wrsc="all">전체 단어장 ('+allItems.length+')</button></div>';
   if(!items.length){
-    box.innerHTML = tabs + '<div class="note">지금은 오답 단어가 없어요. 퀴즈·스펠링에서 틀리거나 플래시카드에서 "몰라요"를 누른 단어가 여기에 모여요.</div>';
+    box.innerHTML = tabs + '<div class="note">지금은 오답 단어가 없어요. 퀴즈·스펠링·뜻 쓰기에서 틀리거나 플래시카드에서 "몰라요"를 누른 단어가 여기에 모여요.</div>';
     bindScope();
     return;
   }
   box.innerHTML = tabs
-    + '<div class="note" style="margin-bottom:12px">틀린 횟수가 많은 단어부터 보여드려요. <b>퀴즈·스펠링에서 맞히면</b> 확실히 탈출하고 +20 XP, 카드의 "이제 안다"는 +10 XP예요.</div>'
+    + '<div class="note" style="margin-bottom:12px">틀린 횟수가 많은 단어부터 보여드려요. <b>퀴즈·스펠링·뜻 쓰기에서 맞히면</b> 확실히 탈출하고 +20 XP, 카드의 "이제 안다"는 +10 XP예요.</div>'
     + items.slice().sort((a,b)=>b.cnt-a.cnt).map(x=>'<div class="wrong-item"><span class="wi-w">'+esc(x.w.word)+'</span><span class="wi-m">'+esc(x.w.meaning)+(wrScope==='all' && x.w._lname?'<small class="wi-l">'+esc(x.w._lname)+'</small>':'')+'</span><span class="cnt">'+x.cnt+'회</span><button class="spk sm" data-say="'+esc(x.w.word)+'">🔊</button></div>').join('')
     + '<div class="row" style="margin-top:14px"><button class="btn ghost" id="wr-flash">카드로 복습</button><button class="btn primary" id="wr-spell">스펠링으로 탈출</button></div>'
     + '<button class="btn ghost block" id="wr-clear" style="margin-top:10px;color:var(--red-deep)">'+(wrScope==='all'?'모든 단어장 오답 전부 지우기':'이 단어장 오답 전부 지우기')+'</button>';
@@ -4101,7 +4153,7 @@ function drawDash(){
   box.innerHTML = ghead + (rows || '<div class="note">'+(($('dash-q').value||'').trim() ? '검색 결과가 없어요. 철자나 반 이름을 다시 확인해 보세요.' : '이 반에 학생이 없어요.')+'</div>');
 }
 function stuDetailHtml(p, ss, wd){
-  const MODE_KO = {quiz:'퀴즈', spell:'스펠링', flash:'카드', listen:'듣기'};
+  const MODE_KO = {quiz:'퀴즈', spell:'스펠링', mean:'뜻 쓰기', flash:'카드', listen:'듣기'};
   const today = new Date(); today.setHours(0,0,0,0);
   const wcount = {};
   for(const lid in wd) for(const w in wd[lid]) wcount[w]=(wcount[w]||0)+wd[lid][w];
@@ -4507,7 +4559,7 @@ function go(id){
   const isMain = MAIN_SCRS.includes(id), isAuth = id==='scr-auth';
   $('topbar').classList.toggle('hidden', isMain || isAuth);
   $('tabbar').classList.toggle('hidden', !isMain);
-  if(!isMain && !isAuth) $('top-ttl').textContent = TITLES[id]||'';
+  if(!isMain && !isAuth) $('top-ttl').textContent = (id==='scr-spell' && typeof SP!=='undefined' && SP) ? (SP.mean?'뜻 쓰기':(SP.listen?'듣기':'스펠링 쓰기')) : (TITLES[id]||'');
   document.querySelectorAll('#tabbar .tab').forEach(t=>t.classList.toggle('on', t.dataset.go===id));
   if(id==='scr-home') renderHome();
   if(id==='scr-stats'){ shopOpen = false; renderStats(); }
@@ -4574,7 +4626,7 @@ function renderHome(){
   $('lv-title').textContent = 'LV.'+lv.level+' '+lv.title;
   $('lv-bar').style.width = Math.round(lv.progress*100)+'%';
   $('lv-meta').textContent = lv.into+'/'+lv.span;
-  $('m-flash').disabled = $('m-spell').disabled = $('m-listen').disabled = (n===0);
+  $('m-flash').disabled = $('m-spell').disabled = $('m-listen').disabled = $('m-mean').disabled = (n===0);
   $('m-quiz').disabled = (n<5);
   $('m-wrong').disabled = (wn===0);
   const badge = $('wrong-badge'); badge.style.display = wn?'inline-block':'none'; badge.textContent = wn;
@@ -4687,7 +4739,7 @@ async function loadClassSuggest(){
 }
 $('m-flash').addEventListener('click', ()=>{ startFlash(activeList().words, false); go('scr-flash'); });
 $('m-quiz').addEventListener('click', ()=>{ openQuizSetup(); go('scr-quiz'); });
-$('m-spell').addEventListener('click', ()=>{ startSpell(activeList().words); go('scr-spell'); }); $('m-listen').addEventListener('click', ()=>{ startSpell(activeList().words, true); go('scr-spell'); }); $('m-maketest').addEventListener('click', ()=>{ if(!activeList()){ toast('단어장이 아직 없어요'); return; } openMakeTest(); }); $('m-explore').addEventListener('click', ()=>{ go('scr-browse'); const bx = $('explore-body'); bx.style.display = 'block'; renderExplore(); window.scrollTo({top:0}); });
+$('m-spell').addEventListener('click', ()=>{ startSpell(activeList().words); go('scr-spell'); }); $('m-listen').addEventListener('click', ()=>{ startSpell(activeList().words, true); go('scr-spell'); }); $('m-mean').addEventListener('click', ()=>{ const ws=(activeList().words||[]).filter(w=>meanEligible(w.meaning)); if(!ws.length){ toast('이 단어장에는 뜻 쓰기로 낼 단어가 없어요'); return; } startSpell(ws, false, false, true); go('scr-spell'); }); $('m-maketest').addEventListener('click', ()=>{ if(!activeList()){ toast('단어장이 아직 없어요'); return; } openMakeTest(); }); $('m-explore').addEventListener('click', ()=>{ go('scr-browse'); const bx = $('explore-body'); bx.style.display = 'block'; renderExplore(); window.scrollTo({top:0}); });
 $('m-wrong').addEventListener('click', ()=>{ renderWrong(); go('scr-wrong'); });
 $('m-test').addEventListener('click', ()=>{ initTestForm(); go('scr-test'); });
 $('m-assign').addEventListener('click', ()=>{ go('scr-assign'); renderAssign(); });
@@ -5601,7 +5653,7 @@ function renderStats(){
     +days.map(d=>'<div class="bar'+(d.n?'':' zero')+'"><i style="height:'+Math.max(2,Math.round(d.n/max*72))+'px"></i><span>'+d.label+'</span></div>').join('')+'</div>';
   const slh = DB.lists.map(l=>{
     const st = g.stars[l.id]; if(!st) return '';
-    const best = Math.max(st.quiz||0, st.spell||0, st.listen||0);
+    const best = Math.max(st.quiz||0, st.spell||0, st.listen||0, st.mean||0);
     let stars=''; for(let i=1;i<=3;i++) stars+='<span class="'+(i<=best?'onn':'off')+'">★</span>';
     return '<div class="sl"><div class="nm">'+esc(l.name)+'</div><div class="st">'+stars+'</div></div>';
   }).join('');
@@ -5664,7 +5716,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.14.1';
+const APP_VERSION = '2.15.0';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -6853,9 +6905,10 @@ async function ensureWeeklyReport(){
   }catch(e){}
 }
 /* ════════ 새 기능 안내 ════════ */
-const APP_VER = '2026.07.27-73';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-74'; });
+const APP_VER = '2026.07.27-75';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-75'; });
 const WN_ITEMS = [
+ ['✍️','단어 보고 뜻 쓰기','홈에 <b>뜻 쓰기</b>가 생겼어요. 스펠링과 반대로, 영어 단어를 보고 우리말 뜻을 써요. 뜻이 여러 개면 하나만 써도 되고, 끝맺음이 달라도(소중한·소중하다) 정답이에요. 내가 쓴 말이 표준 뜻과 다른데 뜻이 통한다면 <b>뜻은 맞게 썼어요</b>를 눌러 격려 XP를 받아요'],
  ['🌙','어두운 화면이 기본이 됐어요','이제 앱이 어두운 화면으로 열려요 — 밤 자습 때 눈이 편해요. 밝은 화면이 좋으면 <b>내 정보 → 라이트 모드</b>를 켜 주세요. 언제든 다시 바꿀 수 있어요'],
  ['📣','친구에게 응원 보내기','상점에 <b>📣 응원 보내기</b>(100 P)가 생겼어요. 아레나 승강 리그에서 친구 줄 끝의 📣를 누르거나 상점에서 열면, 정해진 말 8가지 중에 골라 쪽지로 보내요. 하루 3장까지예요. <b>🏫 우리 반 전체 부스트</b>(5,000 P)를 사면 오늘 하루 우리 반 모두의 XP가 20% 올라요 — 반마다 하루 한 번뿐이에요'],
  ['⚡','오늘 하루만 쓰는 것들','상점에 <b>XP 2배권</b>(500 P)과 <b>주말 3배권</b>(토·일, 1,200 P)이 생겼어요. 산 날 자정까지 얻는 XP가 곱해져요 — 아레나 순위 점수와는 상관없으니 마음 놓고 쓰세요. <b>😴 복습 미루기권</b>(200 P)은 오늘 할 메모리 락을 통째로 내일로 미뤄요. 단계는 그대로예요'],
