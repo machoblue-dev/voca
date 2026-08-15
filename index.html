@@ -3689,6 +3689,7 @@ async function doLogin(email, pw){
   const d = await r.json().catch(()=>({}));
   if(!r.ok) throw new Error(d.error_description || d.msg || d.message || ('HTTP '+r.status));
   DB.auth = {access_token:d.access_token, refresh_token:d.refresh_token, uid:d.user.id, email:d.user.email};
+  pullOkOnce = false;   /* 계정이 바뀌는 자리 — 앞 계정의 깃발을 물려받지 않는다 */
   await storageSave();
 }
 async function doSignup(name, email, pw, code, cls){
@@ -3699,6 +3700,7 @@ async function doSignup(name, email, pw, code, cls){
   if(!r.ok) throw new Error(d.error_description || d.msg || d.message || ('HTTP '+r.status));
   if(!d.access_token) throw new Error('not confirmed');
   DB.auth = {access_token:d.access_token, refresh_token:d.refresh_token, uid:d.user.id, email:d.user.email};
+  pullOkOnce = false;   /* 계정이 바뀌는 자리 — 앞 계정의 깃발을 물려받지 않는다 */
   await storageSave();
 }
 
@@ -3791,13 +3793,14 @@ async function pullProgress(){
   if(!r || !r.ok) return false;
   const rows = await r.json();
   mergeProgress(rows.length ? rows[0].data : {});
+  pullOkOnce = true;
   scheduleSave();
   return true;
 }
-let pushTimer = null, pushDirty = false;
+let pushTimer = null, pushDirty = false, pullOkOnce = false;   /* 서버 진행을 한 번도 못 받아 온 기기가 빈 데이터로 서버를 덮지 못하게 */
 function schedulePush(){ pushDirty = true; clearTimeout(pushTimer); pushTimer = setTimeout(pushProgress, 2500); }
 async function pushProgress(urgent){
-  if(!DB || !DB.auth) return;
+  if(!DB || !DB.auth || !pullOkOnce) return;
   pushDirty = false;
   pruneWrongT();
   const body = JSON.stringify({data:{wrong:DB.wrong||{}, wrongT:DB.wrongT||{}, log:DB.log||[], fx:DB.fx, qzExKo:DB.qzExKo, game:DB.game||null, theme:DB.theme}});
@@ -3947,11 +3950,11 @@ async function fullSync(){
   const okP = await pullProfile();
   pullNotice();
   await pullLists();
-  await pullProgress();
+  const okG = await pullProgress();
   await pullUnread();
   pullAssignments();   /* v2.2 — 과제. 서버 미설치·실패여도 앱 흐름을 막지 않는다 */
   pullExams();         /* 🗓️ 시험 역산 — exams 표 미설치면 조용히 숨는다 */
-  await pushProgress();
+  if(okG) await pushProgress();
   await flushPending();
   return okP;
 }
@@ -5085,6 +5088,13 @@ function rollNick(){
 }
 function maybeNick(){
   const g = ensureGame();
+  if(!g.nickname && DB.profile && DB.profile.nickname){
+    /* 기기가 닉네임을 잃어도 다시 뽑게 하지 않는다 — 처음 확정한 이름이 profiles 등록부에 남아 있다 */
+    g.nickname = DB.profile.nickname;
+    if(!g.avatar && DB.profile.avatar) g.avatar = DB.profile.avatar;
+    scheduleSave();
+    return;
+  }
   if(g.nickname || !DB.profile || DB.profile.role!=='student') return;
   nickRerollMode = false;
   $('nk-desc').innerHTML = NK_DESC_FIRST;
@@ -5629,6 +5639,7 @@ async function renderLeaguePersonal(){
     return;
   }
   let mine=false;
+  const frCls = frameCls({me:true});
   const rowHTML = (r, rank, isMe)=>'<div class="lg-row r'+rank+(isMe?' me':'')+'"><span class="rank">'+rank+'</span><span class="avt'+(isMe?frCls:'')+'">'+esc(r.avatar||'🙂')+'</span><span class="who"><span class="nk">'+esc(r.nickname||'')+(isMe?' <span class="mebadge">나</span>':'')+'</span><span class="sg">'+esc((r.mname? r.mname+' · ':'')+(r.class_name||''))+'</span></span><span class="wxp">'+fmtXp(r.week_xp)+' XP</span></div>';
   const html = rows.slice(0,10).map((r,i)=>{ if(r.me) mine=true; return rowHTML(r, i+1, !!r.me); }).join('');
   const idx = rows.findIndex(r=>r.me);
@@ -5653,7 +5664,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.14.0';
+const APP_VERSION = '2.14.1';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -6843,7 +6854,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-73';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-73'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-74'; });
 const WN_ITEMS = [
  ['🌙','어두운 화면이 기본이 됐어요','이제 앱이 어두운 화면으로 열려요 — 밤 자습 때 눈이 편해요. 밝은 화면이 좋으면 <b>내 정보 → 라이트 모드</b>를 켜 주세요. 언제든 다시 바꿀 수 있어요'],
  ['📣','친구에게 응원 보내기','상점에 <b>📣 응원 보내기</b>(100 P)가 생겼어요. 아레나 승강 리그에서 친구 줄 끝의 📣를 누르거나 상점에서 열면, 정해진 말 8가지 중에 골라 쪽지로 보내요. 하루 3장까지예요. <b>🏫 우리 반 전체 부스트</b>(5,000 P)를 사면 오늘 하루 우리 반 모두의 XP가 20% 올라요 — 반마다 하루 한 번뿐이에요'],
