@@ -2584,7 +2584,11 @@ $('btn-copy-tpl').addEventListener('click', async ()=>{
 
 /* ════════ 단어 카드 렌더링 (단어장 보기 · 플래시카드 공용) ════════ */
 function rootPrefixes(group){
-  return splitDot(group).map(s=>{ const m=s.match(/^[A-Za-z]+/); return m?m[0].toLowerCase():null; }).filter(Boolean);
+  /* 숫자가 든 조각은 어근이 아니라 단원·지문 표시다 — "Unit 01" · "DAY 09" · "Unit01-1" · "1과-1".
+     어근으로 읽으면 “Unit01-1 어근으로 만들어진 단어는?” 같은 엉뚱한 퀴즈가 뜨고,
+     unit 으로 시작하는 단어에 어근 색이 칠해진다. (260816)
+     진짜 어근·접두사에는 숫자가 없어 그대로 남는다 — "ply·plet 채우다·접다" · "com- 함께". */
+  return splitDot(group).map(s=>{ if(/\d/.test(s)) return null; const m=s.match(/^[A-Za-z]+/); return m?m[0].toLowerCase():null; }).filter(Boolean);
 }
 function wordHTML(word, group){
   const lw = String(word||'').toLowerCase();
@@ -5716,7 +5720,7 @@ async function renderLeaguePersonal(){
   el.innerHTML = html + (ghost ? ghostNote : tail) + gap;
 }
 /* ════════ 시작 ════════ */
-const APP_VERSION = '2.15.1';
+const APP_VERSION = '2.15.2';
 let updLast = 0;
 async function checkUpdate(){
   if(sessionStorage.getItem('voca-upd-tried')===APP_VERSION) return;
@@ -6906,7 +6910,7 @@ async function ensureWeeklyReport(){
 }
 /* ════════ 새 기능 안내 ════════ */
 const APP_VER = '2026.07.27-75';   /* '새 기능 안내' 팝업의 열쇠 — 새 기능이 없는 버그 수정에서는 건드리지 않는다 (바꾸면 전 학생에게 안내 팝업이 다시 뜬다) */
-['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-76'; });
+['ver-tag','ver-tag2'].forEach(id=>{ const el = document.getElementById(id); if(el) el.textContent = '앱 버전 ' + '2026.07.27-77'; });
 const WN_ITEMS = [
  ['✍️','단어 보고 뜻 쓰기','홈에 <b>뜻 쓰기</b>가 생겼어요. 스펠링과 반대로, 영어 단어를 보고 우리말 뜻을 써요. 뜻이 여러 개면 하나만 써도 되고, 끝맺음이 달라도(소중한·소중하다) 정답이에요. 내가 쓴 말이 표준 뜻과 다른데 뜻이 통한다면 <b>뜻은 맞게 썼어요</b>를 눌러 격려 XP를 받아요'],
  ['🌙','어두운 화면이 기본이 됐어요','이제 앱이 어두운 화면으로 열려요 — 밤 자습 때 눈이 편해요. 밝은 화면이 좋으면 <b>내 정보 → 라이트 모드</b>를 켜 주세요. 언제든 다시 바꿀 수 있어요'],
